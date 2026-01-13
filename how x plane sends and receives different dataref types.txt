@@ -1,0 +1,1807 @@
+i also wanna include to modify the live value monitor in output config. there are data types that are not just numbers like int, double, float, or bool. some of there are bytes and strings and binary arrays that needs to be shown in their respective data type. the problem with what we have now is that the live monitor only shows the values as floats or number and shows 0 if its not a number. and when i edit them, they dont change at all even if theyre writable. i need to be able to read and edit/write byte[n], float[n], int[n] types of datarefs
+
+Based on my analysis of the X-Plane dataref database, I can now explain what the numbers in array types like float[10] or byte[260] represent:
+
+What the Numbers Mean in Array Types
+The numbers in brackets [n] represent the size or dimension of the array:
+
+Single Dimension Arrays (e.g., float[10], byte[260]):
+
+The number indicates how many elements are in the array
+float[10] = an array of 10 floating-point numbers
+byte[260] = an array of 260 bytes (often used for character strings)
+Multi-Dimensional Arrays (e.g., int[73][10], float[56][2][2]):
+
+Multiple bracket pairs indicate multi-dimensional arrays
+int[73][10] = an array of 73 elements, each containing an array of 10 integers
+float[56][2][2] = a 3D array with dimensions 56×2×2
+Examples from the Database:
+byte[260] - Used for storing character strings (like aircraft descriptions)
+float[10] - Used for multiple related values (like data for 10 engines)
+int[8] - Used for multiple similar components (like 8 engines)
+float[95] - Used for large sets of related data (like drag coefficients for 95 parts)
+Differences Between Data Types:
+byte[n]:
+
+Stores raw binary data or character strings
+Each element is 1 byte (8 bits)
+Commonly used for text fields and binary data
+int[n]:
+
+Stores arrays of whole numbers
+Each element is typically 4 bytes (32 bits)
+Used for discrete values like boolean flags or indices
+float[n]:
+
+Stores arrays of decimal numbers
+Each element is typically 4 bytes (32 bits)
+Used for continuous values like measurements
+double[n]:
+
+Stores arrays of high-precision decimal numbers
+Each element is typically 8 bytes (64 bits)
+Used for high-precision coordinates like GPS positions
+The numbers essentially define the capacity of the array - how many elements of that data type can be stored in the array. This allows X-Plane to handle multiple similar data points efficiently (like data for multiple engines, multiple aircraft in multiplayer, or multiple control surfaces).
+
+example: also arrays (like acf_ICAO) are handled one element at a time. (!)
+
+You need to request:
+
+sim/aircraft/view/acf_ICAO[0]
+sim/aircraft/view/acf_ICAO[1]
+sim/aircraft/view/acf_ICAO[2]
+sim/aircraft/view/acf_ICAO[3]
+sim/aircraft/view/acf_ICAO[4]
+sim/aircraft/view/acf_ICAO[5]
+...
+
+there is a function from another project that can send strings (byte arrays) over the network and basically the implementation is kinda like 
+void XPlaneUDPClient::setDataRefString(std::string dataRef, std::string value) {
+
+	// extract array index out of dataRef if there is one.
+	regex r("^(.*)\\[(\\d+)\\]\\[(\\d+)\\]$");
+	smatch matches;
+
+	if (regex_match(dataRef, matches, r)) {
+
+		string baseDataRef = matches[1];
+		int startIdx = stoi(matches[2]);
+		int stopIdx = stoi(matches[3]);
+
+		for (int i = startIdx; i < stopIdx; i++) {
+
+			unsigned int idx = i - startIdx;
+			float data;
+
+			if (idx < value.length()) {
+				data = value.at(idx);
+			} else {
+				data = ' ';
+			}
+
+			ostringstream dref;
+			dref << baseDataRef << "[" << i << "]";
+
+			char buf[5 + 4 + 500];
+			strcpy(buf, "DREF");
+			memcpy(buf + 5, &data, 4);
+			memset(buf + 9, ' ', sizeof(buf) - 9);
+			strcpy(buf + 9, dref.str().c_str());
+
+			sendto(sock, (void *) buf, sizeof(buf), 0,
+					(struct sockaddr *) &serverAddr, slen);
+
+			if (debug) {
+				cerr << "Sent datagram DREF with value \"" << data
+						<< "\" dref \"" << dref.str() << "\"" << endl;
+			}
+
+		}
+
+	} else {
+		ostringstream buf;
+		buf
+				<< "In XPlaneUDPClient::setDataRefString (dataRef, value), dataRef is \""
+				<< dataRef << "\", expecting \"^.*\\[(\\d+)\\]$\"";
+		throw runtime_error(buf.str());
+	}
+}
+
+RREF - Get Datarefs
+To get a dataref, you’ll create a simple structure consisting of the dataref string, the frequency you want to receive it and an index number. This structure is your request, sent to X-Plane. In a way, you’re subscribing to the dataref, and you’ll continuously receive its value, at the frequency you requested, until you unsubscribe from it.
+
+Send
+The dataref is a bytestring.:
+
+dataref = 'sim/aircraft/engine/acf_num_engines'
+msg = struct.pack("<4sxii400s", b'RREF',
+                  freq,                     # Send data # times/second
+                  index,                    # include this index number with results
+                  dataref.encode('utf-8'))  # remember to encode as bytestring
+sock.sendto(msg, (beacon['ip'], beacon['port']))
+To stop subscription, request with freq=0
+
+Receive
+UDP packets will have header RREF and include the index you passed during the request (that’s how you’ll know which dataref this is) and a single floating point value regardless of which dataref you’re requesting.:
+
+(header,         # 'RREF'
+ idx,            # integer, matching what you sent
+ value           # single floating point value
+ ) = struct.unpack('<4sxif', data)
+Note the received packet may contain multiple <index><value> pairs, see example below.
+
+Assuming your request is well-formed, X-Plane will respond (eventually) with a structure consisting of the index (matching the one you provided) and the current dataref value. “Eventually” because this is all asynchronous.
+
+To stop receiving the dataref, you’ll need to form another request, identical to the first with the exception of setting frequency to zero.
+
+Example
+For example to retrieve the integer number of engines for the user aircraft, we’ll use the following dataref. (X-Plane datarefs are listed in <XP>/Resources/plugins/DataRefs.txt. Other plugins and third-party aircraft & scenery may define additional datarefs.)
+
+Dataref
+
+Type
+
+Writable
+
+sim/aircraft/engine/acf_num_engines
+
+int
+
+y
+
+The code might look like:
+
+# 1) Subscribe to receive once per second
+cmd = b'RREF'  # "Request DataRef(s)"
+freq = 1       # number of times per second (integer)
+index = 0      # "my" number, so I can match responsed with my request
+msg = struct.pack("<4sxii400s", cmd, freq, index, b'sim/aircraft/engine/acf_num_engines')
+sock.sendto(msg, (beacon['ip'], beacon['port']))
+
+# 2) Block, waiting to receive a packet
+data, addr = sock.recvfrom(2048)
+header = data[0:4]
+if header[0:4] != b'RREF':
+    raise ValueError("Unknown packet")
+
+# 3) Unpack the data:
+idx, value = struct.unpack("<if", data[5:13])
+assert idx == index
+print("Number of engines is {}".format(int(value)))
+
+# 4) Unsubscribe -- as otherwise we'll continue to get this data, once every second!
+freq = 0
+msg = struct.pack("<4sxii400s", cmd, freq, index, b'sim/aircraft/engine/acf_num_engines')
+sock.sendto(msg, (beacon['ip'], beacon['port']))
+You’ll always get a float
+Unpacking the data is always this same. The returned data is always 8 bytes: a 4-byte integer (your index) and a 4-byte float (the dataref value). Your code needs to evaluate the resulting float based on the datatype. In the above example, ‘acf_num_engines’ is an ‘int’ type, so we cast the returned floating point value to an integer.
+
+If you’re unpacking something which is string, unpacking is a bit more complicated.
+
+Dataref
+
+Type
+
+Writable
+
+Comment
+
+sim/aircraft/view/acf_ICAO
+
+byte[40]
+
+y
+
+string ICAO code for aircraft (a string) entered by author
+
+First, remember that you’re getting a float in return, so the value you get will need to be cast to a character:
+
+# value == 65.0, result == 'A'
+result = chr(int(value))  # covert float to integer, and then convert it to a character.
+Arrays are handled one-element-at-a-time!
+Second, and this is true for all array types (i.e., int[], byte[], float[]), you’ll need to actually subscribe to each element in the array. Yes, that’s crazy, but that’s how the X-Plane UDP interface works.
+
+So, for acf_ICAO, you’ll subscribe to 40 datarefs, using the following dataref names:
+
+sim/aircraft/view/acf_ICAO[0]
+sim/aircraft/view/acf_ICAO[1]
+sim/aircraft/view/acf_ICAO[2]
+...
+sim/aircraft/view/acf_ICAO[39]
+You’ll have a different index for each, and you’ll receive UDP packets with a single float value for each array element.
+
+Multiple results in same packet
+For performance reasons, X-Plane may send multiple dataref results in a single UDP packet, so your code needs to be prepared for this:
+
+data, addr = sock.recvfrom(2048)
+values = data[5:]                  # skipping over 'RREFx' header, get _all_ values
+num_values = int(len(values) / 8)  # Each dataref is 8 bytes long (index + value)
+for i in range(num_values):
+    dref_info = data[(5 + 8 * i):(5 + 8 * (i + 1))]  # extract the 8 byte segment
+    (index, value) = struct.unpack("<if", dref_info)
+    ...
+For acf_ICAO example, you may get a single UDB packet which is analagous to
+
+RREF,      # the 5-byte header      -- data[0:5]
+(0, 67.0)  # 8 bytes, index + value -- data[5:13]
+(1, 49.0)  # 8 bytes, index + value -- data[13:21]
+(2, 55.0)  # 8 bytes, index + value -- data[21:29]
+(3, 50.0)  # 8 bytes, index + value -- data[29:37]
+(4,  0.0)  # 8 bytes, index + value -- data[37:45]
+(5,  0,0)  # 8 bytes, index + value -- data[45:53]
+...
+Based on your subscription, you’ll know the indices map to:
+
+0 -> sim/aircraft/view/acf_ICAO[0]
+1 -> sim/aircraft/view/acf_ICAO[1]
+2 -> sim/aircraft/view/acf_ICAO[2]
+3 -> sim/aircraft/view/acf_ICAO[3]
+4 -> sim/aircraft/view/acf_ICAO[4]
+5 -> sim/aircraft/view/acf_ICAO[5]
+...
+And you’ll know it is supposed to be a string, so you’ll convert the floating point values to characters to yield:
+
+(0,  'C')
+(1,  '1')
+(2,  '7')
+(3,  '2')
+(4, '\0')
+(5, '\0')
+...
+And of course, you’re not guaranteed to get them in the order you’d like, so be prepared for that.
+
+Using threads
+Because reception is asynchronous and order is not guaranteed, you’ll likely need to create a separate thread to receive on, and use an internal datastructure to hold index numbers with their most recently received values. perhaps something like:
+
+t = treading.thread(target=get_drefs, args=(my_mapping, ))
+t.start()
+
+def get_drefs(my_mapping):
+    while Not_Exit:
+        data, arry = Sock.recvfrom(2048)
+        values = data[5:]
+        num_values = int(len(values) / 8)
+        for i in range(num_values):
+            dref_info = data[(5 + 8 * i):(5 + 8 * (i + 1))]
+            (index, value) = struct.unpack("<if", dref_info)
+            my_mapping[index]['value'] = value
+
+
+THIS IS FROM XPPython3 documentation
+
+Easy Datarefs
+To use:
+
+from XPPython3.utils import datarefs
+-or-
+
+from XPPython3.utils.datarefs import find_dataref, create_dataref
+To make creating and using datarefs easier, XPPython3 includes a module which mimics the way Xlua creates and define datarefs. While originally this was included to make it easier for Aircraft designers to transition from Xlua to python, there is no requirement to use other xlua-related code or restrict use to Aircraft plugins. (This module can be used with or without other python-xlua inspired modules).
+
+There are two functions:
+
+find_dataref()
+
+create_dataref()
+
+Both functions return a DataRef instance.
+
+class DataRef
+Result of find_dataref() and create_dataref(). You should not create an instance of this class yourself.
+
+Useful properties of DataRef are:
+
+property .value
+Gets or sets the current datatype-specific value of the dataref. This may be a string, an int or float array, an int or float.
+
+For gets, the data is obtained from X-Plane on access. Cache this value if you want to access it multiple times during the same frame.
+
+For sets, the data is immediately updated in X-Plane.:
+
+>>>
+ref = datarefs.create_dataref('xppython/test/number', 'number')
+ref.value
+0
+ref.value = 45.6
+ref.value
+45.6
+Note that for array datatypes, we update only those elements in the slice.:
+
+>>>
+ref = datarefs.create_dataref('xppython/test/short_array', 'array[5]')
+ref.value
+[0, 0, 0, 0, 0]
+ref.value[2] = 45
+ref.value
+[0, 0, 45, 0, 0]
+ref.value[2:5] = [1, 2, 3]
+ref.value
+[0, 0, 1, 2, 3]
+It is an error to not provide enough elements for the slice.:
+
+>>>
+ref.value[2:5] = [1, 2]
+RuntimeError: Not enough elements(2) in value to set dataref slice (3)
+If you provide too many elements, we’ll truncate the list and accept the result.:
+
+>>>
+ref.value[2:5] = [4, 3, 2, 1]
+ref.value
+[0, 0, 4, 3, 2]
+Arrays call also be referenced (set or get) without the .value property, as long as you use an index or slice.:
+
+>>>
+ref[0:]
+[0, 0, 4, 3, 2]
+ref[2:5] = [1, 2, 3]
+ref.value
+[0, 0, 1, 2, 3]
+Of course setting ref without an index or slice simply updates the python variable to become an array/list: Negating the dataref.:
+
+>>>
+ref = [1, 2, 3, 4]
+ref.value
+AttributeError: 'list' object has no attribute 'value'
+We treat ref.value without an index or slice similarly, but allow you to specify any number of elements, truncating if you provide too many:
+
+>>>
+ref.value
+[0, 0, 4, 3, 2]
+ref.value = [45]
+ref.value
+[45, 0, 4, 3, 2]
+ref.value = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+ref.value
+[10, 9, 8, 7, 6]
+For string types, we treat slice a little differently, because .value is a simple python string which does not permit item assignment:
+
+>>>
+ref.value
+Hello World
+ref.value[6:]
+World
+ref.value[6:] = "Universe"
+TypeError: 'str' object does not support item assignment
+ref.value = "Hello Universe"
+ref.value
+Hello Universe
+Unlike array types, if you provide fewer elements to .value than the dataref size for strings we’ll zero-fill:
+
+>>>
+ref.value = "Hello"
+ref.value
+Hello
+Note that string datarefs can also be used without .value, if you provide an index or slice:
+
+>>>
+ref[0]
+H
+ref[0] = 'h'
+ref.value
+hello
+In this manner, we will zero-fill only to the width provided by in the slice. This also allows you set string values within a longer dataref such as sim/cockpit2/tcas/targets/icao_type.:
+
+>>>
+ref = datarefs.find_dataref('sim/cockpit2/tcas/targets/icao_type')
+ref.value
+'C172'
+ref[0:8]
+'C172'
+ref[8:16]
+''
+ref[8:16] = 'BE35'
+ref[8:16]
+'BE35'
+The above example will zero-fill the 8-element slice, and apply the 4-character string only to the first four elements starting at index 8. As before, if you provide more values than are required for the slice, we’ll truncate without error. If you provide too few, we’ll zero-fill.
+
+property .bytes
+For non-string datarefs, this is the same as the value property, which may be an int, float, array of ints or floats. For string datarefs, this returns an array of (python) bytes. For example:
+
+>>>
+ref = datarefs.create_dataref('xppython3/test/string', 'string')
+ref.value = "Hello World"
+ref.value
+Hello World
+ref.bytes
+[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 0, 0, 0, ..., 0]
+This property is not commonly used.
+
+property .name
+The string name of the dataref:
+
+>>>
+ref.datarefs.create_datarefs('xppython3/test/string', 'string')
+ref.name
+'xppython3/test/string'
+property .types
+The X-Plane data type, a list containing one or more of the strings ‘int’, ‘float’, ‘double’, ‘float_array’, ‘int_array’, ‘data’. Note that string types are implemented using X-Plane data datarefs.
+
+property .dref
+Reference to the internal X-Plane XPLMDataRef. This would be the result of xp.findDataRef() and can be used with xp.getDatai() and related data access functions.
+
+Note For array types, you can drop ‘.value’ for accessing indexed data: e.g., inverter_on[0] is similar to inverter_on.value[0]:
+inverter_on[0] queries X-Plane for the single valued item
+
+inverter_on.value[0] retrieves from X-Plane the list of values, and then python returns the [0] list element.
+
+Functions
+find_dataref(name: str)
+Parameters
+name (str) – Name of existing dataref to find
+
+Returns
+DataRef
+
+Use find_dataref to retrieve and store the accessor which provides the interface to a dataref (either one you created, or an existing dataref):
+
+>>>
+num_batteries = find_dataref("sim/aircraft/electrical/num_batteries")
+inverter_on = find_dataref("sim/cockpit2/electrical/inverter_on")
+fuel_pump_on_zero = find_dataref("sim/cockpit/engine/fuel_pump_on[0]")
+print(fuel_pump_on_zero)
+DataRef: 'sim/cockpit/engine/fuel_pump_on[0] [int_array]'
+There’s no need to determine the datatype as we’ll figure it out. The result of find_dataref() is a handle, that is, the data has not been retrieved yet.
+
+If the dataref is not found, a ValueError exception is raised.
+
+To get the current value, simple access the .value attribute (see DataRef above for details).
+
+>>>
+if num_batteries.value > 1:
+    do_something()
+
+If the dataref is an array type, you’ll (probably) want to index it:
+
+>>>
+if inverter_on.value[0] and inverter_on.value[1]:
+   do_something()
+elif inverter_on.value[0]:
+   do_something_else()
+
+You can find a specific array index, and use it as a single-value dataref:
+
+>>>
+fuel_pump_on_zero = find_dataref("sim/cockpit/engine/fuel_pump_on[0]")
+fuel_pump_on_zero.value
+1
+fuel_pump_on_zero.value = 0
+Note, however, if you created the dataref as read-only, you can change its value only if you access it through the non-specific index dataref (e.g., ref1 below).:
+
+>>>
+ref1 = create_dataref('xppython3/test/array', 'array[16]', callback=False)
+ref2 = find_dataref('xppython3/test/array[4]')
+ref1[4] = 47
+ref2.value
+47
+ref2.value = 48
+ref1[4] == 47
+True
+Attempting to set it through the specific-index version (ref2) will be silently ignored.
+
+create_dataref(name: str, dataRefType: str = 'number' | 'array' | 'string', callback: None | False | Callable = None)
+Parameters
+name (str) – Name of dataref to be created
+
+dataRefType (str) – See table for possible values
+
+callback (Callable) – None or function to be called whenever dataref is written to, False to make readonly
+
+Returns
+DataRef
+
+The dataRefType is a string which defaults to “number” if not provided.:
+
+'number'
+
+creates int/float/double type
+
+'array[x]'
+
+creates int_array/float_array of dimension x (x must be a number)
+
+'string':
+
+creates data
+
+For callback:
+
+If a function, that function will be called, with no parameters, after the dataref is written to.
+
+If None (the default), dataref is writable, but no callback: data is simply stored and retrieved.
+
+If False, dataref is read-only to all plugins except the plugin which created it.
+
+For example, to create a numeric dataref which will store a numeric value:
+
+>>>
+dr_engaged = create_dataref('test/gadget/engaged')
+print(dr_engaged.value)
+0
+dr_engaged.value = 42
+print(dr_engaged.value)
+42
+For numeric datarefs, We’ve actually created a dataref within X-Plane which supports integers and floats, so other plugins can use either to access the current value. To the creating plugin (i.e., your plugin) we’ll return an int if you set and int, a float if you set a float. If you set a non-integer float and another plugin accesses it using xp.getDatai(), we’ll return an integer representation of your float.
+
+To create an array of 6 (numeric) elements, provide the dimension:
+
+>>>
+dr_tank_capacity = create_dataref('test/fuel_tank/capacity', 'array[6]')
+print(dr_tank_capacity.value)
+[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+print(dr_tank_capacity[3] = 42
+print(dr_tank_capacity.value)
+[0.0, 0.0, 0.0, 42.0, 0.0, 0.0]
+print(dr_tank_capacity[3].value)
+42
+print(dr_tank_capacity.value[3])
+42
+Strings are easy, and we automatically create a string of maximum 512 characters:
+
+>>>
+dr_n_number = create_dataref('test/n_number', 'string')
+print(dr_n_number.value)
+''
+dr_n_number.value = 'N20113'
+print(dr_n_number.value)
+'N20113'
+As with other callbacks within XPPython3, if your dataref callback is a method of PythonInterface, it should also have self parameter, which will be available within you callback. For example:
+
+class PythonInterface(EasyPython):
+    def __init__(self):
+        super().__init__()
+        self.name = "foobar"
+
+    def dataref_callback(self):
+        print("someone the dataref created in {self.name}")
+
+    def onStart(self):
+        datarefs.create_dataref("test/fuel_tank/capacity', 'array[6]', self.dataref_callback)
+You will not get any indication within the callback as to what was changed. You could determine this information by storing previous value within the class (e.g., self.capacity_previous) and then making the comparison within the callback, as you’ll have access to self.
+
+
+DREF - Set Datarefs
+Send
+Setting a dataref is trivial:
+
+msg = struct.pack('<4sxf500s', b'DREF',
+                  value,
+                  dataref.encode('utf-8'))
+sock.sendto(msg, (beacon['ip'], beacon['port']))
+Other than the count of bytes sent (==509) you’ll not get any acknowledgement or return from X-Plane.
+
+Note that value is always a float: You’ll need to cast integer values to float before packing. You’ll also need to convert string characters to floats (e.g., float(ord('C'))) if that’s what you’re trying to set.
+
+Similar to Get Datarefs (see RREF), arrays are sent one element at a time, sim/aircraft/view/acf_ICAO[0], sim/aircraft/view/acf_ICAO[1], etc.
+
+Note X-Plane 11.55 (at least) does not support updating byte[x] type of datarefs. You can send the UDP, and X-Plane will receive it correctly but does not actually make a change. A bug has been filed with Laminar Research: as XPD-11353.
+
+this is the instructions from xplane documentation
+SEND ME ALL THE DATAREFS I WANT: RREF
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+So this one is cool: Send in the 5 chars RREF (null-terminated!) plus this struct:
+
+struct dref_struct_in
+{
+	xint dref_freq;
+	xint dref_sender_index;	// the index the customer is using to define this dataref
+	xchr dref_string[400];
+};
+
+Where dref_freq IS ACTUALLY THE NUMBER OF TIMES PER SECOND YOU WANT X-PLANE TO SEND THIS DATA!
+Where dref_en is the integer code you want X-Plane to send back with the dataref value so you can tell WHICH dataref X-Plane is giving you! (since you are likely to ask for MANY different datarefs!)
+Where dref_string is the dataref string that you want X-Plane to send to you!
+
+And, if the dataref is to an ARRAY of values (like engine thrust, since there can be 8 engines), just add [xxx] to the end, where “xxx” is the array index you want X-Plane to send!
+The [ and ] should simply surround the number to indicate that the number is the index you want.
+So, send in “sim/flightmodel/engine/POINT_thrust[1] “to have X-Plane send the second engine, for example (since we start at 0!)
+
+NOTE: You can send at most about 148 requests at one go (that is, without X-Plane advancing one frame in between). If you are requesting more than about 140 data refs, it is best to request them in batches of 100, and wait 100 milliseconds before requesting the next batch.
+
+X-Plane will send the message right back to the IP address and port number you sent the RREF command from!
+You will get:
+
+struct dref_struct_out
+{
+	xint dref_sender_index	;
+	xflt dref_flt_value		;
+};
+
+Where dref_en is the integer code you sent in for this dataref in the struct above.
+Where dref_flt is the dataref value, in machine-native floating-point value, even for ints!
+
+X-Plane will send as many of these structs right behind one another as there are dataref requests pending at any given time for one receiver IP. 
+This means, if more than one dataref request times out the same time, you get RREF+0+(dref_struct_out)+(dref_struct_out)+(dref_struct_out)+…. as one UDP packet.
+NOTE: X-Plane will send at most 183 dref_struct_outs at one go, because that fits into a 1500 byte MTU. After 183 structs send, X-Plane will send a new packet, starting again with the RREF header.
+
+So, of course, you can send in all the RREF messages you want, to get all the dataref values back that you want!
+Easy!
+
+Send in a “dref_freq” of 0 to stop having X-Pane send the dataref values.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+SET A DATAREF TO A VALUE: DREF
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+const xint strDIM=500;	// must be long enough for ATIS! we must not use in Pascal str above 255!
+
+struct dref_struct
+{
+	xflt var;
+	xchr dref_path[strDIM];
+};
+
+Use this to set ANY data-ref by UDP! With this power, you can send in any floating-point value to any data-ref in the entire sim!
+Just look up the datarefs at http://www.xsquawkbox.net/.
+Easy!
+
+IMPORTANT: NULL TERMINATION MEANS THE NULL CHARACTER MUST BE PLACED AT THE END OF dref_path THEN SHOULD BE FILLED WITH BLANK
+SO YOUR TYPICAL MESSAGE SHOULD LOOK LIKE THIS
+
+DREF0+(4byte byte value)+dref_path+0+spaces to complete the whole message to 509 bytes
+
+AN EXAMPLE TO TURN ON AN ANTI-ICE SWITCH WOULD BE
+
+DREF0+(4byte byte value of 1)+ sim/cockpit/switches/anti_ice_surf_heat_left+0+spaces to complete to 509 bytes
+
+DO NOT ADD ANY + SIGNS. THIS IS JUST TO SHOW THE PARTS OF THE MESSAGE TO BE ADDED AS ONE SINGLE BLOCK
+
+REMEMBER: You can go to the SETTINGS menu, OPERATIONS AND WARNING window, to turn on a diagnostics option that will output what data X-Plane thinks it is getting from you to a log file!
+Turn this on during development to see what X-Plane THINKS it is getting from you!
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+SET A DATA OUTPUT TO A VALUE: DATA
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+Remember how you can output data from the Data Output Screen?
+You can also SET data as well with the DATA message!
+You just send in the variables that you want to SET!
+(Now, you can NOT set ALL the variables! Mach number, for example, is determined by the speed of the plane… so you cannot change that, for example).
+
+But, to enter radios or control deflections by UDP, simply send the DATA message described below TO X-Plane by UDP, and X-Plane will use those messages for input and control of the sim! You may send joystick deflections to fly the plane with your own hardware, or send in any number of other variables selectable in the data output screen... whatever can come out, you can send right back in with an identical message but the values of the number changed! Easy! (Just realize that some messages will be over-ridden by X-Plane!)
+
+const xint VALUES_PER_DATA_ITEM=8;
+
+struct data_struct
+{
+	dout_line_index_t	index						;	// which index to send into the list of choices in the data output screen
+	xflt					data[VALUES_PER_DATA_ITEM]	;	// the 8 values that can be sent for each index
+};
+
+SEND A -999 FOR ANY VARIABLE IN THE SELECTION LIST THAT YOU JUST WANT TO LEAVE ALONE, OR RETURN TO DEFAULT CONTROL IN THE SIMULATOR RATHER THAN UDP OVER-RIDE.
+
+So, to send in a DATA message to control some value in X-Plane, send in:
+“DATA” (4 chars)
+0 (1 char of val 0)
+data_struct (a filled-in data struct as per above, with struct alignment 4)
+
+Do this, and you should be able to control some of the variables in X-Plane by UDP!
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+SELECT OR DE-SELECT DATA OUTPUT TO NOT OR COCKPIT DISLPAY: DSEL/USEL/DCOC/UCOC
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+DATA INPUT STRUCTURE is any series of XINTs
+
+Now, say that you are writing an add-on or something for X-Plane and you want your motion-platform or cockpit to send in a request to X-Plane to send a bunch of data out like this, because you are getting tired of going into the data output screen and making selections of data to output all the time. In that case you will SEND a packet just like the one above to X-Plane, but the label will be "DSEL". The data will be a series of integers indicating which data output you want! (1 for the first in the list, 2 for the second, etc).
+
+So "DSEL0456" would request that X-Plane send the fourth, fifth, and sixth items in the data output screen many times per second to the IP address listed in the Internet Settings screen. DSEL is in characters, but 4 5 6 are YOUR MACHINE-BYTE-ORDER integers.
+
+Use DSEL to select data to send via UDP output.
+Use USEL to UN-select data to send via UDP output.
+Use DCOC to select data to the COCKPIT DISPLAY rather than UDP output.
+Use UCOC to UN-select data to the COCKPIT DISPLAY rather than UDP output.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+SET UP THE INTERNET OPTIONS: ISE4
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+This allows you to set up internet options for X-Plane without touching it.
+This is useful if you have a simulator with many displays, and do not want to manually set the IP options for each copy of X-Plane.
+Simply send this structure:
+
+struct ISE4_struct						// SET AN IP OUTPUT v4
+{
+	xint index;
+	xchr snd_ip_str[16];		// IP's we are sending to, in English
+	xchr snd_pt_str[8];		// ports are easier to work with in STRINGS, and make this 8 bytes not 6 to avoid byte-spacing issues in th struct.. 8 bytes really does fill the space
+	xint snd_use_ip;			// use various IP's
+};
+
+And following are a list of the enums for X-Plane 11.00:
+
+	 if(input<=18)sel=ip_mplayer_00	+input		;	// multiplayer!
+else if(input<=38)sel=ip_exvis_00		+input-19	;	// external visuals!
+else if(input==39)sel=ip_master_is_exvis			;	// master machine, this is an external visual!
+else if(input==42)sel=ip_master_is_IOS				;	// master machine, this is an IOS
+else if(input==62)sel=ip_IOS_is_master				;	// IOS, this is master machine!
+else if(input==64)sel=ip_DOUT_ui_set				;	// data output target
+else if(input==71)sel=ip_Xavi_1					;	// Xavion 1
+else if(input==72)sel=ip_Xavi_2					;	// Xavion 2
+else if(input==73)sel=ip_Xavi_3					;	// Xavion 3
+else if(input==74)sel=ip_Xavi_4					;	// Xavion 4
+else if(input==75)sel=ip_fore_ip_addy				;	// Foreflight, one IP addy
+else if(input==76)sel=ip_fore_broadcast			;	// Foreflight, broadcast
+else if(input==77)sel=ip_control_pad				;	// X-Plane Control pad for IOS
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+SET UP THE INTERNET OPTIONS: ISE6
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+This allows you to set up internet options for X-Plane without touching it.
+This is useful if you have a simulator with many displays, and do not want to manually set the IP options for each copy of X-Plane.
+Simply send this structure:
+
+struct ISE6_struct				// SET AN IP OUTPUT v6
+{
+	xint index;
+	xchr snd_ip_str[65];				// IP's we are sending to, in English sized to match Windows
+	xchr snd_pt_str[6];				// ports are easier to work with in STRINGS!
+	xchr pad1[1];
+	xint snd_use_ip;					// use various IP's
+};
+
+Same index enums as the ASE4 message above!
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+PLAY A SOUND: SOUN
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+const xint strDIM=500;	// must be long enough for ATIS! we must not use in Pascal str above 255!
+
+struct soun_struct	 // play any sound
+{
+	xflt freq, vol;
+	xchr soun_path[strDIM];
+};
+
+Use this to simply play a WAV-file sound. Enter the path of the WAV file in the struct. The freq and volume scale 0.0 to 1.0. Easy!
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+PLAY A LOOPING SOUND: LSND and SSND
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+const xint strDIM=500;	// must be long enough for ATIS! we must not use in Pascal str above 255!
+
+struct loop_struct
+{
+	xint index;
+	xflt freq, vol;
+	xchr soun_path[strDIM];
+};
+
+Use this to simply play a WAV-file sound THAT LOOPS, with index 0 to 4 (so you can have 5 going at once)
+LSND starts it, SSND stops it.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+LOAD AN OBJECT: OBJN
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+const xint strDIM=500;	// must be long enough for ATIS! we must not use in Pascal str above 255!
+
+struct objN_struct // object name: draw any object in the world in the sim
+{
+	xint index;
+	xchr path_rel[strDIM];
+};
+
+Just like the airplane struct, but with any OBJ7 object (see the San Bernardino "KSBD_example.obj" sample object in the Custom Scenery folder for an example of an OBJ7 object.
+With this message, simply send in the path of any object that you have on the drive and you want X-Plane to display! The location is controlled with the struct below.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+PLACE AN OBJECT: OBJL
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+struct objL_struct // object location: draw any object in the world in the sim
+{
+	xint index;
+	xchr pad1[4];
+	xdob lat_lon_ele[3];
+	xflt psi_the_phi[3];
+	xint on_ground;			// is this object on the ground? if so, simply enter 0 for the elevation, x-plane will put it on the ground
+	xflt smoke_size;		// is this object smoking? if so, simply indicate the size of the smoke puffs here
+	xchr pad2[4];
+};
+
+Enter the location of the object you loaded here. It can be a tank driving around on the ground, a missile firing, or anything else you can imagine.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+MAKE AN ALERT MESSAGE IN X-PLANE: ALRT
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+struct ALRT_struct						// MAKE AN ALERT MESSAGE, used between copies of X-Plane
+{
+public:
+	ALRT_struct(){memset(this,0,sizeof(*this));}
+   ~ALRT_struct(){}
+
+	xchr m_m1[240];	// needs to be multiple of 8 for the align to work out perfect for the copy?
+	xchr m_m2[240];	// needs to be long enough to hold the strings!
+	xchr m_m3[240];
+	xchr m_m4[240];
+};
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+FAIL A SYSTEM: FAIL
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+Fail a system, where the data will indicate which system to fail. The system to fail is sent as an ASCI STRING (ie: "145"), where the 0 is the first failure listed in the failure window in X-Plane (currently the vacuum system) and incremented by 1 from there.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+RECOVER A SYSTEM: RECO
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+Recover a system, where the data will be an integer indicating which system to recover. The system to recover is sent as an ASCI STRING (ie: "145"), where the 0 is the first failure listed in the failure window in X-Plane (currently the vacuum system) and incremented by 1 from there.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+FAIL A NAVAID: NFAL
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+Fail a NAVAID, where the data will be the ID of which NAVAID to fail.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+RECOVER A NAVAID: NREC
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+Recover a NAVAID, where the data will be the ID of which NAVAID to Recover.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+RECOVER ALL FAILED SYSTEMS: RESE
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+Just send RESE followed by a NULL of course to recover ALL failed system.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+SHUT IT ALL DOWN. GO HOME. WE’RE DONE.
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+QUIT	(no message needed after this label. we’re done here)
+SHUT	(no message needed after this label. we’re done here)
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+DISCOVER X-PLANE BY A BEACON
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+In order to send and receive UDP messages to talk to X-Plane, you must know the IP-address of that machine within your network. You can either enter the IP-address manually, or you can use the BEACON that each instance of X-Plane running in your network broadcasts to announce its presence. 
+
+The BEACON message uses a mechanism called multicast, which is a special IP-address range that you can subscribe to in order to get announcements from X-Plane. This works both when X-Plane is running on the same local machine, or on a machine in the same local area network.
+
+In order to subscribe to X-Plane's BEACON, you must join the multicast group 239.255.1.1 and listen on port 49707. While this looks like an IP-address that is not in your network, it is really a group identifier. Consult your operating system's documentation on how to join a multicast group with a UDP socket. You will want to read the documentation of the setsockopt() function and the IP_ADD_MEMBERSHIP parameter.
+
+When you configure a socket to receive X-Plane’s multicast messages, you also want to use the SO_REUSEADDR (SO_REUSEPORT on Mac) option. This is important so that multiple applications on the same machine can all receive the BEACON from X-Plane. If you don’t use SO_REUSEADDR (SO_REUSEPORT on Mac) only one application per machine will be able to detect X-Plane, and others will get a failure when they try to bind the socket. 
+However, be careful that you normally do NOT want to use any of the REUSE* options for the sockets you receive unicast traffic from X-Plane on. Unless you know exactly what you are doing, DO ONLY set SO_REUSEPORT or SO_REUSEADDR for receiving X-Plane’s BEACON on port 49707.
+
+Once you are receiving the BEACON messages from X-Plane, the struct must be interpreted as follows:
+
+5-character MESSAGE PROLOGUE which indicates the type of the following struct as
+BECN\0
+
+struct becn_struct
+{
+	uchar beacon_major_version;	// 1 at the time of X-Plane 10.40
+	uchar beacon_minor_version;	// 1 at the time of X-Plane 10.40
+	xint application_host_id;		// 1 for X-Plane, 2 for PlaneMaker
+	xint version_number;			// 104103 for X-Plane 10.41r3
+	uint role;						// 1 for master, 2 for extern visual, 3 for IOS
+	ushort port;					// port number X-Plane is listening on, 49000 by default
+	xchr	computer_name computer_name[500];		// the hostname of the computer, e.g. “Joe’s Macbook”
+};
+
+Parsing this struct allows you to find any instance of X-Plane running in the network, find out which version of X-Plane is running, see the name of the computer and find out whether it's configured as a master or visual slave machine, and lastly find out if X-Plane's receive port has been changed from the default of 49000.
+
+You can expect the struct to be compatible within the same major version of the BEACON. Expect structs to change when the major version changes, so you will want to abort parsing when you discover a mismatch of the beacon_major_version.
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+DATAREF READ/WRITE
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+If you go to the SETTINGS menu in X-Plane as selected on the upper-right corner of the screen,
+Then to the DATA OUTPUT tab,
+Then to the DATAREF READ/WRITE group,
+There, you can select any dataref for outputting from X-Plane, or reading into X-Plane, to or from either a networked computer by UPD, or a com-port, as you like.
+
+Here is the format:
+
+Send data to NETWORKED COMPUTER (via UDP):
+	This struct will be filled in and sent for each dataref selected: (enter the IP address in the GENERAL DATA OUTPUT group right there on that screen)
+
+const xint strDIM=500;	// must be long enough for ATIS! we must not use in Pascal str above 255!
+
+struct DREF_struct
+{
+	xflt var;
+	xchr dref_path[strDIM];
+};
+
+Send data to A COM PORT:
+	A string will be built and sent to the com port, which is simply $xxx.xxx.xxx, etc, where each xxx is the floating-point value of that dataref in the list, in the order shown in the selection list.
+
+For reading, it’s the same thing: Have the variables selected so the values read go into the right slots in X-Plane.
+
+The UDP-Message Overview:
+
+So you want to know how to read the data that X-Plane spits out?
+No problem... You send data to X-Plane and get it out by sending messages by UDP.
+And here are the data formats for getting data in and out of X-Plane, which we are happy for you to do, to suit your own dark agendas.
+
+You will see some variable types that are defined internally to X-Plane, and here they are:
+
+XCHR (character, in local byte-order for the machine you are on)
+XINT (4-byte int, in local byte-order for the machine you are on)
+XFLT (4-byte ints and floats, in local byte-order for the machine you are on)
+XDOB (double-precision float, in local byte-order for the machine you are on)
+strDIM is 500
+vehDIM is 10
+
+You may notice that we often pass around STRINGS TO REPRESENT NUMBERS, like the null-termed string "123" to represent the number 123.
+This is simply to avoid having to do byte-order conversion.
+Any time you send or receive a structure, the struct alignment must be 4 bytes!
+
+All the UDP messages have the same format, which is:
+
+5-character MESSAGE PROLOUGE (to indicate the type of message)
+
+and then a
+
+DATA INPUT STRUCTURE (containing the message data that you want to send or receive)
+
+The UDP-Message Prolouge:
+
+So what is the 5-char message prolouge? Easy!
+
+The first 4 chars are the message type,
+the 5th char is internal-use INDEX-BYTE for X-Plane (you can enter 0 here when sending data),
+
+SAMPLE CODE TO SEND A MESSAGE:
+xchr data_send[net_SIZE_buff];
+
+void NET_send(xchr label[5],xchr* data_in,xint data_len,xint ip_index_to)
+{
+data_send[0]=label[0];
+data_send[1]=label[1];
+data_send[2]=label[2];
+data_send[3]=label[3];
+data_send[4]=0;
+memcpy(&data_send[5],data_in,data_len); // load in the data
+data_len+=5;
+
+#if APL
+TUnitData unitdata;
+unitdata.addr.len =sizeof(struct InetAddress);
+unitdata.addr.buf =(UInt8*)&their_address[ip_index_to];
+unitdata.opt.len =0;
+unitdata.opt.buf =0;
+unitdata.udata.len=data_len;
+unitdata.udata.buf=(UInt8*)data_send;
+OSStatus retval =my_ep->SndUData(&unitdata);
+xint send_failed =(retval!=kOTNoError);
+#endif
+#if IBM
+SOCKADDR_IN addr_otherguy;
+memset(&addr_otherguy,0,sizeof(addr_otherguy));
+addr_otherguy.sin_family =AF_INET;
+addr_otherguy.sin_port =htons(str_to_int(net.their_port_str[ip_index_to]));
+addr_otherguy.sin_addr.s_addr=their_address[ip_index_to];
+xint send_failed=(sendto(my_socket,data_send,data_len,0,(LPSOCKADDR)&addr_otherguy,sizeof(struct sockaddr))!=data_len);
+#endif
+#if LIN
+struct sockaddr_in addr_otherguy;
+memset(&addr_otherguy,0,sizeof(addr_otherguy));
+addr_otherguy.sin_family =AF_INET;
+addr_otherguy.sin_port =htons(str_to_int(net.their_port_str[ip_index_to]));
+addr_otherguy.sin_addr.s_addr =their_address[ip_index_to];
+xint send_failed=(sendto(my_socket,data_send,data_len,0,(const struct sockaddr*)&addr_otherguy,sizeof(struct sockaddr_in))!=data_len);
+#endif
+}
+
+••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+The Data Input Structures:
+
+So here are various DATA INPUT STRUCTURE formats you can send and receive right after the 5-char MESSAGE PROLOUGE, each identified by the first 4 chars mentioned above as the message type:
+
+DATA
+Go to the Data Input & Output screen in the Settings menu, Data tab. You can output all manner of data there! All the data you select for internet output will now go to the IP address and port you entered the Internet tab over the ethernet cable. While this could be any IP address on the net, you are most likely to be going to a computer on your own LAN. For each data selection that you make in the Data Output screen, X-Plane will send a little packet over the ethernet cable many times per second. (if you send data to another copy of X-Plane, be sure you check it's DATA RECIEVER option in the Internet tab in this same window) Here is what the "packet" or "structure" looks like for each data selection:
+
+DATA INPUT STRUCTURE is the following stuct
+
+struct data_struct
+{
+int index; // data index, the index into the list of variables you can output from the Data Output screen in X-Plane.
+float data[8]; // the up to 8 numbers you see in the data output screen associated with that selection.. many outputs do not use all 8, though.
+};
+
+Now, if you have 10 data output selections, then there will be 10 of these structures sent in one big blob of data every few frames or so. NOW HERE IS AN INTERESTING TIP: YOU CAN ALSO SEND DATA PACKETS RIGHT BACK TO X-PLANE! So, for example, to enter radios or control deflections by UDP, simply send the DATA message described above TO X-Plane by UDP, and X-Plane will use those messages for input and control of the sim! You may send joystick deflections to fly the plane with your own hardware, or send in any number of other variables selectable in the data output screen... whatever can come out, you can send right back in with an identical message but the values of the number changed! Easy!
+
+SEND A -999 FOR ANY VARIABLE IN THE SELECTION LIST THAT YOU JUST WANT TO LEAVE ALONE, OR RETRUN TO DEFAULT CONTROL IN THE SIMULATOR RATHER THAN UDP OVER-RIDE.
+
+DSEL/USEL/DCOC/UCOC
+DATA INPUT STRUCTURE is any series of XINTs
+
+Now, say that you are writing an add-on or something for X-Plane and you want your motion-platform or cockpit to send in a request to X-Plane to send a bunch of data out like this, because you are getting tired of going into the data output screen and making selections of data to output all the time. In that case you will SEND a packet just like the one above to X-Plane, but the label will be "DSEL". The data will be a series of integers indicating which data output you want! (1 for the first in the list, 2 for the second, etc).
+
+So "DSEL0456" would request that X-Plane send the fourth, fifth, and sixth items in the data output screen many times per second to the IP address listed in the Internet Settings screen. DSEL is in characters, but 4 5 6 are YOUR MACHINE-BYTE-ORDER integers.
+
+Use DSEL to select data to send via UDP output.
+
+Use USEL to UN-select data to send via UDP output.
+
+Use DCOC to select data to the COCKPIT rather than UDP output.
+
+Use UCOC to UN-select data to the COCKPIT rather than UDP output.
+
+MOUS
+DATA INPUT STRUCTURE is an 8-char string
+Simulates a mouse-click, where thedata will be a text string indicating where to act like a MOUSE-CLICK has occurred. This is useful to control any number of instruments on the panel... Just enter the location where you would like the mouse clicked in the blank above, and X-Plane will pretend you have just clicked the mouse there! The location will simply be an 8-character-long string, where the first 4 digits are the x value (0 at the left) and the second 4 digits are the are the y value (0 at bottom).
+
+CHAR
+DATA INPUT STRUCTURE is a char
+
+You can send this UDP message to X-Plane to act as a keypress. This opens up a lot of possibilities! Menu Selections, landing gear and other equipment... anything that has a keypress you can do simply by sending in that key after the IP address string.
+
+MENU
+DATA INPUT STRUCTURE:
+The data part of this message is simply a menu item number you wish to select in string form.
+See the Resources/Menus/English/X-Plane.txt file to see the number of each menu item.
+
+SOUN
+DATA INPUT STRUCTURE:
+struct soun_struct{ // play any sound
+xflt freq,vol; xchr path[strDIM];};
+
+Use this to simply play a WAV-file sound. Enter the path of the WAV file in the struct. The freq and volume scale 0.0 to 1.0. Easy!
+
+DREF
+SET DATAREF STRUCTURE:
+struct dref_struct{
+xflt var; xchr dref_path[strDIM];};
+
+Use this to set ANY data-ref by UDP! With this power, you can send in any floating-point value to any data-ref in the entire sim! Just look up the datarefs at http://www.xsquawkbox.net/. Easy!
+
+FAIL
+DATA INPUT STRUCTURE:
+Fail a system, where the data will indicate which system to fail. The system to fail is sent as an ASCI STRING (ie: "145"), where the 0 is the first failure listed in the failure window in X-Plane (currently the vacuum system) and incremented by 1 from there.
+
+RECO
+DATA INPUT STRUCTURE:
+Recover a system, where the data will be an integer indicating which system to recover. The system to recover is sent as an ASCI STRING (ie: "145"), where the 0 is the first failure listed in the failure window in X-Plane (currently the vacuum system) and incremented by 1 from there.
+
+PAPT
+Use this to place the aircraft at an airport. Just use the PAPT message with the following struct filled in:
+
+DATA INPUT STRUCTURE:
+
+struct papt_struct
+{
+xchr apt_ID[5] ; // ID to go to, null-termed
+xint type_start ; // 601 for takeoff, 602 for final approach, 603 for far-away final approach
+xint lcl_rwy_ram; // which runway or ramp-start location to use, starting at 0 for each airport
+xint backwards ; // 0 or 1, depending on if you want to appraoch from the other direction
+};
+
+VEHN
+DATA INPUT STRUCTURE:
+struct vehN_struct{
+xint p;
+xchr path_rel[150];
+xchr att_file[24][40];};
+
+NOTE: FOR THIS MESSAGE, YOU MUST ENTER 17 AS THE VALUE RIGHT AFTER THE 4-CHAR LABEL.
+
+Use this to load a vehicle (an airplane). Just enter wich plane to load as 'p', and the path of the plane as the path. Send this in and X-Plane will load this plane. Send in 1->19 to load the other planes! The path clearly cannot exceed 150 chars! As well, you can specify up to 24 WEAPONS attached to the airplane, each weapon name being up to 40 chars long. This is nice to arm planes as you like for multi-player fun... of course just leave these blank to have no weapons.
+
+VEH1/VEHA
+You can send the VEH1 "ONE-VEHICLE" UDP to move an airplane wherever you like. This way, you can easily have X-Plane do the graphics for your own flight model, whatever that flight model may be! It is really easy... just fill in a structure with the small amount of data needed to indicate the craft's location and orientation and send it in!
+
+DATA INPUT STRUCTURE:
+
+struct VEH1_struct // byte-align 4
+{
+xint p; // this is the plane you wish to control.. 0 for your plane, but you can enter up to 9 here
+xdob lat_lon_ele[3];
+xflt psi_the_phi[3];
+xflt gear_flap_vect[3];
+}
+
+Here is what those array are:
+
+DOUBLE-PRECISION FLOAT array of dimension 3, with the latitude, longitude, and elevation of the aircraft. The elevation of the plane is in meters above sea-level.
+
+SINGLE-PRECISION FLOAT array of dimension 3, with the heading, pitch, and roll, all in degrees, positive up and right.
+
+Gear, flap, and thrust-vectors... single-precision floats, all RATIOS 0->1,
+
+When you set one plane's location at a time, planes tend to "jiggle" a bit with respect to each other since their locations come in at different times. To avoid this annoyance, use the ALLP message. It is exactly like the ONEP message, except that lat, lon, elevation, the, psi, and phi are each dimmed 10 (index 0 to 9) and the index that you send in is the NUMBER OF PLANES that you want to control. Send in an index of 5, for example, to control planes with indices 0 through 4. Easy! As well, we snuck a little tidbit in the struct for you: the pilots VIWPOINT location. Send in ZERO for these if you are happy with X-Plane's default viewing locations, or the lat, lon, elevation, theta, psi, and phi if not. Here is the total structure you must send in, entering ZERO for unused params:
+
+Or, with the VEHA message, control the locations of MORE THAN ONE PLANE at a time.
+
+struct vehA_struct
+{
+xint num_p;
+
+xdob lat_lon_ele[vehDIM][3];
+xflt psi_the_phi[vehDIM][3];
+xflt gear_flap_vect[vehDIM][3];
+
+xdob lat_view,lon_view,ele_view;
+xflt psi_view,the_view,phi_view
+};
+
+Where vehDIM is 10, send in any number p from 1 to 10 to control how many planes you want to set, and send in a non-zero value for the view locations if you want to control the viewpoint location as well.
+
+OBJN
+DATA INPUT STRUCTURE:
+struct objN_struct{ // object name: draw any object in the world in the sim
+xint index;
+xchr path[strDIM];};
+
+
+Just like the airplane struct, but with any OBJ7 object (see the San Bernardino "KSBD_example.obj" sample object in the Custom Scenery folder for an example of an OBJ7 object. With this message, simply send in the path of any object that you have on the drive and you want X-Plane to display! The location is controlled with the struct below.
+
+OBJL
+DATA INPUT STRUCTURE:
+struct objL_struct{ // object location: draw any object in the world in the sim
+xint index;
+xdob lat_lon_ele[3];
+xflt psi_the_phi[3];
+xint on_ground; // is this object on the ground? if so, simply enter 0 for the elevation, x-plane will put it on the ground
+xflt smoke_size;}; // is this object smoking? if so, simply indicate the size of the smoke puffs here
+
+Enter the location of the object you loaded here. It can be a tank driving around on the ground, a missile firing, or anythng else you can imagine.
+
+GSET
+This allows you to set up graphics options for X-Plane without touching it. This is useful if you have a simulator with many displays, and do not want to manually set the texture res, offsets, etc, for each copy of X-Plane.
+
+DATA INPUT STRUCTURE:
+
+struct gset_struct{xint index;xflt change_it_to;};
+
+The index indicates what you want to change, the change_it_to indicates... oh you can guess.
+
+0->tex_res
+1->x_res_req
+2->y_res_req
+3->col_res_req
+4->set_res_req
+5->num_acf
+6->render detail
+7->object level
+8->road level
+9->draw_boats
+10->draw_birds
+11->draw_fires
+12->draw_texlites
+13->draw_shadows
+14->draw_gload
+15->off_lat_deg
+16->off_lat_rat
+17->off_vrt_deg
+18->off_vrt_rat
+19->FOV
+20->vert1
+21->vert2
+
+ISET
+This allows you to set up internet options for X-Plane without touching it. This is useful if you have a simulator with many displays, and do not want to manually set the IP options for each copy of X-Plane. Simply send this structure:
+
+DATA INPUT STRUCTURE:
+
+struct iset_struct{
+xint index; // (0->20 in the lsit below)
+xchr str_ipad_them[16]; // IP's we are sending to, in english
+xchr str_port_them[6]; // ports are easier to work with in STRINGS!
+xint use_ip ;}; // to use this option, 0 not to.
+
+IP of multiplayer1=0
+IP of multiplayer19=18
+
+IP of master this is exteranl viewpoint=27
+IP of master this is cockpit=28
+IP of master this is external any=29
+IP of master this is IOS=30
+IP of IOS=50
+IP of data receiver=52
+
+BOAT
+DATA INPUT STRUCTURE is a 12-char string
+This command is simply a 12-character long string to steer a boat around. (Aircraft carrier, frigate, sailboat, whatever).
+
+It might look like this: "000275010"
+
+That means take boat index 000 (the carrier) turn it to heading 275 degrees true, and run it along at 10 meters per second.
+
+The frigate is index 1, and the sailboats are currently indices 2->12.
+
+Send in the new command data whenever you like... every frame or once per hour... I don't care. Easy as heck!
+
+
+Receiving data from X-Plane in C#
+
+Here we go...
+The first step to receiving the UDP data from X-Plane was to get some general UDP code working. I was very happy to find that within C# were some very powerful, yet simple commands for doing just this.
+
+I found this C# code for receiving binary data from a UDP client from this site, as shown below. This is for a consule application, and works great using Microsoft Visual C# 2008 Express:
+
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+class MainClass
+{
+   public static void Main()
+   {
+      byte[] data = new byte[1024];
+      IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 9050);
+      UdpClient newsock = new UdpClient(ipep);
+
+      Console.WriteLine("Waiting for a client...");
+
+      IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+
+      byte[] data1 = newsock.Receive(ref sender);
+      int test1 = BitConverter.ToInt32(data1, 0);
+      Console.WriteLine("test1 = {0}", test1);
+
+      byte[] data2 = newsock.Receive(ref sender);
+      double test2 = BitConverter.ToDouble(data2, 0);
+      Console.WriteLine("test2 = {0}", test2);
+
+      byte[] data3 = newsock.Receive(ref sender);
+      int test3 = BitConverter.ToInt32(data3, 0);      
+      Console.WriteLine("test3 = {0}", test3);
+
+      byte[] data4 = newsock.Receive(ref sender);
+      bool test4 = BitConverter.ToBoolean(data4, 0);
+      Console.WriteLine("test4 = {0}", test4.ToString());
+
+      byte[] data5 = newsock.Receive(ref sender);
+      string test5 = Encoding.ASCII.GetString(data5);
+      Console.WriteLine("test5 = {0}", test5);
+
+      newsock.Close();
+   }
+}
+
+I then began experimenting with that code, some trial-and-error tests, and was able to come up with the following code that works perfectly for reading X-Plane UDP data sentences. This code will read a single transmission, then wait for a keypress to close. This example assumes the X-Plane's IP for Data Output was set to use your localhost IP (127.0.0.1) and use port 49003.
+
+//// This code works well so far for reading data from X-Plane
+
+using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+using System.Net;
+using System.Net.Sockets;
+
+namespace UDPTest2
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+
+            byte[] data = new byte[1024];
+            IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 49003);
+            UdpClient newsock = new UdpClient(ipep);
+
+            Console.WriteLine("Waiting for a client...");
+
+            IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+
+                Console.WriteLine("X-Plane Data Read: \n\n");
+                data = newsock.Receive(ref sender);
+
+                for (int index = 0; index < data.Length; index++)
+                {
+                    Console.Write("{0},", data[index]);
+                }
+
+            Console.ReadKey(true); // Wait for any keypress before closing
+            newsock.Close();
+        }
+    }
+}
+
+
+That's it! Simple as that. I have a couple using statements commented out that aren't needed for this code, but may be needed for any additions or whatever, so I left them in.
+
+Here is the .exe for the above code (with some text added to the console screen better clarity): UDP_Receive.exe
+
+This will read UDP data over the localnet on Port 49003 (port we setup on X-Plane). There are many reasons why this may not work (opperating system other than Windows XP, newer/older version of X-Plane, etc.). But since I already had this compiled, why not throw it up here?
+
+
+Sending data to X-Plane in C#
+
+We can receive, now to send...
+On my last page, I showed how to receive data from X-Plane. This page will show how to send data. Just as I did before, I started with some generic UDP code and went from there. Here's the original code for sending binary data from UDP I found here:
+
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+class MainClass
+{
+   public static void Main()
+   {
+      byte[] data = new byte[1024];
+      string stringData;
+      UdpClient server = new UdpClient("127.0.0.1", 9050);
+
+      IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+
+      int test1 = 45;
+      double test2 = 3.14159;
+      int test3 = -1234567890;
+      bool test4 = false;
+      string test5 = "This is a test.";
+
+      byte[] data1 = BitConverter.GetBytes(test1);
+      server.Send(data1, data1.Length);
+
+      byte[] data2 = BitConverter.GetBytes(test2);
+      server.Send(data2, data2.Length);
+
+      byte[] data3 = BitConverter.GetBytes(test3);
+      server.Send(data3, data3.Length);
+
+      byte[] data4 = BitConverter.GetBytes(test4);
+      server.Send(data4, data4.Length);
+
+      byte[] data5 = Encoding.ASCII.GetBytes(test5);
+      server.Send(data5, data5.Length);
+
+      server.Close();
+   }
+}
+
+After tweaking the code abit, I was successfully able to write values to X-Plane and even control a plane! Here's the code to send a single sentence to X-Plane:
+
+//////// This program works well so far for sending data to X-Plane
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+
+namespace UDPTest3_Send
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            byte[] data = new byte[1024]; // Array to hold entire data string to be sent to X-Flight
+
+            UdpClient server = new UdpClient("127.0.0.1", 49000);
+
+            
+
+            // --- 11: Flight Controls ---
+            // Pitch: 0.20
+                //byte[] XFData = { 68, 65, 84, 65, 0, 11, 0, 0, 0, 205, 204, 76, 62, 0, 192, 121, 196, 0, 192, 121, 196, 0, 192, 121, 196, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            // Pitch: 0.00
+                byte[] XFData = { 68, 65, 84, 65, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 192, 121, 196, 0, 192, 121, 196, 0, 192, 121, 196, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+
+	    float value;
+
+
+	    // Send the data to X-Plane
+            server.Send(XFData, XFData.Length);
+
+	    // Print the data we sent to screen
+            Console.WriteLine("Length: {0}", XFData.Length);
+            Console.WriteLine("Data Set: {0}", XFData[5]);
+            value = BitConverter.ToSingle(XFData, 9);
+            Console.WriteLine("XFData1: {0}", value);
+            value = BitConverter.ToSingle(XFData, 13);
+            Console.WriteLine("XFData2: {0}", value);
+            value = BitConverter.ToSingle(XFData, 17);
+            Console.WriteLine("XFData3: {0}", value);
+            value = BitConverter.ToSingle(XFData, 21);
+            Console.WriteLine("XFData4: {0}", value);
+            value = BitConverter.ToSingle(XFData, 25);
+            Console.WriteLine("XFData5: {0}", value);
+            value = BitConverter.ToSingle(XFData, 29);
+            Console.WriteLine("XFData6: {0}", value);
+            value = BitConverter.ToSingle(XFData, 33);
+            Console.WriteLine("XFData7: {0}", value);
+            value = BitConverter.ToSingle(XFData, 37);
+            Console.WriteLine("XFData8: {0}", value);
+  
+            server.Close();
+            Console.ReadKey(true); // Wait for keypress to close program
+
+        } // End Main
+
+    } // End Program
+}
+
+In the above code, many of those lines aren't even needed to actually send the data array. But they're helpful for visualizing the data that was sent. The "value=..." and "Consolue.WriteLines" actually show how easily you can easily 4 bytes from an array into a single-precision floating point number. This function will actually be needed for parsing and processing X-Plane sentences. My last "receiving" example just spit out the raw data, but to make use of it, it will need to be parsed and processed. But that's all something to work on still.
+
+The byte array, XFData, holds the 41 byte values required. I've included a couple example data sets, so only un-comment one at a time. I included two values for pitch adjustments, one sets it to 0.0, the other to 0.20. You can toggle between the two and view the changes in X-Plane. Of course, feel free to experiment with any available sentence.
+
+Perhaps to help out a bit more, I'll explain a little more on my two data arrays under Flight Controls. You'll notice that they are almost identical. The only difference is the first floating point value. The top one is 205, 204, 76, 62, which is equivelent of "0.20". The array below that just has four 0's, a value equal to zero. And finally, because the only value I'm wanting to change at the moment is pitch, I've set the other values 0, 192, 121, 196, which is -999. The 0's at the end of both sentences because the Data Set #11, which we're using, only uses 4 of 8 possible float values. Even though the last 4 values aren't used by this Data Set, we still have to put something there, so 0's are used. That is important to remember. You always need to send a total of 41 bytes. The above code will display on screen the total number of bytes in your array. So that should always show 41, otherwise you've made a mistake in the data array.
+
+Here is the .exe for the above code (with some text added to the console screen better clarity): UDP_Send.exe
+
+This will send the pitch value of 0.20 over localnet 127.0.0.1 to port 49000 (X-Plane's receiving port). There are many reasons why this may not work (opperating system other than Windows XP, newer/older version of X-Plane, etc.). But since I already had this compiled, why not throw it up here?
+
+Receiving data from X-Plane in C#
+
+Here we go...
+The first step to receiving the UDP data from X-Plane was to get some general UDP code working. I was very happy to find that within C# were some very powerful, yet simple commands for doing just this.
+
+I found this C# code for receiving binary data from a UDP client from this site, as shown below. This is for a consule application, and works great using Microsoft Visual C# 2008 Express:
+
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+class MainClass
+{
+   public static void Main()
+   {
+      byte[] data = new byte[1024];
+      IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 9050);
+      UdpClient newsock = new UdpClient(ipep);
+
+      Console.WriteLine("Waiting for a client...");
+
+      IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+
+      byte[] data1 = newsock.Receive(ref sender);
+      int test1 = BitConverter.ToInt32(data1, 0);
+      Console.WriteLine("test1 = {0}", test1);
+
+      byte[] data2 = newsock.Receive(ref sender);
+      double test2 = BitConverter.ToDouble(data2, 0);
+      Console.WriteLine("test2 = {0}", test2);
+
+      byte[] data3 = newsock.Receive(ref sender);
+      int test3 = BitConverter.ToInt32(data3, 0);      
+      Console.WriteLine("test3 = {0}", test3);
+
+      byte[] data4 = newsock.Receive(ref sender);
+      bool test4 = BitConverter.ToBoolean(data4, 0);
+      Console.WriteLine("test4 = {0}", test4.ToString());
+
+      byte[] data5 = newsock.Receive(ref sender);
+      string test5 = Encoding.ASCII.GetString(data5);
+      Console.WriteLine("test5 = {0}", test5);
+
+      newsock.Close();
+   }
+}
+I then began experimenting with that code, some trial-and-error tests, and was able to come up with the following code that works perfectly for reading X-Plane UDP data sentences. This code will read a single transmission, then wait for a keypress to close. This example assumes the X-Plane's IP for Data Output was set to use your localhost IP (127.0.0.1) and use port 49003.
+
+//// This code works well so far for reading data from X-Plane
+
+using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+using System.Net;
+using System.Net.Sockets;
+
+namespace UDPTest2
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+
+            byte[] data = new byte[1024];
+            IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 49003);
+            UdpClient newsock = new UdpClient(ipep);
+
+            Console.WriteLine("Waiting for a client...");
+
+            IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+
+                Console.WriteLine("X-Plane Data Read: \n\n");
+                data = newsock.Receive(ref sender);
+
+                for (int index = 0; index < data.Length; index++)
+                {
+                    Console.Write("{0},", data[index]);
+                }
+
+            Console.ReadKey(true); // Wait for any keypress before closing
+            newsock.Close();
+        }
+    }
+}
+
+That's it! Simple as that. I have a couple using statements commented out that aren't needed for this code, but may be needed for any additions or whatever, so I left them in.
+
+Here is the .exe for the above code (with some text added to the console screen better clarity): UDP_Receive.exe
+
+This will read UDP data over the localnet on Port 49003 (port we setup on X-Plane). There are many reasons why this may not work (opperating system other than Windows XP, newer/older version of X-Plane, etc.). But since I already had this compiled, why not throw it up here?
+
+X-Plane 11.35b5 adds datarefs to read the contents of the X-Plane default FMS Control and Display Unit (CDU) screen.
+
+The CDU is limited to 16 lines of text with 24 characters per line. Note that not all CDUs use all 16 lines – Some use a combined scratchpad/message line, others have an additional line under the scratchpad for messages. Some CDUs have four line selectable rows of data, others have 6. So while you can read data from CDUs of all sizes up to 16 lines, not all CDUs will fill 16 lines with content.
+
+Text
+The datarefs
+
+sim/cockpit2/radios/indicators/fms_cdu1_text_line0
+to
+
+sim/cockpit2/radios/indicators/fms_cdu1_text_line15
+and
+
+sim/cockpit2/radios/indicators/fms_cdu2_text_line0
+to
+
+sim/cockpit2/radios/indicators/fms_cdu2_text_line15
+contain the contents of each line as an UTF-8 string. Note that one character might need more than one byte of the dataref to display. You are expected to be able to read at least the following UTF-8 characters:
+
+U+00B0 (degree sign): (0xC2 0xB0)
+U+2610 (ballot box): (0xE2 0x98 0x90)
+U+2190 (left arrow): (0xE2 0x86 0x90) to U+2193 (downwards arrow): (0xE2 0x86 0x93)
+U+0394 (greek capital letter delta): (0xCE 0x94)
+U+2B21 (white hexagon): (0xE2 0xAC 0xA1)
+U+25C0 (left-point triangle): (0xE2 0x97 0x80)
+U+25B6 (right-pointing triangle): (0xE2 0x96 0xb6)
+More special characters might be added in future versions.
+
+Formatting info
+The datarefs
+
+sim/cockpit2/radios/indicators/fms_cdu1_style_line0
+to
+
+sim/cockpit2/radios/indicators/fms_cdu1_style_line15
+and
+
+sim/cockpit2/radios/indicators/fms_cdu2_style_line0
+to
+
+sim/cockpit2/radios/indicators/fms_cdu2_style_line15
+contain the formatting information for each character in the line as one byte (unsigned char) with the following special meaning:
+
+The highest bit is set for a text displayed in large font. So use mask (1<<7) for the bit that tells you large vs small font.
+The second highest bit is set for a text displayed in reverse video (colored background, black text). So use mask (1<<6) for the bit that tells you to invert the colors.
+The third highest bit is set for a text displayed flashing (text being turned an and off periodically). So use mask (1<<5) for the bit that tells you to flash.
+The fourth highest bit is set for a text with an underscore. So use mask (1<<4) for the bit that tells you to display an underscore under the character.
+The remaining four bits encode the color of the text (or the background for reverse video): BLACK(0),CYAN(1),RED(2),YELLOW(3),GREEN(4),MAGENTA(5),AMBER(6),WHITE(7).
+
+
+
+
+Standalone Python & UDP
+In addition to plugins, X-Plane supports external communications via UDP. This allows any number of separate processes (potentially on separate computers) to get and set data remotely and execute some commands.
+
+This is completely unrelated to XPPython3, but as you’re programming in python I figured I might as well introduce you to this method of interaction as well.
+
+Intro to UDP
+UDP simply sends one packet of data – like throwing a rock – it might make it to the receiver, it might not (as opposed to TCP, which is more like a pipe.) Packets are not guaranteed to arrive in order, nor are they even guaranteed to arrive. But they’re quick, with low overhead.
+
+The size of the packet is limited by the protocol – about 65k bytes. The content of the packet can be anything, but the sender and receiver have to agree.
+
+UDP and Python
+UDP is pretty simple: you’ll create a UDP (i.e., DATAGRAM) socket, and then use that socket to send information to a remote port:
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+msg = myMakeMsg()
+sock.sendto(msg, (X_PLANE_IP, UDP_PORT))
+Receiving information is similarly simple:
+
+data, addr = sock.recvfrom(2048)
+handleData(data)
+The more difficult part is working this sendto() and recvfrom() into a working program so you don’t get confused while interleaving sends and receives. (You can put the receiver in a python thread. See example in RREF - Get Datarefs.)
+
+UDP and X-Plane
+X-Plane understands a particular format, described in Exchanging Data with X-Plane.rtfd under <XP>/Instructions. However, that document is not accurate. I suppose because it’s just not been updated in a while, but it no longer matches with what X-Plane 11.55 or 12 does.
+
+X-Plane’s interface is (usually) described using C language structures and expects a particular size and encoding of data. You’ll have to format (‘pack’) the python data into the proper structure before sending it to X-Plane, and unpack any received data in a similar manner.
+
+The easiest way to pack and unpack is to use the python struct module. For example:
+
+cmd = b'RREF'
+freq = 1
+index = 0
+msg = struct.pack("<4sxii400s", cmd, freq, index, b'sim/aircraft/engines/acf_num_engines')
+The initial string <4sxii400s describes how to pack the remaining arguments:
+
+<
+
+little endian (i.e., least significant byte in the lowest memory position)
+
+4s
+
+a 4-byte object, commonly string, e.g., ‘RREF’, expressed as a bytes: b’RREF’.
+
+x
+
+a null byte, or 0x00. X-Plane is looking for a null-terminated 4-character string & this encodes the null value. (does not consume an argument). Yes, you could use 5s, without the x for the same effect, but this method emphasizes the usable command is a 4-character value
+
+i
+
+a 4-byte integer
+
+i
+
+another 4-byte integer (you could also combine these as 2i, which consumes two integer arguments)
+
+400s
+
+a 400-byte object. Note that Python pads and zero-fills to fit 400 bytes.
+
+Basically what you’ll do is “find” X-Plane – the host IP address and port (See Connecting with X-Plane, next), and then you’ll send one or more command packets to it & wait for data packets.
+
+Connecting with X-Plane
+X-Plane automatically broadcasts a “beacon” on the network, allowing other programs to find it. Ideally, you should listen for this beacon to tell your standalone program a) X-Plane is running; and, b) where it is located.
+
+Multicast beacons are pretty standard, the only “custom” aspects are which port the multicast is on (49707 for X-Plane) and the data contents of the beacon itself.
+
+See example code in find_xp() which will wait for X-Plane to startup and will then return information about the version of X-Plane found.
+
+You can use it like:
+
+beacon = find_xp()
+port = beacon['port']
+ip = beacon['ip']
+By default, X-Plane 11 is set for UDP networking. You do not have to enable anything under X-Plane Settings->Network. This includes External Visuals, External Apps, or UDP Ports.
+
+Note XP 12 appears to disable UDP networking initially. Check Settings->Network page, and make sure “Accept incoming connections” is enabled.
+Note your socket related to the beacon is different from the socket you use to send and receive information from X-Plane. One you’ve found X-Plane, you can close the beacon socket.
+
+For initial debugging, it may be helpful to have X-Plane log networking data to Log.txt: that way you can see verify it is receiving what you think you’re sending. This can be enabled on Settings->General, select “Output network data to Log.txt” option under the Data section. The problem with this option is that it also logs all Beacon posts, so there will be lots of log entries.
+
+X-Plane UDP Summary
+SEND
+
+Cmd - Description
+
+Structure
+
+ACFN - Load an Aircraft
+
+ACFN <index><path><livery>
+
+ACPR - Load and Init the Airplane at Location
+
+ACPR <acfn><prel>
+
+ALRT - Display Alert Message
+
+ALRT <line1><line2<line3><line4>
+
+CMND - Execute Command
+
+CMND <command>
+
+DATA - Input to Data Output
+
+DATA <index><data1><data2><data3><data4>
+<data5><data6><data7><data8>
+
+DREF - Set Datarefs
+
+DREF <value><dataref>
+
+DSEL/USEL - Stream Data Output
+
+DSEL <index><index>…
+
+USEL <index><index>…
+
+FAIL/RECO - Fail a System
+
+FAIL <index>
+
+RECO <index>
+
+FLIR - Forward Looking Infrared Images
+
+FLIR <frequency>
+
+(Deprecated since 11.41)
+
+ISE4/ISE6 - Set Network Parameters
+
+ISE4 <cmd><ip><port><enable>
+
+ISE6 <cmd><ip><port><enable>
+
+LSND/SSND - Loop a Sound
+
+LSND<index><freq><vol><path>
+
+SSND<index><freq><vol><path>
+
+NFAL/NREC - Fail/Recover NavAid
+
+NFAL <navaid_id>
+
+NREC <navaid_id>
+
+OBJN/OBJL - Load and Place Object
+
+OBJN <index><path>
+
+OBJL <index><lat><lon><ele><psi><theta>
+<phi><on_ground><smoke_size>
+
+PREL - Init the Airplane at Location
+
+PREL <type_start><index><apt_id>
+<rwy_id><rwy_dir> <lat><lon><elev><psi><spd>
+
+RADR - Weather Radar
+
+RADR <freq>
+
+RESE - Reset Failures
+
+RESE
+
+RPOS - Request Aircraft Position
+
+RPOS <freq>
+
+RREF - Get Datarefs
+
+RREF <freq><index><dataref>
+
+SIMO - Load or Save a Situation or Movie
+
+SIMO<type><path>
+
+SHUT/QUIT - Quit X-Plane
+
+SHUT
+
+QUIT
+
+SOUN - Play a Sound
+
+SOUN<freq><vol><path>
+
+VEHS - Drive X-Planes Visuals Single
+
+VEHS <plane><lat><log><elev>
+<psi><theta><ph>
+
+VEHX - Drive X-Planes Visuals
+
+VEHX <plane><lat><log><elev>
+<psi><theta><ph>
+
+RECEIVE
+
+Cmd
+
+In response to
+
+Structure
+
+DATA
+
+DSEL/USEL - Stream Data Output
+
+DATA <index><val1><val2>…<val8>
+
+FLIR
+
+FLIR - Forward Looking Infrared Images
+
+(Deprecated since 11.41)
+
+RADR
+
+RADR - Weather Radar
+
+RADR <lon><lat><level><height>
+
+RPOS
+
+RPOS - Request Aircraft Position
+
+RPOS <lon><lat><elev><agl><theta><psi> <phi><vx><vy><vz><P><Q><R>
+
+RREF
+
+RREF - Get Datarefs
+
+RREF <index><value><index><value>…

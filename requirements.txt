@@ -1,0 +1,9 @@
+PyQt6  
+qasync  
+pyserial  
+hidapi  
+requests  
+aiohttp  
+websockets  
+lxml  
+beautifulsoup4 

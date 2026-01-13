@@ -1,0 +1,62 @@
+{
+    "sim/custom/1": {
+        "name": "sim/custom/1",
+        "type": "string",
+        "description": "2",
+        "writable": false,
+        "is_custom": true,
+        "custom": true
+    },
+    "sim/custom/123123": {
+        "name": "sim/custom/123123",
+        "type": "string",
+        "description": "asdasd",
+        "writable": true,
+        "is_custom": true,
+        "custom": true
+    },
+    "sim/custom/testtesttest": {
+        "name": "sim/custom/testtesttest",
+        "type": "float",
+        "description": "",
+        "writable": true,
+        "custom": true
+    },
+    "sim/custom/asdasd": {
+        "name": "sim/custom/asdasd",
+        "type": "float",
+        "description": "",
+        "writable": true,
+        "custom": true
+    },
+    "sim/custom/var2": {
+        "type": "int",
+        "description": "",
+        "writable": true,
+        "custom": true
+    },
+    "sim/custom/var3": {
+        "type": "int",
+        "description": "",
+        "writable": true,
+        "custom": true
+    },
+    "sim/custom/var4": {
+        "type": "float",
+        "description": "",
+        "writable": true,
+        "custom": true
+    },
+    "sim/custom/var5": {
+        "type": "float",
+        "description": "",
+        "writable": true,
+        "custom": true
+    },
+    "sim/custom/var6": {
+        "type": "float",
+        "description": "",
+        "writable": true,
+        "custom": true
+    }
+}

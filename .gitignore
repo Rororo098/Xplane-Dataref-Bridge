@@ -1,0 +1,99 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+.ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.directory
+.Trashes
+*.nib
+
+# Logs
+*.log
+bridge_log.txt
+error.log
+error_new.log
+error_final.log
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+*.bak
+
+# User-specific files
+my_profile_backup.json
+my_profile_backup1.json
+*.backup.json
+*_backup*.json
+*backup*.json
+config/profiles/*.json
+!config/profiles/Custom.json
+!config/profiles/Flight.json
+!config/profiles/default.json
+
+# Local configuration (if you have any)
+config/local.ini
+config/development.ini
+
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test files and directories
+tests/__pycache__/
+test/__pycache__/
+*.pytest_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.cov/
+test_*.py
+*_test.py
+tests/
+test/

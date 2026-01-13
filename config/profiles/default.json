@@ -1,0 +1,31 @@
+{
+    "version": "1.0",
+    "outputs": {
+        "CLR": {
+            "source": "sim/FMS/key_clear",
+            "is_variable": false
+        },
+        "CLRR": {
+            "source": "sim/FMS/key_clear",
+            "is_variable": false
+        }
+    },
+    "monitored_datarefs": [
+        "sim/FMS/key_clear",
+        "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
+        "sim/flightmodel/weight/m_fuel",
+        "sim/cockpit/engine/ignition_on",
+        "sim/flightmodel/controls/yawb_def"
+    ],
+    "inputs": [],
+    "logic": [],
+    "calibration": {},
+    "auto_connect": [
+        "COM15"
+    ],
+    "device_aliases": {},
+    "known_devices": {
+        "WINMM_0": "Microsoft PC-joystick driver",
+        "WINMM_5": "Microsoft PC-joystick driver"
+    }
+}

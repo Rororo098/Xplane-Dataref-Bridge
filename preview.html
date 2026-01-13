@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Plane Dataref Bridge - Input Mapper Preview</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            color: #ecf0f1;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .feature-title {
+            font-size: 1.4em;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+        
+        .feature-desc {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .axis-preview {
+            background: #e8f4fd;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px;
+            text-align: center;
+        }
+        
+        .axis-bar {
+            width: 100%;
+            height: 40px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            position: relative;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .axis-deadzone {
+            position: absolute;
+            height: 100%;
+            background: rgba(255, 200, 200, 0.6);
+            border: 1px dashed #e74c3c;
+        }
+        
+        .axis-input {
+            position: absolute;
+            width: 6px;
+            height: 100%;
+            background: #333;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .axis-output {
+            position: absolute;
+            width: 8px;
+            height: 100%;
+            background: #28a745;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .curve-selector {
+            margin: 15px 0;
+        }
+        
+        .curve-selector select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+        }
+        
+        .curve-graph {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 15px;
+            position: relative;
+            background: #fff;
+        }
+        
+        .curve-line {
+            stroke: #0078d4;
+            stroke-width: 3;
+            fill: none;
+        }
+        
+        .curve-reference {
+            stroke: #ccc;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+        }
+        
+        .condition-example {
+            background: #fff8e6;
+            border-left: 4px solid #fd7e14;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px;
+        }
+        
+        .mapping-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .mapping-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .mapping-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected {
+            background: #28a745;
+        }
+        
+        .status-disconnected {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 X-Plane Dataref Bridge</h1>
+            <div class="subtitle">Advanced Input Mapping System with Conditional Logic</div>
+        </header>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🔒</span>
+                <h3 class="feature-title">Conditional Execution</h3>
+                <p class="feature-desc">Actions only execute when specific conditions are met. Example: Only allow gear extension when airspeed is below 200 knots.</p>
+            </div>
+            
+            <div class="feature-card">
+                <span class="feature-icon">📊</span>
+                <h3 class="feature-title">Advanced Axis Processing</h3>
+                <p class="feature-desc">Multiple deadzone positions (center, left, right, ends) and 7 response curves (linear, smooth, aggressive, soft, ultra_fine, s_curve, exponential).</p>
+            </div>
+            
+            <div class="feature-card">
+                <span class="feature-icon">📜</span>
+                <h3 class="feature-title">Sequence Macros</h3>
+                <p class="feature-desc">Execute multiple actions in order with configurable delays. Perfect for checklists like landing configuration (flaps → gear → lights).</p>
+            </div>
+        </div>
+        
+        <div class="axis-preview">
+            <h3>📈 Live Axis Preview</h3>
+            <p>See how your settings affect the axis response in real-time</p>
+            
+            <div class="curve-selector">
+                <label for="curve-type">Response Curve: </label>
+                <select id="curve-type">
+                    <option value="linear">📏 Linear - Direct 1:1 response</option>
+                    <option value="smooth" selected>🌊 Smooth - Gentle acceleration (x^1.5)</option>
+                    <option value="aggressive">⚡ Aggressive - Fine center, quick extremes (√x)</option>
+                    <option value="soft">🪶 Soft - Very precise center (x²)</option>
+                    <option value="ultra_fine">🎯 Ultra Fine - Maximum precision center (x³)</option>
+                    <option value="s_curve">〰️ S-Curve - Smooth start and end</option>
+                    <option value="exponential">📈 Exponential - Slow start, fast finish</option>
+                </select>
+            </div>
+            
+            <div class="axis-bar">
+                <div class="axis-deadzone" id="deadzone-center" style="left: 45%; width: 10%;"></div>
+                <div class="axis-input" id="input-indicator" style="left: 50%;"></div>
+                <div class="axis-output" id="output-indicator" style="left: 50%;"></div>
+            </div>
+            
+            <div>Raw Input: <span id="raw-value">0.00</span> → Processed Output: <span id="proc-value">0.00</span></div>
+            
+            <div class="curve-graph" id="curve-graph">
+                <!-- Curve visualization will be drawn here -->
+            </div>
+        </div>
+        
+        <div class="condition-example">
+            <h3>⚠️ Safety Example</h3>
+            <p><strong>"Only allow gear toggle when airspeed is below 200 knots"</strong> prevents gear damage at high speeds.</p>
+            <p>Condition: <code>sim/cockpit2/gauges/indicators/airspeed_kts_pilot</code> &lt; 200.0</p>
+        </div>
+        
+        <table class="mapping-table">
+            <thead>
+                <tr>
+                    <th>Input</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>Conditions</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>COM3/AXIS_0</td>
+                    <td>📊 Axis</td>
+                    <td>sim/cockpit2/engine/actuators/throttle_ratio</td>
+                    <td>None</td>
+                    <td><span class="status-indicator status-connected"></span> Active</td>
+                </tr>
+                <tr>
+                    <td>COM3/BTN_0</td>
+                    <td>🖱️ Command</td>
+                    <td>sim/autopilot/autopilot_on</td>
+                    <td>Airspeed &lt; 250kts</td>
+                    <td><span class="status-indicator status-connected"></span> Active</td>
+                </tr>
+                <tr>
+                    <td>WINMM_0/HAT_0_UP</td>
+                    <td>📜 Sequence</td>
+                    <td>Landing Config (3 steps)</td>
+                    <td>Altitude &gt; 1000ft</td>
+                    <td><span class="status-indicator status-connected"></span> Active</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <footer>
+            <p>X-Plane Dataref Bridge v2.0 | Advanced Input Mapping System | Ready for Flight</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple simulation of axis preview
+        const inputIndicator = document.getElementById('input-indicator');
+        const outputIndicator = document.getElementById('output-indicator');
+        const rawValue = document.getElementById('raw-value');
+        const procValue = document.getElementById('proc-value');
+        const curveType = document.getElementById('curve-type');
+        const deadzoneCenter = document.getElementById('deadzone-center');
+        
+        // Simulate moving input
+        let inputPos = 0.5;
+        let direction = 0.005;
+        
+        function simulateAxis() {
+            inputPos += direction;
+            if (inputPos >= 0.95 || inputPos <= 0.05) {
+                direction *= -1;
+            }
+            
+            // Update input position
+            inputIndicator.style.left = `${inputPos * 100}%`;
+            
+            // Apply simple processing (just for demo)
+            const raw = (inputPos - 0.5) * 2; // Convert to -1 to 1 range
+            rawValue.textContent = raw.toFixed(2);
+            
+            // Apply curve based on selection
+            const curve = curveType.value;
+            let processed = raw;
+            
+            if (curve === 'aggressive') {
+                const sign = Math.sign(raw);
+                const absVal = Math.abs(raw);
+                processed = sign * Math.pow(absVal, 0.5);
+            } else if (curve === 'soft') {
+                const sign = Math.sign(raw);
+                const absVal = Math.abs(raw);
+                processed = sign * Math.pow(absVal, 2.0);
+            } else if (curve === 'smooth') {
+                const sign = Math.sign(raw);
+                const absVal = Math.abs(raw);
+                processed = sign * Math.pow(absVal, 1.5);
+            } else if (curve === 'ultra_fine') {
+                const sign = Math.sign(raw);
+                const absVal = Math.abs(raw);
+                processed = sign * Math.pow(absVal, 3.0);
+            } else if (curve === 's_curve') {
+                const sign = Math.sign(raw);
+                const absVal = Math.abs(raw);
+                processed = sign * (absVal * absVal * (3.0 - 2.0 * absVal));
+            } else if (curve === 'exponential') {
+                const sign = Math.sign(raw);
+                const absVal = Math.abs(raw);
+                processed = sign * ((Math.exp(absVal) - 1) / (Math.E - 1));
+            }
+            
+            // Convert back to 0-100% for display
+            const outputPos = (processed + 1) / 2;
+            outputIndicator.style.left = `${outputPos * 100}%`;
+            procValue.textContent = processed.toFixed(2);
+            
+            requestAnimationFrame(simulateAxis);
+        }
+        
+        // Start simulation
+        simulateAxis();
+        
+        // Update curve graph when selection changes
+        curveType.addEventListener('change', function() {
+            drawCurveGraph(this.value);
+        });
+        
+        // Draw initial curve
+        drawCurveGraph('smooth');
+        
+        function drawCurveGraph(curveType) {
+            const graph = document.getElementById('curve-graph');
+            const svgNS = "http://www.w3.org/2000/svg";
+            
+            // Clear previous graph
+            while (graph.firstChild) {
+                graph.removeChild(graph.firstChild);
+            }
+            
+            // Create SVG element
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("viewBox", "0 0 200 200");
+            
+            // Draw grid
+            for (let i = 0; i <= 10; i++) {
+                const gridLine = document.createElementNS(svgNS, "line");
+                gridLine.setAttribute("x1", i * 20);
+                gridLine.setAttribute("y1", "0");
+                gridLine.setAttribute("x2", i * 20);
+                gridLine.setAttribute("y2", "200");
+                gridLine.setAttribute("stroke", "#eee");
+                gridLine.setAttribute("stroke-width", "1");
+                svg.appendChild(gridLine);
+                
+                const gridLine2 = document.createElementNS(svgNS, "line");
+                gridLine2.setAttribute("x1", "0");
+                gridLine2.setAttribute("y1", i * 20);
+                gridLine2.setAttribute("x2", "200");
+                gridLine2.setAttribute("y2", i * 20);
+                gridLine2.setAttribute("stroke", "#eee");
+                gridLine2.setAttribute("stroke-width", "1");
+                svg.appendChild(gridLine2);
+            }
+            
+            // Draw diagonal reference line (linear)
+            const refLine = document.createElementNS(svgNS, "line");
+            refLine.setAttribute("x1", "0");
+            refLine.setAttribute("y1", "200");
+            refLine.setAttribute("x2", "200");
+            refLine.setAttribute("y2", "0");
+            refLine.setAttribute("stroke", "#ccc");
+            refLine.setAttribute("stroke-width", "2");
+            refLine.setAttribute("stroke-dasharray", "5,5");
+            svg.appendChild(refLine);
+            
+            // Draw curve
+            const path = document.createElementNS(svgNS, "path");
+            let pathData = "M 0 200 "; // Start at bottom-left (input -1, output -1)
+            
+            for (let i = 0; i <= 200; i++) {
+                const input = (i / 200) * 2 - 1; // From -1 to 1
+                
+                let output = input; // Default to linear
+                
+                if (curveType === 'aggressive') {
+                    const sign = Math.sign(input);
+                    const absVal = Math.abs(input);
+                    output = sign * Math.pow(absVal, 0.5);
+                } else if (curveType === 'soft') {
+                    const sign = Math.sign(input);
+                    const absVal = Math.abs(input);
+                    output = sign * Math.pow(absVal, 2.0);
+                } else if (curveType === 'smooth') {
+                    const sign = Math.sign(input);
+                    const absVal = Math.abs(input);
+                    output = sign * Math.pow(absVal, 1.5);
+                } else if (curveType === 'ultra_fine') {
+                    const sign = Math.sign(input);
+                    const absVal = Math.abs(input);
+                    output = sign * Math.pow(absVal, 3.0);
+                } else if (curveType === 's_curve') {
+                    const sign = Math.sign(input);
+                    const absVal = Math.abs(input);
+                    output = sign * (absVal * absVal * (3.0 - 2.0 * absVal));
+                } else if (curveType === 'exponential') {
+                    const sign = Math.sign(input);
+                    const absVal = Math.abs(input);
+                    output = sign * ((Math.exp(absVal) - 1) / (Math.E - 1));
+                }
+                
+                // Convert to SVG coordinates (0-200, with Y inverted)
+                const x = i;
+                const y = 200 - ((output + 1) / 2 * 200);
+                
+                pathData += `L ${x} ${y} `;
+            }
+            
+            path.setAttribute("d", pathData);
+            path.setAttribute("stroke", "#0078d4");
+            path.setAttribute("stroke-width", "3");
+            path.setAttribute("fill", "none");
+            svg.appendChild(path);
+            
+            graph.appendChild(svg);
+        }
+    </script>
+</body>
+</html>

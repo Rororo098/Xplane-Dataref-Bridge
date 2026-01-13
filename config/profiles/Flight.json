@@ -1,0 +1,29 @@
+{
+    "version": "1.0",
+    "outputs": {
+        "sim/cockpit2/gauges/indicators/airspeed_kts_pilot": "ASD",
+        "sim/cockpit2/gauges/indicators/altitude_ft_pilot": "VDD",
+        "sim/cockpit2/controls/flap_ratio": "VBB"
+    },
+    "inputs": [
+        {
+            "input_key": "BTN_0",
+            "device_port": "WINMM_5",
+            "action": "COMMAND",
+            "target": "GEAR",
+            "value_on": 1.0,
+            "value_off": 0.0,
+            "increment": 1.0,
+            "min_value": 0.0,
+            "max_value": 360.0,
+            "wrap": false,
+            "axis_min": 0.0,
+            "axis_max": 1023.0,
+            "axis_deadzone": 0.0,
+            "multiplier": 1.0,
+            "description": "Microsoft PC-joystick driver - BTN_0",
+            "enabled": true
+        }
+    ],
+    "auto_connect": []
+}

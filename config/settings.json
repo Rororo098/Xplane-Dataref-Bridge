@@ -1,0 +1,7 @@
+{
+  "xplane_ip": "127.0.0.1",
+  "xplane_port": 49000,
+  "recv_port": 49001,
+  "arduino_baud": 115200,
+  "auto_reconnect": true
+}
