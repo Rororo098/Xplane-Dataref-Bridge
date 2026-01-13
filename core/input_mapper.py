@@ -845,6 +845,19 @@ class InputMapper:
     
     async def _execute_dataref_inc_internal(self, mapping: InputMapping, target: str, value: float, direction: int) -> None:
         """Execute an increment/decrement action on a specific target."""
+        
+        # Check if target is a command type
+        is_command = False
+        if self.dataref_manager:
+            target_info = self.dataref_manager.get_dataref_info(target)
+            is_command = target_info and target_info.get("type") == "command"
+        
+        # For commands, execute the command instead of incrementing/decrementing
+        if is_command:
+            await self._execute_command_for_encoder(target, direction)
+            return
+        
+        # Regular dataref increment/decrement behavior
         current = self._current_values.get(target, 0)
         delta = 1.0 * mapping.increment * mapping.multiplier * direction # Use 1.0 typically for encoder tick
         # Note: mapping.increment logic might need value scaling if axis is used, but typically encoders send 1/0
@@ -858,6 +871,18 @@ class InputMapper:
         # _write_target updates the internal tracker appropriately
         log.info("Incremented dataref: %s = %.2f (delta: %.2f)",
                 target, new_value, delta)
+    
+    async def _execute_command_for_encoder(self, target: str, direction: int) -> None:
+        """Execute a command for encoder input."""
+        # Remove XP: prefix if present
+        command_target = target
+        if command_target.startswith("XP:"):
+            command_target = command_target[3:]
+        
+        # Commands don't have values - they just execute once per click
+        # Both CW (+) and CCW (-) directions execute the same command
+        await self.xplane_conn.send_command(command_target)
+        log.info("Sent encoder command: %s (direction: %s)", command_target, "CW" if direction > 0 else "CCW")
 
     def _apply_value_limits(self, new_value: float, mapping: InputMapping) -> float:
         """Apply limits to the new value based on mapping configuration."""

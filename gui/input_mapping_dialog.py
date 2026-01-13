@@ -600,6 +600,7 @@ class TargetWidget(QFrame):
     removed = pyqtSignal(object)
     def __init__(self, dataref_manager=None, target=None, parent=None):
         super().__init__(parent)
+        self.dataref_manager = dataref_manager
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QHBoxLayout(self)
         self.target_input = QLineEdit()
@@ -621,16 +622,46 @@ class TargetWidget(QFrame):
         
         layout.addWidget(QLabel("Target:"))
         layout.addWidget(self.target_input, 2)
-        layout.addWidget(QLabel("On:"))
+        
+        self.on_label = QLabel("On:")
+        self.off_label = QLabel("Off:")
+        layout.addWidget(self.on_label)
         layout.addWidget(self.on_val)
-        layout.addWidget(QLabel("Off:"))
+        layout.addWidget(self.off_label)
         layout.addWidget(self.off_val)
         layout.addWidget(self.remove_btn)
+
+        # Connect text change to check for command type
+        self.target_input.textChanged.connect(self._check_target_type)
 
         if target:
             self.target_input.setText(target.target)
             self.on_val.setValue(target.value_on)
             self.off_val.setValue(target.value_off)
+    
+    def _check_target_type(self):
+        """Check if target is a command and update UI accordingly."""
+        target_name = self.target_input.text().strip()
+        is_command = False
+        
+        if self.dataref_manager and target_name:
+            info = self.dataref_manager.get_dataref_info(target_name)
+            is_command = info and info.get("type") == "command"
+        
+        # Disable/hide value spinboxes for commands
+        if is_command:
+            self.on_label.setVisible(False)
+            self.on_val.setVisible(False)
+            self.off_label.setVisible(False)
+            self.off_val.setVisible(False)
+            # Set visual indicator
+            self.target_input.setStyleSheet("background-color: #fff3cd;")
+        else:
+            self.on_label.setVisible(True)
+            self.on_val.setVisible(True)
+            self.off_label.setVisible(True)
+            self.off_val.setVisible(True)
+            self.target_input.setStyleSheet("")
 
 class InputMappingDialog(QDialog):
     def __init__(self, parent=None, mapping: Optional[InputMapping] = None, 
@@ -920,8 +951,25 @@ class InputMappingDialog(QDialog):
         self.max_spin.setValue(360.0)
         layout.addRow("Maximum Limit:", self.max_spin)
         
+        wrap_tooltip = (
+            "<b>Wrap Around:</b> When enabled, values cycle continuously instead of stopping at limits.<br><br>"
+            "<b>Examples:</b><br>"
+            "• Heading knob: 359° + 1° = 0° (cycles 0-360)<br>"
+            "• Radio frequency: 117.95 + 0.025 = 118.00 (comms range)<br>"
+            "• Altitude knob: 40000ft + 1000ft = 0ft (cycles through altitude range)<br><br>"
+            "<b>Note:</b> Only applies to numeric datarefs. Commands cannot wrap (they execute once per click)."
+        )
         self.wrap_check = QCheckBox("Wrap around (e.g., 359° → 0°)")
+        self.wrap_check.setToolTip(wrap_tooltip)
         layout.addRow("", self.wrap_check)
+        
+        wrap_desc = QLabel(
+            "<i>When enabled, values cycle from max back to min (and min to max). "
+            "Example: Heading at 359° + 1° = 0° instead of stopping.</i>"
+        )
+        wrap_desc.setWordWrap(True)
+        wrap_desc.setStyleSheet("color: #666; font-size: 10px; padding: 5px; background: #f8f9fa; border-radius: 3px;")
+        layout.addRow(wrap_desc)
         
         self.mult_spin = QDoubleSpinBox()
         self.mult_spin.setRange(0.1, 100.0)

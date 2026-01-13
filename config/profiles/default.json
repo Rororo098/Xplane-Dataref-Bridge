@@ -11,13 +11,45 @@
         }
     },
     "monitored_datarefs": [
+        "sim/flightmodel/weight/m_fuel",
+        "sim/flightmodel/controls/yawb_def",
         "sim/cockpit/engine/ignition_on",
         "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
-        "sim/FMS/key_clear",
-        "sim/flightmodel/weight/m_fuel",
-        "sim/flightmodel/controls/yawb_def"
+        "sim/FMS/key_clear"
     ],
-    "inputs": [],
+    "inputs": [
+        {
+            "input_key": "BTN_0",
+            "device_port": "WINMM_5",
+            "action": "DATAREF_INC",
+            "target": "sim/instruments/DG_sync_down",
+            "value_on": 1.0,
+            "value_off": 0.0,
+            "targets": [],
+            "condition_enabled": false,
+            "conditions": [],
+            "condition_logic": "AND",
+            "sync_on_connect": true,
+            "increment": 7.0009999999999994,
+            "min_value": 0.0,
+            "max_value": 360.0,
+            "wrap": false,
+            "axis_min": -1.0,
+            "axis_max": 1.0,
+            "axis_deadzone": 0.0,
+            "axis_deadzone_pos": "center",
+            "axis_curve": "linear",
+            "axis_invert": false,
+            "multiplier": 8.0,
+            "sequence_actions": [],
+            "sequence_stop_on_error": false,
+            "sequence_repeat_while_held": false,
+            "sequence_reverse_on_release": false,
+            "description": "Microsoft PC-joystick driver - BTN_0",
+            "enabled": true,
+            "init_value": null
+        }
+    ],
     "logic": [
         {
             "name": "var",
