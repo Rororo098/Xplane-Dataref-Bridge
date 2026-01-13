@@ -11,11 +11,12 @@
         }
     },
     "monitored_datarefs": [
+        "sim/cockpit/gyros/dg_drift_vac_deg",
+        "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
+        "sim/FMS/key_clear",
         "sim/flightmodel/weight/m_fuel",
         "sim/flightmodel/controls/yawb_def",
-        "sim/cockpit/engine/ignition_on",
-        "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
-        "sim/FMS/key_clear"
+        "sim/cockpit/engine/ignition_on"
     ],
     "inputs": [
         {
@@ -63,9 +64,7 @@
         }
     ],
     "calibration": {},
-    "auto_connect": [
-        "COM15"
-    ],
+    "auto_connect": [],
     "device_aliases": {},
     "known_devices": {
         "WINMM_0": "Microsoft PC-joystick driver",
