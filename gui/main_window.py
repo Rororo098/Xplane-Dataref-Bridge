@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction, QDesktopServices
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QUrl
 
+
 from core.hid.hid_manager import HIDManager
 from core.arduino.arduino_manager import ArduinoManager
 from core.variable_store import VariableStore
@@ -28,6 +29,12 @@ log = logging.getLogger(__name__)
 
 class MainWindow(QMainWindow):
     """Main application window."""
+
+    # Constants for UI texts
+    LOAD_PROFILE_ACTION = "Load Profile"
+    SAVE_PROFILE_ACTION = "Save Profile"
+    IMPORT_PROFILE_ACTION = "Import Profile..."
+    EXPORT_PROFILE_ACTION = "Export Profile..."
 
     # Signals for thread-safe communication
     arduino_input_signal = pyqtSignal(str, str, float)  # port, key, value
@@ -118,18 +125,29 @@ class MainWindow(QMainWindow):
         # Load default profile on startup
         QTimer.singleShot(500, self._load_default_profile)
 
+        # Initialize donation popup timer
+        self._donation_timer = QTimer()
+        self._donation_timer.setSingleShot(True)  # Only show once per startup
+        self._donation_timer.timeout.connect(self._show_donation_popup)
+        self._donation_timer.setInterval(1500)  # Show after 1.5 seconds
+
+        # Start the donation popup timer after the window is fully initialized
+        self._donation_timer.start()
+
     def _load_default_profile(self):
         """Load default profile after startup."""
         if self.profile_manager.load_profile("default"):
             log.info("Loaded default profile")
             if hasattr(self, 'output_panel'):
                 self.output_panel.refresh_from_manager()
-                if hasattr(self.output_panel, 'restore_state'):
+                if hasattr(self, 'output_panel') and hasattr(self.output_panel, 'restore_state'):
                     self.output_panel.restore_state()
             # Refresh all search helpers now that IDs are loaded
             self.refresh_search_helpers()
         else:
             log.info("No default profile found (fresh start)")
+
+
 
 
     def _setup_ui(self) -> None:
@@ -150,6 +168,42 @@ class MainWindow(QMainWindow):
         status_layout.addWidget(self.xplane_status)
 
         status_layout.addStretch()
+
+        # PayPal donation button
+        self.paypal_btn = QPushButton("❤️ Donate (PayPal)")
+        self.paypal_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        self.paypal_btn.clicked.connect(self._open_paypal_page)
+        status_layout.addWidget(self.paypal_btn)
+
+        # Stripe donation button
+        self.stripe_btn = QPushButton("💳 Donate (Stripe)")
+        self.stripe_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #635bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #5951e6;
+            }
+        """)
+        self.stripe_btn.clicked.connect(self._open_stripe_page)
+        status_layout.addWidget(self.stripe_btn)
 
         self.connect_btn = QPushButton("Connect to X-Plane")
         self.connect_btn.clicked.connect(self._toggle_xplane_connection)
@@ -190,12 +244,12 @@ class MainWindow(QMainWindow):
         # File Menu
         file_menu = menu_bar.addMenu("File")
 
-        save_action = QAction("Save Profile", self)
+        save_action = QAction(self.SAVE_PROFILE_ACTION, self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self._save_profile_dialog)
         file_menu.addAction(save_action)
 
-        load_action = QAction("Load Profile", self)
+        load_action = QAction(self.LOAD_PROFILE_ACTION, self)
         load_action.setShortcut("Ctrl+O")
         load_action.triggered.connect(self._load_profile_dialog)
         file_menu.addAction(load_action)
@@ -224,12 +278,17 @@ class MainWindow(QMainWindow):
         open_log_action.triggered.connect(self._open_log_file)
         help_menu.addAction(open_log_action)
 
+        # Donation Action
+        donation_popup_action = QAction("Show Donation Appeal", self)
+        donation_popup_action.triggered.connect(self._show_donation_popup)
+        help_menu.addAction(donation_popup_action)
+
         about_action = QAction("About", self)
         about_action.triggered.connect(self._show_about_dialog)
         help_menu.addAction(about_action)
 
     def _save_profile_dialog(self):
-        name, ok = QInputDialog.getText(self, "Save Profile", "Profile Name:", text="default")
+        name, ok = QInputDialog.getText(self, self.SAVE_PROFILE_ACTION, "Profile Name:", text="default")
         if ok and name:
             if self.profile_manager.save_profile(name):
                 self.status_bar.showMessage(f"Profile '{name}' saved successfully", 3000)
@@ -237,15 +296,14 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Error", "Failed to save profile")
 
     def _load_profile_dialog(self):
-        name, ok = QInputDialog.getText(self, "Load Profile", "Profile Name:", text="default")
+        name, ok = QInputDialog.getText(self, self.LOAD_PROFILE_ACTION, "Profile Name:", text="default")
         if ok and name:
             if self.profile_manager.load_profile(name):
                 self.status_bar.showMessage(f"Profile '{name}' loaded successfully", 3000)
                 # Refresh UI
-                if hasattr(self, 'output_panel'):
+                if hasattr(self, 'output_panel') and hasattr(self.output_panel, 'restore_state'):
                     self.output_panel.refresh_from_manager()
-                    if hasattr(self.output_panel, 'restore_state'):
-                        self.output_panel.restore_state()
+                    self.output_panel.restore_state()
             else:
                 QMessageBox.warning(self, "Error", f"Profile '{name}' not found or failed to load")
 
@@ -263,13 +321,12 @@ class MainWindow(QMainWindow):
         if imported_name:
             QMessageBox.information(self, "Success", f"Profile imported successfully as '{imported_name}'")
             # Ask to load?
-            if QMessageBox.question(self, "Load Profile", f"Do you want to load the imported profile '{imported_name}' now?") == QMessageBox.StandardButton.Yes:
+            if QMessageBox.question(self, self.LOAD_PROFILE_ACTION, f"Do you want to load the imported profile '{imported_name}' now?") == QMessageBox.StandardButton.Yes:
                 self.profile_manager.load_profile(imported_name)
                 # Refresh UI
-                if hasattr(self, 'output_panel'):
+                if hasattr(self, 'output_panel') and hasattr(self.output_panel, 'restore_state'):
                     self.output_panel.refresh_from_manager()
-                    if hasattr(self.output_panel, 'restore_state'):
-                        self.output_panel.restore_state()
+                    self.output_panel.restore_state()
         else:
             QMessageBox.critical(self, "Error", "Failed to import profile. Check log for details.")
 
@@ -304,18 +361,135 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(self, "Log File", "Log file not found yet (maybe write something first?)")
 
+
+    def _open_paypal_page(self):
+        """Open the PayPal donation page in the default browser."""
+        from PyQt6.QtGui import QDesktopServices
+        from PyQt6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl("https://www.paypal.me/Ruzu26"))
+
+    def _open_stripe_page(self):
+        """Open the Stripe donation page in the default browser."""
+        from PyQt6.QtGui import QDesktopServices
+        from PyQt6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl("https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00"))
+
+    def _show_donation_popup(self):
+        """Show a dedicated donation popup window."""
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
+        from PyQt6.QtCore import QTimer, Qt
+
+        # Create a custom dialog instead of QMessageBox to have more control
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Support X-Plane Dataref Bridge Development")
+        dialog.setModal(True)
+        dialog.resize(550, 350)
+        # Remove the close button (X) from the window
+        dialog.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint)
+
+        layout = QVBoxLayout()
+
+        # Add content
+        title_label = QLabel("<h3>Enjoying X-Plane Dataref Bridge?</h3>")
+        title_label.setTextFormat(Qt.TextFormat.RichText)
+        layout.addWidget(title_label)
+
+        content_label = QLabel(
+            "<p>If this tool enhances your flight simulation experience, "
+            "please consider supporting its continued development!</p>"
+            "<p>Your donation helps maintain and improve this project, "
+            "ensuring it remains free and functional for the community.</p>"
+            "<p><b>Choose your preferred donation method:</b></p>"
+        )
+        content_label.setTextFormat(Qt.TextFormat.RichText)
+        layout.addWidget(content_label)
+
+        # PayPal link
+        paypal_label = QLabel("<p>PayPal: <a href='https://www.paypal.me/Ruzu26'>https://www.paypal.me/Ruzu26</a></p>")
+        paypal_label.setTextFormat(Qt.TextFormat.RichText)
+        paypal_label.setOpenExternalLinks(True)  # Allow clicking links
+        layout.addWidget(paypal_label)
+
+        # Stripe link
+        stripe_label = QLabel("<p>Stripe: <a href='https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00'>https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00</a></p>")
+        stripe_label.setTextFormat(Qt.TextFormat.RichText)
+        stripe_label.setOpenExternalLinks(True)  # Allow clicking links
+        layout.addWidget(stripe_label)
+
+        # Countdown label
+        countdown_label = QLabel("You can dismiss this message in 8 seconds...")
+        layout.addWidget(countdown_label)
+
+        # Buttons layout
+        button_layout = QHBoxLayout()
+
+        # PayPal Donate button (always enabled)
+        paypal_button = QPushButton("Donate via PayPal")
+        paypal_button.clicked.connect(lambda: self._open_paypal_page())
+        button_layout.addWidget(paypal_button)
+
+        # Stripe Donate button (always enabled)
+        stripe_button = QPushButton("Donate via Stripe")
+        stripe_button.clicked.connect(lambda: self._open_stripe_page())
+        button_layout.addWidget(stripe_button)
+
+        # Maybe Later button (initially disabled)
+        maybe_later_button = QPushButton("Maybe Later")
+        maybe_later_button.setEnabled(False)
+        maybe_later_button.clicked.connect(dialog.reject)
+        button_layout.addWidget(maybe_later_button)
+
+        layout.addLayout(button_layout)
+        dialog.setLayout(layout)
+
+        # Countdown mechanism
+        countdown = 8
+        countdown_label.setText(f"You can dismiss this message in {countdown} seconds...")
+
+        def update_countdown():
+            nonlocal countdown
+            countdown -= 1
+            if countdown > 0:
+                # Check if the dialog still exists before updating
+                if dialog.isVisible():
+                    countdown_label.setText(f"You can dismiss this message in {countdown} seconds...")
+            else:
+                # Check if the dialog still exists before updating
+                if dialog.isVisible():
+                    countdown_label.setText("You may now close this message")
+                    maybe_later_button.setEnabled(True)
+                timer.stop()
+
+        timer = QTimer(self)
+        timer.timeout.connect(update_countdown)
+        timer.start(1000)  # Update every second
+
+        # Show the dialog
+        dialog.exec()
+
+        # Stop the timer when dialog closes to prevent errors
+        timer.stop()
+
     def _show_about_dialog(self):
         """Show About dialog."""
-        QMessageBox.about(
-            self,
-            "About X-Plane Dataref Bridge",
+        # Create a custom message box to properly handle HTML links
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("About X-Plane Dataref Bridge")
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
+        msg_box.setText(
             "<h3>X-Plane Dataref Bridge</h3>"
             "<p>Version: 1.0.0 (Beta)</p>"
             "<p>A tool to bridge X-Plane datarefs to Arduino and HID devices.</p>"
             "<p><b>Beta Testing:</b></p>"
             "<p>If you encounter issues, please use 'Help -> Open Log File' "
             "and send the 'bridge_log.txt' to the developer.</p>"
+            "<p><b>Support Development:</b></p>"
+            "<p>If you find this tool valuable, consider supporting its continued development "
+            "by making a donation via <a href='https://www.paypal.me/Ruzu26'>PayPal</a> or "
+            "<a href='https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00'>Stripe</a>. "
+            "Your contribution helps maintain and improve this project!</p>"
         )
+        msg_box.exec()
 
     def _setup_status_bar(self) -> None:
         self.status_bar = QStatusBar()
@@ -348,7 +522,12 @@ class MainWindow(QMainWindow):
             self.input_panel.handle_input_signal(key, port)
 
         # 3. Process actual logic
-        asyncio.create_task(self._process_arduino_input(port, key, value))
+        task = asyncio.create_task(self._process_arduino_input(port, key, value))
+        # Store task to prevent garbage collection
+        if not hasattr(self, '_active_tasks'):
+            self._active_tasks = set()
+        self._active_tasks.add(task)
+        task.add_done_callback(lambda t: self._active_tasks.discard(t))
 
     async def _process_arduino_input(self, port: str, key: str, value: float) -> None:
         """Process Arduino input asynchronously."""
@@ -379,12 +558,22 @@ class MainWindow(QMainWindow):
     def _on_arduino_dataref_write(self, dataref: str, value: float) -> None:
         """Handle dataref write request from Arduino."""
         if self.xplane_conn.connected:
-            asyncio.create_task(self.xplane_conn.write_dataref(dataref, value))
+            task = asyncio.create_task(self.xplane_conn.write_dataref(dataref, value))
+            # Store task to prevent garbage collection
+            if not hasattr(self, '_active_tasks'):
+                self._active_tasks = set()
+            self._active_tasks.add(task)
+            task.add_done_callback(lambda t: self._active_tasks.discard(t))
 
     def _on_arduino_command_send(self, command: str) -> None:
         """Handle command send request from Arduino."""
         if self.xplane_conn.connected:
-            asyncio.create_task(self.xplane_conn.send_command(command))
+            task = asyncio.create_task(self.xplane_conn.send_command(command))
+            # Store task to prevent garbage collection
+            if not hasattr(self, '_active_tasks'):
+                self._active_tasks = set()
+            self._active_tasks.add(task)
+            task.add_done_callback(lambda t: self._active_tasks.discard(t))
 
     def _on_variable_update(self, name: str, value: float) -> None:
         """Handle variable update from the variable store."""
@@ -402,7 +591,12 @@ class MainWindow(QMainWindow):
 
     def _toggle_xplane_connection(self) -> None:
         """Toggle X-Plane connection."""
-        asyncio.create_task(self._async_toggle_connection())
+        task = asyncio.create_task(self._async_toggle_connection())
+        # Store task to prevent garbage collection
+        if not hasattr(self, '_active_tasks'):
+            self._active_tasks = set()
+        self._active_tasks.add(task)
+        task.add_done_callback(lambda t: self._active_tasks.discard(t))
 
     async def _async_toggle_connection(self) -> None:
         """Async connection toggle."""
@@ -425,7 +619,12 @@ class MainWindow(QMainWindow):
                 self._subscribe_condition_datarefs()
 
                 # Perform immediate state sync
-                asyncio.create_task(self.input_mapper.sync_hardware_to_xplane())
+                task = asyncio.create_task(self.input_mapper.sync_hardware_to_xplane())
+                # Store task to prevent garbage collection
+                if not hasattr(self, '_active_tasks'):
+                    self._active_tasks = set()
+                self._active_tasks.add(task)
+                task.add_done_callback(lambda t: self._active_tasks.discard(t))
             else:
                 QMessageBox.warning(
                     self,
@@ -443,42 +642,64 @@ class MainWindow(QMainWindow):
         for mapping in self.input_mapper.get_mappings():
             # Subscribe to all datarefs used in the new multi-condition system
             for rule in mapping.conditions:
-                if rule.enabled and rule.dataref:
-                    if rule.dataref not in subscribed:
-                        asyncio.create_task(
-                            self.xplane_conn.subscribe_dataref(rule.dataref, 5)
-                        )
-                        subscribed.add(rule.dataref)
-                        log.info("Subscribed to condition dataref: %s", rule.dataref)
+                self._process_condition_rule(rule, subscribed)
+
+    def _process_condition_rule(self, rule, subscribed_set):
+        """Helper method to process individual condition rules."""
+        if rule.enabled and rule.dataref and rule.dataref not in subscribed_set:
+            self._create_and_track_task(
+                self.xplane_conn.subscribe_dataref(rule.dataref, 5)
+            )
+            subscribed_set.add(rule.dataref)
+            log.info("Subscribed to condition dataref: %s", rule.dataref)
 
     def _on_xplane_connection_changed(self, connected: bool) -> None:
         """Handle X-Plane connection state change."""
         if connected:
-            self.xplane_status.setText("X-Plane: Connected")
-            self.xplane_status.setStyleSheet("color: green; font-weight: bold;")
-            self.connect_btn.setText("Disconnect")
-            self.sync_btn.setEnabled(True)
-            self.status_bar.showMessage("Connected to X-Plane")
-            # Start logic engine when connected
-            self._logic_timer.start(100)
-            
-            # Sync hardware switches to X-Plane immediately
-            asyncio.create_task(self.input_mapper.sync_hardware_to_xplane())
-            
-            # Sync initial values for variables/logic
-            asyncio.create_task(self.logic_engine.sync_initial_values())
-
-            # Subscribe to aircraft ICAO for auto-profile switching
-            for i in range(40):
-                asyncio.create_task(self.xplane_conn.subscribe_dataref(f"sim/aircraft/view/acf_ICAO[{i}]", 1))
+            self._handle_xplane_connected()
         else:
-            self.xplane_status.setText("X-Plane: Disconnected")
-            self.xplane_status.setStyleSheet("color: red; font-weight: bold;")
-            self.connect_btn.setText("Connect to X-Plane")
-            self.sync_btn.setEnabled(False)
-            self.status_bar.showMessage("Disconnected from X-Plane")
-            # Stop logic engine when disconnected
-            self._logic_timer.stop()
+            self._handle_xplane_disconnected()
+
+    def _handle_xplane_connected(self) -> None:
+        """Handle X-Plane connection established."""
+        self.xplane_status.setText("X-Plane: Connected")
+        self.xplane_status.setStyleSheet("color: green; font-weight: bold;")
+        self.connect_btn.setText("Disconnect")
+        self.sync_btn.setEnabled(True)
+        self.status_bar.showMessage("Connected to X-Plane")
+        # Start logic engine when connected
+        self._logic_timer.start(100)
+
+        # Sync hardware switches to X-Plane immediately
+        self._create_and_track_task(self.input_mapper.sync_hardware_to_xplane())
+
+        # Sync initial values for variables/logic
+        self._create_and_track_task(self.logic_engine.sync_initial_values())
+
+        # Subscribe to aircraft ICAO for auto-profile switching
+        for i in range(40):
+            self._create_and_track_task(
+                self.xplane_conn.subscribe_dataref(f"sim/aircraft/view/acf_ICAO[{i}]", 1)
+            )
+
+    def _handle_xplane_disconnected(self) -> None:
+        """Handle X-Plane disconnection."""
+        self.xplane_status.setText("X-Plane: Disconnected")
+        self.xplane_status.setStyleSheet("color: red; font-weight: bold;")
+        self.connect_btn.setText("Connect to X-Plane")
+        self.sync_btn.setEnabled(False)
+        self.status_bar.showMessage("Disconnected from X-Plane")
+        # Stop logic engine when disconnected
+        self._logic_timer.stop()
+
+    def _create_and_track_task(self, coro):
+        """Helper method to create and track asyncio tasks to prevent garbage collection."""
+        task = asyncio.create_task(coro)
+        if not hasattr(self, '_active_tasks'):
+            self._active_tasks = set()
+        self._active_tasks.add(task)
+        task.add_done_callback(lambda t: self._active_tasks.discard(t))
+        return task
 
     # --- Search Help Refresh ---
 
@@ -524,27 +745,31 @@ class MainWindow(QMainWindow):
 
         # Handle Aircraft Change detection
         if "sim/aircraft/view/acf_ICAO[" in dataref:
-            try:
-                # Extract index
-                idx = int(dataref.split('[')[1].split(']')[0])
-                if 0 <= idx < 40:
-                    old_icao = self._current_icao
-                    self._icao_buffer[idx] = int(value)
-                    
-                    # Rebuild string
-                    chars = []
-                    for v in self._icao_buffer:
-                        if v == 0: break
-                        chars.append(chr(v))
-                    new_icao = "".join(chars).strip()
-                    
-                    if new_icao and new_icao != old_icao:
-                        self._current_icao = new_icao
-                        log.info("Aircraft changed to: %s", new_icao)
-                        if self._auto_profile_enabled:
-                            self._auto_load_aircraft_profile(new_icao)
-            except Exception as e:
-                log.error("Error tracking aircraft ICAO: %s", e)
+            self._handle_aircraft_icao_change(dataref, value)
+
+    def _handle_aircraft_icao_change(self, dataref: str, value: float) -> None:
+        """Handle aircraft ICAO change detection and auto-profile loading."""
+        try:
+            # Extract index
+            idx = int(dataref.split('[')[1].split(']')[0])
+            if 0 <= idx < 40:
+                old_icao = self._current_icao
+                self._icao_buffer[idx] = int(value)
+
+                # Rebuild string
+                chars = []
+                for v in self._icao_buffer:
+                    if v == 0: break
+                    chars.append(chr(v))
+                new_icao = "".join(chars).strip()
+
+                if new_icao and new_icao != old_icao:
+                    self._current_icao = new_icao
+                    log.info("Aircraft changed to: %s", new_icao)
+                    if self._auto_profile_enabled:
+                        self._auto_load_aircraft_profile(new_icao)
+        except Exception as e:
+            log.error("Error tracking aircraft ICAO: %s", e)
 
     def _auto_load_aircraft_profile(self, icao: str):
         """Try to load a profile for the current aircraft."""
@@ -566,11 +791,21 @@ class MainWindow(QMainWindow):
         local_port = self.xplane_conn.recv_port
         
         # Tell X-Plane to send data to us (ISE4)
-        asyncio.create_task(self.xplane_conn.set_data_output_target(local_ip, local_port))
+        task = asyncio.create_task(self.xplane_conn.set_data_output_target(local_ip, local_port))
+        # Store task to prevent garbage collection
+        if not hasattr(self, '_active_tasks'):
+            self._active_tasks = set()
+        self._active_tasks.add(task)
+        task.add_done_callback(lambda t: self._active_tasks.discard(t))
         
         # Enable common interesting rows (DSEL)
         # 0=frame rate, 3=speeds, 4=G-load, 17=pitch/roll, 20=lat/lon
-        asyncio.create_task(self.xplane_conn.select_data_output([0, 3, 4, 17, 20]))
+        task = asyncio.create_task(self.xplane_conn.select_data_output([0, 3, 4, 17, 20]))
+        # Store task to prevent garbage collection
+        if not hasattr(self, '_active_tasks'):
+            self._active_tasks = set()
+        self._active_tasks.add(task)
+        task.add_done_callback(lambda t: self._active_tasks.discard(t))
         
         self.status_bar.showMessage("Sent Auto-Sync (ISE4/DSEL) to X-Plane")
         log.info("Sent Auto-Sync (ISE4 and DSEL) to X-Plane")
@@ -617,7 +852,12 @@ class MainWindow(QMainWindow):
 
         # Disconnect X-Plane
         if self.xplane_conn.connected:
-            asyncio.create_task(self.xplane_conn.disconnect())
+            task = asyncio.create_task(self.xplane_conn.disconnect())
+            # Store task to prevent garbage collection
+            if not hasattr(self, '_active_tasks'):
+                self._active_tasks = set()
+            self._active_tasks.add(task)
+            task.add_done_callback(lambda t: self._active_tasks.discard(t))
 
         self.hid_manager.stop()
         self.arduino_manager.disconnect_all()

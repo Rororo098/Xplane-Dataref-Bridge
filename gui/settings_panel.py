@@ -79,18 +79,53 @@ class SettingsPanel(QWidget):
         
         layout.addWidget(arduino_group)
         
-        # Save button
+        # Save and donation buttons
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        
+
+        # Donation buttons
+        self.paypal_btn = QPushButton("❤️ Donate via PayPal")
+        self.paypal_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        btn_layout.addWidget(self.paypal_btn)
+
+        self.stripe_btn = QPushButton("💳 Donate via Stripe")
+        self.stripe_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #635bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #5951e6;
+            }
+        """)
+        btn_layout.addWidget(self.stripe_btn)
+
         self.save_btn = QPushButton("Save Settings")
         btn_layout.addWidget(self.save_btn)
-        
+
         layout.addLayout(btn_layout)
         layout.addStretch()
     
     def _connect_signals(self) -> None:
         self.save_btn.clicked.connect(self._save_settings)
+        self.paypal_btn.clicked.connect(self._open_paypal_page)
+        self.stripe_btn.clicked.connect(self._open_stripe_page)
     
     def _load_settings(self) -> None:
         """Load settings from file."""
@@ -139,3 +174,15 @@ class SettingsPanel(QWidget):
     
     def get_arduino_baud(self) -> int:
         return self.arduino_baud.value()
+
+    def _open_paypal_page(self):
+        """Open the PayPal donation page in the default browser."""
+        from PyQt6.QtGui import QDesktopServices
+        from PyQt6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl("https://www.paypal.me/Ruzu26"))
+
+    def _open_stripe_page(self):
+        """Open the Stripe donation page in the default browser."""
+        from PyQt6.QtGui import QDesktopServices
+        from PyQt6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl("https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00"))

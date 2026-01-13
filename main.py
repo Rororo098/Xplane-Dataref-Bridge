@@ -89,7 +89,7 @@ def main() -> int:
         variable_store=variable_store,
     )
     window.show()
-    
+
     log.info("Application ready")
     
     # Run event loop

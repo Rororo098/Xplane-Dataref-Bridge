@@ -11,14 +11,25 @@
         }
     },
     "monitored_datarefs": [
-        "sim/FMS/key_clear",
-        "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
-        "sim/flightmodel/weight/m_fuel",
         "sim/cockpit/engine/ignition_on",
+        "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
+        "sim/FMS/key_clear",
+        "sim/flightmodel/weight/m_fuel",
         "sim/flightmodel/controls/yawb_def"
     ],
     "inputs": [],
-    "logic": [],
+    "logic": [
+        {
+            "name": "var",
+            "description": "this is a variable, call using id",
+            "enabled": true,
+            "conditions": [],
+            "logic_gate": "AND",
+            "outputs": [],
+            "initial_value": 1.0,
+            "output_key": ""
+        }
+    ],
     "calibration": {},
     "auto_connect": [
         "COM15"
