@@ -1,4 +1,5 @@
 X-Plane Dataref Bridge
+
 X-Plane Dataref Bridge is a powerful, open-source middleware application that enables seamless bidirectional communication between X-Plane flight simulator and Arduino-based hardware. It acts as a universal translator, allowing you to build professional-grade cockpit hardware, instrument panels, and control systems without writing complex networking code.
 
 Python Version 3.8+
