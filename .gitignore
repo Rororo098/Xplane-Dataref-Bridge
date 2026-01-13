@@ -97,3 +97,24 @@ test_*.py
 *_test.py
 tests/
 test/
+
+# Specific test files
+temp_test.py
+test_arduinapy
+test file.bd
+test microcontroller values.ino
+test_winmm_caps.py
+test_xpla nepy
+USER MANUALpdf
+convert_to_ico.py
+create_icon_now.py
+create_icon_simple.py
+create_icon.py
+
+# More specific ignores for sensitive files
+**/temp_*.py
+**/test_*.py
+**/create_icon*.py
+**/convert_to_*.py
+**/create_icon_now.py
+**/create_icon_simple.py
