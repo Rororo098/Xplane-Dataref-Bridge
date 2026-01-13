@@ -14,7 +14,7 @@ A Python-based application that bridges X-Plane flight simulator datarefs to Ard
 ## Prerequisites
 
 - Python 3.8 or higher
-- X-Plane flight simulator (tested with X-Plane 11/12)
+- X-Plane flight simulator (tested with X-Plane 11/12 -- needs more testing)
 
 ## Installation
 
