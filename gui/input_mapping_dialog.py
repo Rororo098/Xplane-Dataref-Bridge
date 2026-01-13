@@ -974,7 +974,34 @@ class InputMappingDialog(QDialog):
         self.mult_spin = QDoubleSpinBox()
         self.mult_spin.setRange(0.1, 100.0)
         self.mult_spin.setValue(1.0)
+        mult_tooltip = (
+            "<b>Speed Multiplier:</b> Controls how fast values change or commands repeat.<br><br>"
+            "<b>Datarefs:</b> Multiplies the increment value<br>"
+            "• Multiplier 2.0 = Change by 2× the increment amount<br>"
+            "• Example: Increment 0.1 × Multiplier 5.0 = Change by 0.5 per click<br><br>"
+            "<b>Commands:</b> Repeats the command with short delays<br>"
+            "• Multiplier 1.0 = Execute once<br>"
+            "• Multiplier 3.5 = Execute 4 times (rounded up)<br>"
+            "• Use Command Delay setting to control timing between repeats"
+        )
+        self.mult_spin.setToolTip(mult_tooltip)
         layout.addRow("Speed Multiplier:", self.mult_spin)
+        
+        self.cmd_delay_spin = QSpinBox()
+        self.cmd_delay_spin.setRange(1, 500)
+        self.cmd_delay_spin.setValue(20)
+        self.cmd_delay_spin.setSuffix(" ms")
+        cmd_delay_tooltip = (
+            "<b>Command Delay:</b> Time between repeated command executions when speed multiplier > 1.<br><br>"
+            "<b>Only applies to command targets:</b><br>"
+            "• Datarefs: Multiplier changes the value increment amount<br>"
+            "• Commands: Multiplier repeats the command execution with this delay<br><br>"
+            "<b>Examples:</b><br>"
+            "• Multiplier 3.0 + Delay 10ms = Command executes 3 times, 10ms apart<br>"
+            "• Multiplier 1.5 + Delay 20ms = Command executes 2 times (rounded up), 20ms apart"
+        )
+        self.cmd_delay_spin.setToolTip(cmd_delay_tooltip)
+        layout.addRow("Command Delay:", self.cmd_delay_spin)
         
         self.options_stack.addWidget(page)
 
@@ -1782,6 +1809,7 @@ class InputMappingDialog(QDialog):
         self.max_spin.setValue(m.max_value)
         self.wrap_check.setChecked(m.wrap)
         self.mult_spin.setValue(m.multiplier)
+        self.cmd_delay_spin.setValue(m.command_delay_ms)
         
         # Axis options
         self.axis_min_spin.setValue(m.axis_min)
@@ -1912,6 +1940,7 @@ class InputMappingDialog(QDialog):
             max_value=self.out_max_spin.value() if action == InputAction.AXIS else self.max_spin.value(),
             wrap=self.wrap_check.isChecked(),
             multiplier=self.mult_spin.value(),
+            command_delay_ms=self.cmd_delay_spin.value(),
             axis_min=self.axis_min_spin.value(),
             axis_max=self.axis_max_spin.value(),
             axis_deadzone=self.dz_slider.value() / 100.0,

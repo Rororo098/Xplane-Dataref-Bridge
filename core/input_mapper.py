@@ -161,6 +161,7 @@ class InputMapping:
     description: str = ""
     enabled: bool = True
     init_value: Optional[float] = None  # NEW: Value to set on startup
+    command_delay_ms: int = 20  # Delay between command executions when multiplier > 1
     
     def to_dict(self) -> Dict:
         return {
@@ -193,6 +194,7 @@ class InputMapping:
             "description": self.description,
             "enabled": self.enabled,
             "init_value": self.init_value,
+            "command_delay_ms": self.command_delay_ms,
         }
     
     @classmethod
@@ -242,6 +244,7 @@ class InputMapping:
             description=data.get("description", ""),
             enabled=data.get("enabled", True),
             init_value=data.get("init_value"),
+            command_delay_ms=data.get("command_delay_ms", 20),
         )
 
 
@@ -854,7 +857,7 @@ class InputMapper:
         
         # For commands, execute the command instead of incrementing/decrementing
         if is_command:
-            await self._execute_command_for_encoder(target, direction)
+            await self._execute_command_for_encoder(target, direction, mapping)
             return
         
         # Regular dataref increment/decrement behavior
@@ -872,17 +875,25 @@ class InputMapper:
         log.info("Incremented dataref: %s = %.2f (delta: %.2f)",
                 target, new_value, delta)
     
-    async def _execute_command_for_encoder(self, target: str, direction: int) -> None:
+    async def _execute_command_for_encoder(self, target: str, direction: int, mapping: InputMapping) -> None:
         """Execute a command for encoder input."""
         # Remove XP: prefix if present
         command_target = target
         if command_target.startswith("XP:"):
             command_target = command_target[3:]
         
-        # Commands don't have values - they just execute once per click
-        # Both CW (+) and CCW (-) directions execute the same command
-        await self.xplane_conn.send_command(command_target)
-        log.info("Sent encoder command: %s (direction: %s)", command_target, "CW" if direction > 0 else "CCW")
+        # Calculate execution count based on multiplier (rounded up, minimum 1)
+        execution_count = max(1, math.ceil(mapping.multiplier))
+        
+        # Execute command multiple times with delays
+        for i in range(execution_count):
+            await self.xplane_conn.send_command(command_target)
+            if i < execution_count - 1:
+                await asyncio.sleep(mapping.command_delay_ms / 1000.0)
+        
+        log.info("Sent encoder command: %s %d times (multiplier: %.1f, delay: %dms, direction: %s)",
+                 command_target, execution_count, mapping.multiplier,
+                 mapping.command_delay_ms, "CW" if direction > 0 else "CCW")
 
     def _apply_value_limits(self, new_value: float, mapping: InputMapping) -> float:
         """Apply limits to the new value based on mapping configuration."""
