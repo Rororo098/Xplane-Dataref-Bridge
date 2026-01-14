@@ -18,6 +18,18 @@ A Python-based application that bridges X-Plane flight simulator datarefs to Ard
 
 ## Installation
 
+### Option 1: Download Pre-built Executable
+
+**Windows:**
+- Download the latest `X-Plane Dataref Bridge-Windows.zip` from releases
+- Extract and run `X-Plane Dataref Bridge.exe` (no installation required)
+- Admin privileges recommended for serial port access
+
+**Linux/macOS:**
+- Follow build instructions below or download from releases (if available)
+
+### Option 2: Build from Source
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/YOUR_USERNAME/x-plane-dataref-bridge.git
@@ -28,6 +40,50 @@ cd x-plane-dataref-bridge
 ```bash
 pip install -r requirements.txt
 ```
+
+3. Build for your platform:
+```bash
+# Windows (automatic)
+powershell -ExecutionPolicy Bypass -File build_multi_platform.ps1
+
+# Linux/macOS
+python setup_cross_platform.py build
+```
+
+## Cross-Platform Building
+
+This project includes automated cross-platform build scripts:
+
+### Build Scripts
+- `setup_cross_platform.py` - Cross-platform build script
+- `build_multi_platform.ps1` - Windows PowerShell build script
+
+### Build Requirements
+```bash
+pip install PyQt6 cx_Freeze==8.5.3 serial pyserial hidapi Pillow
+```
+
+### Platform-Specific Builds
+
+**Windows:**
+- GUI executable with taskbar icon
+- No console window
+- Icon displays in taskbar and title bar ✅
+
+**Linux:**
+- Console executable
+- Full library bundling
+- Standard Linux application
+
+**macOS:**
+- Console executable with PNG icon support
+- Automatic .icns generation for proper app bundle
+
+### Features
+- ✅ Real dataref descriptions (from database)
+- ✅ Icon display in taskbar and window title
+- ✅ Cross-platform compatibility
+- ✅ Automated dependency bundling
 
 ## Usage
 
