@@ -58,5 +58,731 @@
         "description": "",
         "writable": true,
         "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[0]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[1]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[2]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[3]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[4]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[5]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[6]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit/engine/ignition_on[7]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[0]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[1]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[2]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[3]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[4]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[5]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[6]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[7]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[0]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[1]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[2]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[3]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[4]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[5]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[6]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[7]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[26]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[27]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[28]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[29]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[30]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[31]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[32]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[33]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[34]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[35]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[36]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[37]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[38]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[39]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[40]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[41]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[42]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[43]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[44]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[45]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[46]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[47]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[48]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[49]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[50]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[51]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[52]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[53]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[54]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[55]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[0]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[1]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[2]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[3]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[4]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[5]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[6]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[7]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[8]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[9]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[10]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[11]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[12]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[13]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[14]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[15]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[16]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[17]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[18]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[19]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[20]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[21]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[22]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[23]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[24]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[25]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[26]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[27]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[28]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[29]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[30]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[31]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[32]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[33]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[34]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[35]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[36]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[37]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[38]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[39]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[40]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[41]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[42]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[43]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[44]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[45]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[46]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[47]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[48]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[49]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[50]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[51]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[52]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[53]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[54]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[55]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[56]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[57]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[58]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[59]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[60]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[61]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[62]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[63]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[64]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[65]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/joystick/joy_mapped_axis_value[66]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
     }
 }

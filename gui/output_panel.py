@@ -322,6 +322,94 @@ class OutputPanel(QWidget):
         if self.variable_store:
             self.variable_store.register_listener(self._on_variable_update)
 
+    def _parse_array_size(self, type_str: str) -> int:
+        """Parse array size from type string (e.g., 'float[8]' -> 8)."""
+        if not type_str:
+            return 0
+        m = re.search(r'\[(\d+)\]', type_str)
+        return int(m.group(1)) if m else 0
+
+    def _populate_live_monitor(self, datarefs):
+        """Populate live monitor with array expansion."""
+        # datarefs: list of dicts with at least {name, type, value}
+        self.table.setRowCount(0)  # Clear existing rows
+        self._subscribed_datarefs.clear()  # Clear mapping
+
+        for dr in datarefs:
+            name = dr.get("name", "")
+            type_str = dr.get("type", "")
+            size = self._parse_array_size(type_str)
+
+            if size > 1:
+                base = name.split("[")[0]  # Extract base name from array notation
+                for idx in range(size):
+                    elem_name = f"{base}[{idx}]"
+                    value = self._get_value_for_dataref_element(dr, idx)
+                    self._add_live_row(elem_name, type_str, value)
+            else:
+                value = dr.get("value", 0.0)
+                self._add_live_row(name, type_str, value)
+
+    def _add_live_row(self, display_name, data_type, value):
+        """Add a single row to the live monitor."""
+        row = self.table.rowCount()
+        self.table.insertRow(row)
+
+        # Add dataref name
+        name_item = QTableWidgetItem(display_name)
+        name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        self.table.setItem(row, 0, name_item)
+
+        # Add description
+        writable = self.dataref_manager.get_dataref_info(display_name).get("writable", False) if self.dataref_manager.get_dataref_info(display_name) else False
+        writable_str = "[WRITABLE]" if writable else "[READ-ONLY]"
+        type_str = f"[{data_type}]" if data_type else ""
+        desc_item = QTableWidgetItem(f"{type_str} {writable_str}")
+        desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        self.table.setItem(row, 1, desc_item)
+
+        # Add live value
+        value_item = QTableWidgetItem(f"{value:.4f}")
+        value_item.setFlags(value_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        self.table.setItem(row, 2, value_item)
+
+        # Add modify button
+        is_command = data_type == "command"
+        is_complex = "[" in data_type or "string" in data_type or "byte" in data_type
+        btn_text = "EXECUTE" if is_command else ("Inspect/Edit" if is_complex else "Write")
+        modify_btn = QPushButton(btn_text)
+        modify_btn.clicked.connect(lambda _, r=row: self._modify_value(r))
+        self.table.setCellWidget(row, 3, modify_btn)
+
+        # Add output key input
+        key_input = QLineEdit()
+        key_input.setPlaceholderText(PLACEHOLDER_OUTPUT_KEY)
+        self.table.setCellWidget(row, 4, key_input)
+
+        # Add delete button
+        del_btn = QPushButton("Delete")
+        del_btn.clicked.connect(lambda _, n=display_name: self._remove_row(n))
+        self.table.setCellWidget(row, 5, del_btn)
+
+        # Store mapping from name to row
+        self._subscribed_datarefs[display_name] = row
+
+    def _get_value_for_dataref_element(self, dataref_dict, index):
+        """Get the value for a specific array element."""
+        value = dataref_dict.get("value", 0.0)
+        if isinstance(value, (list, tuple)) and index < len(value):
+            return value[index]
+        elif isinstance(value, str) and "," in value:
+            # Handle comma-separated values as array
+            try:
+                values = [float(x.strip()) for x in value.split(",")]
+                return values[index] if index < len(values) else 0.0
+            except (ValueError, IndexError):
+                return 0.0
+        else:
+            # For scalar values or if index is out of bounds, return default
+            return 0.0
+
     def _setup_ui(self):
         # Create a tab widget to separate Datarefs and Variables
         tab_widget = QTabWidget()
@@ -1479,17 +1567,38 @@ class OutputPanel(QWidget):
         if not self._validate_dataref(clean_name):
             return
 
-        row = self._add_table_row(clean_name)
+        # Check if this is an array dataref
+        info = self.dataref_manager.get_dataref_info(clean_name)
+        if info:
+            data_type = info.get("type", "")
+            size = self._parse_array_size(data_type)
+
+            if size > 1:
+                # This is an array dataref - expand into individual elements
+                base = clean_name.split("[")[0]  # Extract base name
+                for idx in range(size):
+                    elem_name = f"{base}[{idx}]"
+                    self._add_single_output_row(elem_name, dataref)
+            else:
+                # Regular dataref - add single row
+                self._add_single_output_row(clean_name, dataref)
+        else:
+            # If no info available, treat as regular dataref
+            self._add_single_output_row(clean_name, dataref)
+
+    def _add_single_output_row(self, display_name: str, original_dataref: str):
+        """Add a single output row to the table."""
+        row = self._add_table_row(display_name)
 
         # Store mapping
-        self._subscribed_datarefs[clean_name] = row
+        self._subscribed_datarefs[display_name] = row
 
         # Subscribe to X-Plane if appropriate
-        self._subscribe_if_appropriate(clean_name, dataref)
+        self._subscribe_if_appropriate(display_name, original_dataref)
 
         # Persistence: Mark as monitored
         if hasattr(self.arduino_manager, 'add_monitor'):
-            self.arduino_manager.add_monitor(dataref)
+            self.arduino_manager.add_monitor(original_dataref)
 
     def _get_clean_name(self, dataref: str) -> str:
         """Get the clean name from the dataref string."""
@@ -1642,7 +1751,14 @@ class OutputPanel(QWidget):
 
     def _subscribe_if_appropriate(self, clean_name: str, dataref: str):
         """Subscribe to X-Plane if appropriate."""
-        info = self.dataref_manager.get_dataref_info(clean_name)
+        # Check if this is an array element (e.g., LED_STATE[3])
+        array_match = re.match(r'^(.+)\[(\d+)\]$', clean_name)
+        if array_match:
+            # This is an array element, subscribe to the base array
+            base_name = array_match.group(1)
+            info = self.dataref_manager.get_dataref_info(base_name)
+        else:
+            info = self.dataref_manager.get_dataref_info(clean_name)
 
         # Determine frequency and count (for arrays)
         freq = 5
@@ -1660,9 +1776,24 @@ class OutputPanel(QWidget):
 
         # Subscribe if it's a dataref, not a command, and not a variable
         if not is_command and not (self.variable_store and clean_name in self.variable_store.get_names()):
-            task = asyncio.create_task(self.xplane_conn.subscribe_dataref(clean_name, freq, count=count))
-            self._tasks.append(task)  # Prevent garbage collection
-            log.info("Subscribed to dataref: %s (freq=%d, count=%d)", dataref, freq, count)
+            # For array elements, we need to make sure the base array is subscribed
+            # But we only want to subscribe once to the base array even if multiple elements are displayed
+            if array_match:
+                base_name = array_match.group(1)
+                # Check if we've already subscribed to this base array for this session
+                # We'll use a temporary set to track which arrays we've subscribed to
+                if not hasattr(self, '_subscribed_arrays'):
+                    self._subscribed_arrays = set()
+
+                if base_name not in self._subscribed_arrays:
+                    task = asyncio.create_task(self.xplane_conn.subscribe_dataref(base_name, freq, count=count))
+                    self._tasks.append(task)  # Prevent garbage collection
+                    self._subscribed_arrays.add(base_name)
+                    log.info("Subscribed to array dataref: %s (freq=%d, count=%d)", base_name, freq, count)
+            else:
+                task = asyncio.create_task(self.xplane_conn.subscribe_dataref(clean_name, freq, count=count))
+                self._tasks.append(task)  # Prevent garbage collection
+                log.info("Subscribed to dataref: %s (freq=%d, count=%d)", dataref, freq, count)
         else:
             value_item = self.table.item(self.table.rowCount()-1, 2)  # Get the value item for this row
             if value_item:
@@ -1771,6 +1902,19 @@ class OutputPanel(QWidget):
         # 3. Cleanup state
         self._cleanup_dataref_state(dataref, row)
 
+        # 4. Handle array elements - if this was an array element, check if we need to unsubscribe from the base array
+        array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+        if array_match:
+            base_name = array_match.group(1)
+            # Check if there are any other elements of this array still subscribed
+            other_elements_exist = any(
+                re.match(rf'^{re.escape(base_name)}\[\d+\]$', key) and key != dataref
+                for key in self._subscribed_datarefs.keys()
+            )
+
+            # If no other elements of this array are subscribed, we might want to unsubscribe from the base array
+            # For now, we'll just leave the subscription as is since it might be used by other parts of the app
+
     def _confirm_removal(self, dataref: str, force: bool) -> bool:
         """Confirm removal with user if not forced."""
         if force:
@@ -1811,6 +1955,10 @@ class OutputPanel(QWidget):
         if dataref in self._live_values:
             del self._live_values[dataref]
 
+        # Remove from subscribed datarefs mapping
+        if dataref in self._subscribed_datarefs:
+            del self._subscribed_datarefs[dataref]
+
         # Re-index all remaining rows to prevent desync
         self._reindex_subscribed_datarefs()
 
@@ -1831,8 +1979,27 @@ class OutputPanel(QWidget):
 
     def _notify_managers_of_removal(self, dataref: str):
         """Notify managers of dataref removal."""
-        task = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(dataref))
-        self._tasks.append(task)  # Prevent garbage collection
+        # Check if this is an array element
+        array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+        if array_match:
+            # This is an array element, unsubscribe from the base array only if no other elements are subscribed
+            base_name = array_match.group(1)
+            # Check if there are any other elements of this array still subscribed
+            other_elements_exist = any(
+                re.match(rf'^{re.escape(base_name)}\[\d+\]$', key) and key != dataref
+                for key in self._subscribed_datarefs.keys()
+            )
+
+            # Only unsubscribe from the base array if no other elements of it are still subscribed
+            if not other_elements_exist:
+                task = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(base_name))
+                self._tasks.append(task)  # Prevent garbage collection
+                log.info("Unsubscribed from array dataref: %s", base_name)
+        else:
+            # Regular dataref (non-array)
+            task = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(dataref))
+            self._tasks.append(task)  # Prevent garbage collection
+
         self.arduino_manager.set_universal_mapping(dataref, "")
 
         if hasattr(self.arduino_manager, 'remove_monitor'):
@@ -1887,11 +2054,11 @@ class OutputPanel(QWidget):
         monitored = self._get_monitored_datarefs()
         inverted_mappings = self._get_inverted_mappings()
 
-        # 4. Rebuild Table
+        # 3. Rebuild Table with array expansion
         all_datarefs = set(monitored) | set(inverted_mappings.keys())
         self._process_datarefs_for_restoration(all_datarefs, inverted_mappings)
 
-        # 5. Refresh Variables Table (Logic Engine state is already loaded)
+        # 4. Refresh Variables Table (Logic Engine state is already loaded)
         self._refresh_variables_table()
 
         log.info("Restored Output Panel state: %d rows", len(all_datarefs))
@@ -1920,6 +2087,21 @@ class OutputPanel(QWidget):
                 inverted_mappings[dataref_source] = key
         return inverted_mappings
 
+    def _set_key_input_for_dataref(self, dataref: str, key: str):
+        """Set the key input for a specific dataref."""
+        if dataref in self._subscribed_datarefs:
+            row = self._subscribed_datarefs[dataref]
+            key_widget = self.table.cellWidget(row, 4)  # Output Key column
+            if isinstance(key_widget, QLineEdit):
+                key_widget.setText(key)
+
+                # Update Arduino manager mapping
+                self.arduino_manager.set_universal_mapping(dataref, key)  # Empty key removes mapping
+                if key:
+                    log.info("Mapped %s -> %s", dataref, key)
+                else:
+                    log.info("Removed mapping for %s", dataref)
+
     def _process_datarefs_for_restoration(self, all_datarefs: set, inverted_mappings: dict):
         """Process datarefs for restoration."""
         for dataref in all_datarefs:
@@ -1927,11 +2109,36 @@ class OutputPanel(QWidget):
                 log.debug("Skipping variable %s in Datarefs table", dataref)
                 continue
 
-            # Add row (this handles subscription logic too)
-            self._add_output_row(dataref)
+            # Check if this is an array dataref for expansion
+            info = self.dataref_manager.get_dataref_info(dataref)
+            if info:
+                data_type = info.get("type", "")
+                size = self._parse_array_size(data_type)
 
-            # If it has a mapping, set the key input
-            self._set_key_input_if_mapped(dataref, inverted_mappings)
+                if size > 1:
+                    # This is an array dataref - expand into individual elements
+                    base = dataref.split("[")[0]  # Extract base name
+                    for idx in range(size):
+                        elem_name = f"{base}[{idx}]"
+                        self._add_single_output_row(elem_name, dataref)
+
+                        # If the base dataref has a mapping, apply it to the first element
+                        # or create individual mappings if needed
+                        if dataref in inverted_mappings:
+                            # Apply the mapping to this element (we could create element-specific mappings if needed)
+                            # For now, we'll just apply the base mapping to the first element
+                            if idx == 0:
+                                self._set_key_input_if_mapped(elem_name, inverted_mappings)
+                            # Or if we want to create element-specific mappings, we could do:
+                            # self._set_key_input_if_mapped(elem_name, inverted_mappings)  # This would apply to each element
+                else:
+                    # Regular dataref - add single row
+                    self._add_output_row(dataref)
+                    self._set_key_input_if_mapped(dataref, inverted_mappings)
+            else:
+                # If no info available, treat as regular dataref
+                self._add_output_row(dataref)
+                self._set_key_input_if_mapped(dataref, inverted_mappings)
 
     def _is_logic_variable(self, dataref: str) -> bool:
         """Check if the dataref is a logic variable."""
@@ -1954,6 +2161,13 @@ class OutputPanel(QWidget):
             key_widget = self.table.cellWidget(row, 4)
             if isinstance(key_widget, QLineEdit):
                 key_widget.setText(key)
+
+                # Update Arduino manager mapping
+                self.arduino_manager.set_universal_mapping(dataref, key)  # Empty key removes mapping
+                if key:
+                    log.info("Mapped %s -> %s", dataref, key)
+                else:
+                    log.info("Removed mapping for %s", dataref)
 
     def _generate_code(self):
         """Generate Arduino code for all mappings."""
@@ -2001,6 +2215,23 @@ class OutputPanel(QWidget):
         """Handle dataref update from X-Plane."""
         # Store in the general live values cache for backward compatibility
         self._live_values[dataref] = value
+
+        # Check if this is an array element update (e.g., LED_STATE[3])
+        array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+        if array_match:
+            base_name = array_match.group(1)
+            index = int(array_match.group(2))
+
+            # Update the specific array element in the UI
+            element_name = f"{base_name}[{index}]"
+            if element_name in self._subscribed_datarefs:
+                row = self._subscribed_datarefs[element_name]
+                self._update_table_item(row, element_name, value, "LIVE")
+        else:
+            # Regular dataref update - update the corresponding row in the UI
+            if dataref in self._subscribed_datarefs:
+                row = self._subscribed_datarefs[dataref]
+                self._update_table_item(row, dataref, value, "LIVE")
 
     def _format_value(self, name: str, value: float, dtype: str) -> str:
         """Helper to format a value based on type (supports arrays/strings)."""
@@ -2080,12 +2311,30 @@ class OutputPanel(QWidget):
     def _update_datarefs_table_values(self):
         """Update values in the datarefs table."""
         for dataref, row in self._subscribed_datarefs.items():
-            # Get current base value or 0 - prioritize live values over virtual values
-            live_value = self.xplane_conn.get_live_value(dataref) if self.xplane_conn else None
-            virtual_value = self.xplane_conn.get_virtual_value(dataref) if self.xplane_conn else None
+            # Check if this is an array element (e.g., LED_STATE[3])
+            array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+            if array_match:
+                # This is an array element, get the base dataref name
+                base_name = array_match.group(1)
+                index = int(array_match.group(2))
 
-            # Determine value and source
-            value, value_source = self._get_value_and_source(dataref, live_value, virtual_value)
+                # Get the base dataref's live value (which should be an array/list)
+                live_value = self.xplane_conn.get_live_value(base_name) if self.xplane_conn else None
+
+                if live_value is not None and isinstance(live_value, (list, tuple)) and index < len(live_value):
+                    value = live_value[index]
+                    value_source = "LIVE"
+                else:
+                    # Fallback to stored value
+                    value = self._live_values.get(dataref, 0.0)
+                    value_source = None
+            else:
+                # Regular dataref (non-array)
+                live_value = self.xplane_conn.get_live_value(dataref) if self.xplane_conn else None
+                virtual_value = self.xplane_conn.get_virtual_value(dataref) if self.xplane_conn else None
+
+                # Determine value and source
+                value, value_source = self._get_value_and_source(dataref, live_value, virtual_value)
 
             # Update the table item
             self._update_table_item(row, dataref, value, value_source)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import json
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Set
 from core.input_mapper import ConditionRule, LogicGate
@@ -37,7 +38,55 @@ class DatarefManager:
         self._load_database()
         self.load_custom_datarefs()
         self._build_categories()
-    
+
+    def get_array_size_from_type(self, type_str: str) -> int:
+        """Extract array size from type string (e.g., 'float[8]' -> 8)."""
+        if not type_str:
+            return 0
+        m = re.search(r'\[(\d+)\]', type_str)
+        return int(m.group(1)) if m else 0
+
+    def get_expanded_datarefs(self):
+        """Return datarefs with arrays expanded into per-element entries."""
+        out = []
+        for name, info in self._database.items():
+            type_str = info.get("type", "")
+            size = self.get_array_size_from_type(type_str)
+
+            if size > 1:
+                base = name.split("[")[0]  # Extract base name from array notation
+                # If we have a value that's a list/array, use it; otherwise create placeholder values
+                original_value = info.get("value", [0] * size if isinstance(info.get("value"), list) else 0)
+
+                # Handle case where original_value is a list/array
+                if isinstance(original_value, (list, tuple)):
+                    for i in range(min(size, len(original_value))):
+                        out.append({
+                            "name": f"{base}[{i}]",
+                            "type": type_str,
+                            "description": f"{info.get('description', '')} [{i}]",
+                            "writable": info.get("writable", False),
+                            "value": original_value[i],
+                            "custom": info.get("custom", False)
+                        })
+                else:
+                    # If not a list, create individual entries with placeholder values
+                    for i in range(size):
+                        out.append({
+                            "name": f"{base}[{i}]",
+                            "type": type_str,
+                            "description": f"{info.get('description', '')} [{i}]",
+                            "writable": info.get("writable", False),
+                            "value": 0.0,  # Placeholder value
+                            "custom": info.get("custom", False)
+                        })
+            else:
+                # Non-array dataref, add as-is
+                out.append(info.copy())
+                out[-1]["name"] = name
+
+        return out
+
     def _load_database(self) -> None:
         """Load dataref database from JSON file."""
 
