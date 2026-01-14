@@ -1,4 +1,16 @@
 {
+    "sim/flightmodel2/misc/door_open_ratio": {
+        "description": "Door open ratio per door, 0 = closed, 1 = fully open",
+        "type": "float[20]",
+        "units": "ratio",
+        "writable": false
+    },
+    "sim/flightmodel2/gear/tire_rotation_angle_deg": {
+        "description": "Per-wheel tire rotation angle in degrees",
+        "type": "float[20]",
+        "units": "deg",
+        "writable": false
+    },
     "sim/aircraft/artstability/acf_ASh_hi_pos": {
         "description": "",
         "type": "float",

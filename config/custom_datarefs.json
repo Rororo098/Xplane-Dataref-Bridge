@@ -1,241 +1,241 @@
 {
     "sim/flightmodel2/gear/tire_rotation_angle_deg[0]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[1]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[2]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[3]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[4]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[5]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[6]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[7]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[8]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/gear/tire_rotation_angle_deg[9]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Tire rotation in degrees, running 0 to 360 over and over as it rolls.",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[0]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[1]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[2]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[3]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[4]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[5]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[6]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[7]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[8]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/flightmodel2/misc/door_open_ratio[9]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "How open is the door, 0 = closed, 1 = open",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[0]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[1]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[2]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[3]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[4]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[5]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[6]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[7]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[8]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[9]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[10]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/cockpit2/radios/actuators/nav_frequency_Mhz[11]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Nav radio N frequency, Mhz component only",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[0]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[1]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[2]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[3]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[4]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[5]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[6]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     },
     "sim/multiplayer/position/plane10_throttle[7]": {
         "type": "float",
-        "description": "Custom Dataref",
+        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
     }

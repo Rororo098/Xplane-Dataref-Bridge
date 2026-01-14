@@ -2,10 +2,12 @@
     "version": "1.0",
     "outputs": {},
     "monitored_datarefs": [
+        "sim/multiplayer/position/plane10_throttle",
+        "sim/autopilot/airspeed_up",
         "sim/flightmodel2/gear/tire_rotation_angle_deg",
         "sim/flightmodel2/misc/door_open_ratio",
         "sim/cockpit2/radios/actuators/nav_frequency_Mhz",
-        "sim/multiplayer/position/plane10_throttle"
+        "sim/GPS/mode_airport"
     ],
     "inputs": [
         {

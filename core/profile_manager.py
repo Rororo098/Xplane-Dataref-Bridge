@@ -9,6 +9,7 @@ from core.input_mapper import InputMapping, InputAction
 
 log = logging.getLogger(__name__)
 
+
 class ProfileManager:
     """
     Manages loading and saving of application profiles.
@@ -17,20 +18,29 @@ class ProfileManager:
     2. Input Mappings (Device Input -> X-Plane Command)
     3. Logic Blocks (Virtual Variables)
     """
-    
+
     PROFILE_DIR = Path("config/profiles")
     DEFAULT_PROFILE = "default"
-    
+
     # Store device names even if disconnected for offline viewing
     # DeviceID -> Last Known Name
     _known_devices: Dict[str, str] = {}
-    
-    def __init__(self, arduino_manager, input_mapper, xplane_conn, logic_engine=None, hid_manager=None):
+
+    def __init__(
+        self,
+        arduino_manager,
+        input_mapper,
+        xplane_conn,
+        logic_engine=None,
+        hid_manager=None,
+        dataref_manager=None,
+    ):
         self.arduino_manager = arduino_manager
         self.input_mapper = input_mapper
         self.xplane_conn = xplane_conn
         self.logic_engine = logic_engine
         self.hid_manager = hid_manager
+        self.dataref_manager = dataref_manager
 
         # Device aliases dictionary
         self._device_aliases: Dict[str, str] = {}
@@ -42,18 +52,24 @@ class ProfileManager:
         data = {
             "version": "1.0",
             "outputs": self._get_output_config(),
-            "monitored_datarefs": self._get_monitored_datarefs_config(), # Save monitored list
+            "monitored_datarefs": self._get_monitored_datarefs_config(),  # Save monitored list
             "inputs": self._get_input_config(),
             "logic": self._get_logic_config(),
             "calibration": self._get_calibration_config(),
             "auto_connect": self._get_auto_connect_config(),
             "device_aliases": self._get_device_aliases_config(),
-            "known_devices": self._known_devices, # Save metadata for offline display
+            "known_devices": self._known_devices,  # Save metadata for offline display
         }
 
         path = self.PROFILE_DIR / f"{name}.json"
+        # Clear custom datarefs before saving to ensure empty profile resets placeholders
+        if self.dataref_manager:
+            try:
+                self.dataref_manager.clear_custom_datarefs()
+            except Exception as e:
+                log.warning("Failed to clear custom datarefs before save: %s", e)
         try:
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 json.dump(data, f, indent=4)
             log.info("Saved profile to %s", path)
             return True
@@ -69,7 +85,7 @@ class ProfileManager:
             return False
 
         try:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 data = json.load(f)
 
             # 1. Load Outputs
@@ -87,7 +103,7 @@ class ProfileManager:
 
             # 4. Load Device Aliases
             self._load_device_aliases_config(data.get("device_aliases", {}))
-            
+
             # 5. Load Calibration (NEW)
             self._load_calibration_config(data.get("calibration", {}))
 
@@ -109,33 +125,35 @@ class ProfileManager:
     def _get_output_config(self) -> Dict[str, str]:
         """Extract output mappings."""
         # Get from ArduinoManager (Source of Truth)
-        if hasattr(self.arduino_manager, 'get_all_universal_mappings'):
+        if hasattr(self.arduino_manager, "get_all_universal_mappings"):
             return self.arduino_manager.get_all_universal_mappings()
-        return self.arduino_manager._universal_mappings # Fallback
+        return self.arduino_manager._universal_mappings  # Fallback
 
     def _load_output_config(self, data: Dict[str, Dict[str, any]]):
         """Restore output mappings."""
         # Clear existing
-        if hasattr(self.arduino_manager, 'clear_universal_mappings'):
+        if hasattr(self.arduino_manager, "clear_universal_mappings"):
             self.arduino_manager.clear_universal_mappings()
         else:
             self.arduino_manager._universal_mappings.clear()
 
         # Add new (JUST update the manager state)
         for key, info in data.items():
-            self.arduino_manager.set_universal_mapping(info['source'], key, info.get('is_variable', False))
+            self.arduino_manager.set_universal_mapping(
+                info["source"], key, info.get("is_variable", False)
+            )
 
     def _get_monitored_datarefs_config(self) -> List[str]:
         """Get list of monitored datarefs."""
-        if hasattr(self.arduino_manager, 'get_monitored_datarefs'):
+        if hasattr(self.arduino_manager, "get_monitored_datarefs"):
             return self.arduino_manager.get_monitored_datarefs()
         return []
 
     def _load_monitored_datarefs_config(self, data: List[str]):
         """Load monitored datarefs."""
-        if not hasattr(self.arduino_manager, 'add_monitor'):
+        if not hasattr(self.arduino_manager, "add_monitor"):
             return
-            
+
         for dataref in data:
             self.arduino_manager.add_monitor(dataref)
 
@@ -168,13 +186,13 @@ class ProfileManager:
 
     def _get_calibration_config(self) -> Dict:
         """Get calibration data."""
-        if hasattr(self.hid_manager, 'get_all_calibration'):
+        if hasattr(self.hid_manager, "get_all_calibration"):
             return self.hid_manager.get_all_calibration()
         return {}
 
     def _load_calibration_config(self, data: Dict):
         """Load calibration data."""
-        if hasattr(self.hid_manager, 'load_calibration'):
+        if hasattr(self.hid_manager, "load_calibration"):
             self.hid_manager.load_calibration(data)
 
     def set_device_alias(self, device_id: str, alias: str):
@@ -220,8 +238,9 @@ class ProfileManager:
 
         # Clear existing
         self.logic_engine.clear_blocks()
-        
+
         from core.logic_engine import LogicBlock
+
         for item in data:
             try:
                 block = LogicBlock.from_dict(item)
@@ -236,9 +255,10 @@ class ProfileManager:
         source_path = self.PROFILE_DIR / f"{name}.json"
         if not source_path.exists():
             return False
-            
+
         try:
             import shutil
+
             shutil.copy2(source_path, target_path)
             log.info("Exported profile %s to %s", name, target_path)
             return True
@@ -251,10 +271,11 @@ class ProfileManager:
         try:
             new_name = source_path.stem
             target_path = self.PROFILE_DIR / f"{new_name}.json"
-            
+
             import shutil
+
             shutil.copy2(source_path, target_path)
-            
+
             # Load it
             if self.load_profile(new_name):
                 return new_name
