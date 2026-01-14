@@ -1,24 +1,11 @@
 {
     "version": "1.0",
-    "outputs": {
-        "CLR": {
-            "source": "sim/FMS/key_clear",
-            "is_variable": false
-        },
-        "CLRR": {
-            "source": "sim/FMS/key_clear",
-            "is_variable": false
-        }
-    },
+    "outputs": {},
     "monitored_datarefs": [
-        "sim/joystick/joy_mapped_axis_value",
-        "sim/FMS/key_clear",
-        "sim/cockpit2/radios/actuators/nav_dme_frequency_hz",
-        "sim/aircraft/engine/aacf_tip_mach_des_100",
-        "sim/cockpit/gyros/dg_drift_vac_deg",
-        "sim/flightmodel/weight/m_fuel",
-        "sim/cockpit/engine/ignition_on",
-        "sim/flightmodel/controls/yawb_def"
+        "sim/flightmodel2/gear/tire_rotation_angle_deg",
+        "sim/flightmodel2/misc/door_open_ratio",
+        "sim/cockpit2/radios/actuators/nav_frequency_Mhz",
+        "sim/multiplayer/position/plane10_throttle"
     ],
     "inputs": [
         {

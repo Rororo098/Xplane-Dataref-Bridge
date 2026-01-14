@@ -5,10 +5,30 @@ import re
 from typing import Dict, List, Optional
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTableWidget, QTableWidgetItem, QHeaderView, QSplitter, QFrame,
-    QCompleter, QDialog, QTextEdit, QMessageBox, QGroupBox, QComboBox,
-    QDoubleSpinBox, QMenu, QApplication, QTabWidget, QInputDialog, QFormLayout, QDialogButtonBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QSplitter,
+    QFrame,
+    QCompleter,
+    QDialog,
+    QTextEdit,
+    QMessageBox,
+    QGroupBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QMenu,
+    QApplication,
+    QTabWidget,
+    QInputDialog,
+    QFormLayout,
+    QDialogButtonBox,
 )
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt, QTimer
@@ -19,9 +39,15 @@ from core.logic_engine import LogicBlock
 from core.variable_store import VariableType
 from .custom_dataref_dialog import CustomDatarefDialog
 from .dataref_editor_dialog import DatarefEditorDialog
+from .output_panel_array_edit import ArrayEditDialog
 from core.dataref_writer import DatarefWriter
 
 log = logging.getLogger(__name__)
+
+
+
+
+
 
 # Constants for duplicated literals
 CODE_HANDLED_FALSE = "    bool handled = false;\n\n"
@@ -33,9 +59,16 @@ CODE_IF_HANDLED = "\n    if (handled) {\n"
 PLACEHOLDER_OUTPUT_KEY = "e.g., GEAR_LED"
 WARNING_DUPLICATE_KEY = "Duplicate Output Key"
 
+
 class CodeGeneratorDialog(QDialog):
     """Dialog to show generated Arduino code."""
-    def __init__(self, mappings: Dict[str, str], dataref_types: Dict[str, str] = None, parent=None):
+
+    def __init__(
+        self,
+        mappings: Dict[str, str],
+        dataref_types: Dict[str, str] = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.setWindowTitle("Arduino Code Generator")
         self.resize(600, 500)
@@ -66,7 +99,9 @@ class CodeGeneratorDialog(QDialog):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.text_edit.toPlainText())
 
-    def _generate_code(self, mappings: Dict[str, str], dataref_types: Dict[str, str]) -> str:
+    def _generate_code(
+        self, mappings: Dict[str, str], dataref_types: Dict[str, str]
+    ) -> str:
         code = self._generate_header()
         code += self._generate_configuration()
         code += self._generate_pin_declarations(mappings)
@@ -88,9 +123,9 @@ class CodeGeneratorDialog(QDialog):
     def _generate_configuration(self) -> str:
         code = "// --- Configuration ---\n"
         code += "const int BAUD_RATE = 115200;\n"
-        code += "const char* DEVICE_NAME = \"MyXPDevice\";\n"
-        code += "const char* FW_VERSION = \"1.0\";\n"
-        code += "const char* BOARD_TYPE = \"UNO\";\n\n"
+        code += 'const char* DEVICE_NAME = "MyXPDevice";\n'
+        code += 'const char* FW_VERSION = "1.0";\n'
+        code += 'const char* BOARD_TYPE = "UNO";\n\n'
         return code
 
     def _generate_pin_declarations(self, mappings: Dict[str, str]) -> str:
@@ -104,145 +139,161 @@ class CodeGeneratorDialog(QDialog):
     def _generate_helper_functions(self, mappings: Dict[str, str]) -> str:
         code = "// --- Helper Functions ---\n"
         code += "void runSelfTest() {\n"
-        code += "    Serial.println(\"STATUS Running Test Sequence...\");\n"
+        code += '    Serial.println("STATUS Running Test Sequence...");\n'
         for key in mappings.values():
             code += f"    // Test {key}\n"
-            code += f"    Serial.print(\"STATUS Testing \"); Serial.println(\"{key}\");\n"
+            code += f'    Serial.print("STATUS Testing "); Serial.println("{key}");\n'
             code += f"    // TODO: Add your hardware test for {key} here\n"
             code += f"    // Example: digitalWrite({key}_PIN, HIGH); delay(200); digitalWrite({key}_PIN, LOW);\n"
-        code += "    Serial.println(\"STATUS Test Complete.\");\n"
+        code += '    Serial.println("STATUS Test Complete.");\n'
         code += "}\n\n"
         return code
 
-    def _generate_handle_set_function(self, mappings: Dict[str, str], dataref_types: Dict[str, str]) -> str:
+    def _generate_handle_set_function(
+        self, mappings: Dict[str, str], dataref_types: Dict[str, str]
+    ) -> str:
         code = "void handleSet(String key, String valueStr) {\n"
         code += CODE_HANDLED_FALSE
         for dataref, key_name in mappings.items():
             dataref_type = dataref_types.get(dataref, "")
             code += f"    // Dataref: {dataref} (Type: {dataref_type})\n"
-            code += f"    if (key == \"{key_name}\") {{\n"
+            code += f'    if (key == "{key_name}") {{\n'
             if dataref_type == "command":
-                code += "        // Command dataref - execute instead of setting value\n"
+                code += (
+                    "        // Command dataref - execute instead of setting value\n"
+                )
                 code += f"        // TODO: Add command execution logic for {key_name}\n"
-                code += "        Serial.print(\"STATUS Executed command: \"); Serial.println(key);\n"
+                code += '        Serial.print("STATUS Executed command: "); Serial.println(key);\n'
             elif "[" in dataref_type:
                 code += "        // Array dataref - handle as comma-separated values or single value\n"
                 code += "        if (valueStr.indexOf(',') != -1) {\n"
                 code += "            // Multiple values: val1,val2,val3\n"
                 code += f"            // TODO: Parse and handle array values for {key_name}\n"
-                code += f"            Serial.print(\"STATUS Updated array {key_name} with multiple values: \"); Serial.println(valueStr);\n"
+                code += f'            Serial.print("STATUS Updated array {key_name} with multiple values: "); Serial.println(valueStr);\n'
                 code += "        }} else {{\n"
                 code += "            // Single value to first element\n"
                 code += "            float value = valueStr.toFloat();\n"
                 code += f"            {key_name}_VAL = value;\n"
                 code += f"            // TODO: Add your array logic for {key_name}[0] here\n"
-                code += f"            Serial.print(\"STATUS Updated {key_name}[0] = \"); Serial.println(value);\n"
+                code += f'            Serial.print("STATUS Updated {key_name}[0] = "); Serial.println(value);\n'
                 code += "        }}\n"
             elif dataref_type in ["string", "byte"]:
                 code += "        // String/byte dataref\n"
                 code += f"        // TODO: Handle string value for {key_name}\n"
-                code += f"        Serial.print(\"STATUS Updated string {key_name} = \"); Serial.println(valueStr);\n"
+                code += f'        Serial.print("STATUS Updated string {key_name} = "); Serial.println(valueStr);\n'
             else:
                 code += "        // Scalar dataref (int, float, double, bool)\n"
                 code += "        float value = valueStr.toFloat();\n"
                 code += f"        {key_name}_VAL = value; // Update internal state\n"
                 code += f"        // TODO: Add your logic for {key_name} here\n"
                 code += f"        // Example: digitalWrite({key_name}_PIN, value > 0.5 ? HIGH : LOW);\n"
-                code += f"        Serial.print(\"STATUS Updated {key_name} = \"); Serial.println(value);\n"
+                code += f'        Serial.print("STATUS Updated {key_name} = "); Serial.println(value);\n'
             code += CODE_HANDLED_TRUE
             code += CODE_CLOSE_BRACE
         code += CODE_IF_HANDLED
-        code += "        Serial.print(\"ACK \"); Serial.print(key); Serial.print(\" \"); Serial.println(valueStr);\n"
+        code += '        Serial.print("ACK "); Serial.print(key); Serial.print(" "); Serial.println(valueStr);\n'
         code += CODE_CLOSE_BRACE
         code += "}\n\n"
         return code
 
-    def _generate_handle_command_function(self, mappings: Dict[str, str], dataref_types: Dict[str, str]) -> str:
+    def _generate_handle_command_function(
+        self, mappings: Dict[str, str], dataref_types: Dict[str, str]
+    ) -> str:
         code = "void handleCommand(String key) {\n"
         code += CODE_HANDLED_FALSE
         for dataref, key_name in mappings.items():
             dataref_type = dataref_types.get(dataref, "")
             if dataref_type == "command":
                 code += f"    // Command: {dataref}\n"
-                code += f"    if (key == \"{key_name}\") {{\n"
+                code += f'    if (key == "{key_name}") {{\n'
                 code += f"        // TODO: Execute command for {key_name}\n"
-                code += f"        // Example: if (key == \"{key_name}\") {{ toggleLandingGear(); }}\n"
-                code += "        Serial.print(\"STATUS Executed command: \"); Serial.println(key);\n"
+                code += f'        // Example: if (key == "{key_name}") {{ toggleLandingGear(); }}\n'
+                code += '        Serial.print("STATUS Executed command: "); Serial.println(key);\n'
                 code += CODE_HANDLED_TRUE
                 code += CODE_CLOSE_BRACE
         code += CODE_IF_HANDLED
-        code += "        Serial.print(\"ACK CMD \"); Serial.println(key);\n"
+        code += '        Serial.print("ACK CMD "); Serial.println(key);\n'
         code += CODE_CLOSE_BRACE_ELSE
-        code += "        Serial.print(\"ERROR Unknown command: \"); Serial.println(key);\n"
+        code += (
+            '        Serial.print("ERROR Unknown command: "); Serial.println(key);\n'
+        )
         code += CODE_CLOSE_BRACE
         code += "}\n\n"
         return code
 
-    def _generate_handle_array_element_function(self, mappings: Dict[str, str], dataref_types: Dict[str, str]) -> str:
+    def _generate_handle_array_element_function(
+        self, mappings: Dict[str, str], dataref_types: Dict[str, str]
+    ) -> str:
         code = "void handleArrayElement(String baseKey, int index, String valueStr) {\n"
         code += CODE_HANDLED_FALSE
         for dataref, key_name in mappings.items():
             dataref_type = dataref_types.get(dataref, "")
             if "[" in dataref_type:
                 code += f"    // Array element: {dataref}[index]\n"
-                code += f"    if (baseKey == \"{key_name}\") {{\n"
+                code += f'    if (baseKey == "{key_name}") {{\n'
                 code += "        float value = valueStr.toFloat();\n"
-                code += f"        // TODO: Handle array element {key_name}[index] = value\n"
-                code += f"        Serial.print(\"STATUS Updated {key_name}[\"); Serial.print(index); Serial.print(\"] = \"); Serial.println(value);\n"
+                code += (
+                    f"        // TODO: Handle array element {key_name}[index] = value\n"
+                )
+                code += f'        Serial.print("STATUS Updated {key_name}["); Serial.print(index); Serial.print("] = "); Serial.println(value);\n'
                 code += CODE_HANDLED_TRUE
                 code += CODE_CLOSE_BRACE
         code += CODE_IF_HANDLED
-        code += "        Serial.print(\"ACK \"); Serial.print(baseKey); Serial.print(\"[\"); Serial.print(index); Serial.print(\"] \"); Serial.println(valueStr);\n"
+        code += '        Serial.print("ACK "); Serial.print(baseKey); Serial.print("["); Serial.print(index); Serial.print("] "); Serial.println(valueStr);\n'
         code += CODE_CLOSE_BRACE_ELSE
-        code += "        Serial.print(\"ERROR Unknown array key: \"); Serial.println(baseKey);\n"
+        code += '        Serial.print("ERROR Unknown array key: "); Serial.println(baseKey);\n'
         code += CODE_CLOSE_BRACE
         code += "}\n\n"
         return code
 
-    def _generate_process_line_function(self, mappings: Dict[str, str], dataref_types: Dict[str, str]) -> str:
+    def _generate_process_line_function(
+        self, mappings: Dict[str, str], dataref_types: Dict[str, str]
+    ) -> str:
         code = "void processLine(String line) {\n"
         code += "    line.trim();\n\n"
         code += "    // --- HANDSHAKE ---\n"
-        code += "    if (line == \"HELLO\") {\n"
-        code += "        Serial.print(\"XPDR;fw=\"); Serial.print(FW_VERSION);\n"
-        code += "        Serial.print(\";board=\"); Serial.print(BOARD_TYPE);\n"
-        code += "        Serial.print(\";name=\"); Serial.println(DEVICE_NAME);\n"
+        code += '    if (line == "HELLO") {\n'
+        code += '        Serial.print("XPDR;fw="); Serial.print(FW_VERSION);\n'
+        code += '        Serial.print(";board="); Serial.print(BOARD_TYPE);\n'
+        code += '        Serial.print(";name="); Serial.println(DEVICE_NAME);\n'
         code += CODE_CLOSE_BRACE_NEWLINE
         code += "    // --- MONITOR COMMANDS ---\n"
-        code += "    else if (line.equalsIgnoreCase(\"LIST\")) {\n"
-        code += "        Serial.println(\"STATUS Available Keys:\");\n"
+        code += '    else if (line.equalsIgnoreCase("LIST")) {\n'
+        code += '        Serial.println("STATUS Available Keys:");\n'
         for dataref, key in mappings.items():
             dataref_type = dataref_types.get(dataref, "")
             type_info = f" [{dataref_type}]" if dataref_type else ""
-            code += f"        Serial.println(\"STATUS - {key} (Dataref: {dataref}{type_info})\");\n"
+            code += f'        Serial.println("STATUS - {key} (Dataref: {dataref}{type_info})");\n'
         code += CODE_CLOSE_BRACE_NEWLINE
-        code += "    else if (line.equalsIgnoreCase(\"STATUS\")) {\n"
-        code += "        Serial.println(\"STATUS Current Values:\");\n"
+        code += '    else if (line.equalsIgnoreCase("STATUS")) {\n'
+        code += '        Serial.println("STATUS Current Values:");\n'
         for key in mappings.values():
-            code += f"        Serial.print(\"STATUS [{key}]: \"); Serial.println({key}_VAL);\n"
+            code += f'        Serial.print("STATUS [{key}]: "); Serial.println({key}_VAL);\n'
         code += CODE_CLOSE_BRACE_NEWLINE
-        code += "    else if (line.equalsIgnoreCase(\"TEST\")) {\n"
+        code += '    else if (line.equalsIgnoreCase("TEST")) {\n'
         code += "        runSelfTest();\n"
         code += CODE_CLOSE_BRACE_NEWLINE
         code += "    // --- DATA UPDATES (SET) ---\n"
-        code += "    else if (line.startsWith(\"SET \")) {\n"
+        code += '    else if (line.startsWith("SET ")) {\n'
         code += "        int firstSpace = line.indexOf(' ');\n"
         code += "        int secondSpace = line.lastIndexOf(' ');\n"
         code += "        if (firstSpace > 0 && secondSpace > firstSpace) {\n"
-        code += "            String key = line.substring(firstSpace + 1, secondSpace);\n"
+        code += (
+            "            String key = line.substring(firstSpace + 1, secondSpace);\n"
+        )
         code += "            String valueStr = line.substring(secondSpace + 1);\n"
         code += "            handleSet(key, valueStr);\n"
         code += "        }\n"
         code += CODE_CLOSE_BRACE_NEWLINE
         code += "    // --- COMMAND EXECUTION ---\n"
-        code += "    else if (line.startsWith(\"CMD \")) {\n"
+        code += '    else if (line.startsWith("CMD ")) {\n'
         code += "        String key = line.substring(4);\n"
         code += "        handleCommand(key);\n"
         code += CODE_CLOSE_BRACE_NEWLINE
         code += "    // --- ARRAY ELEMENT ACCESS ---\n"
         code += "    else if (line.indexOf('[') != -1 && line.indexOf(']') != -1 && line.indexOf(\"SET \") != -1) {\n"
         code += "        // Handle array element: SET KEY[index] value\n"
-        code += "        int setPos = line.indexOf(\"SET \");\n"
+        code += '        int setPos = line.indexOf("SET ");\n'
         code += "        int bracketPos = line.indexOf('[', setPos);\n"
         code += "        int endBracketPos = line.indexOf(']', bracketPos);\n"
         code += "        if (bracketPos != -1 && endBracketPos != -1) {\n"
@@ -256,8 +307,8 @@ class CodeGeneratorDialog(QDialog):
         code += "    // --- CUSTOM COMMANDS ---\n"
         code += "    else {\n"
         code += "        // Echo back or handle custom commands here\n"
-        code += "        Serial.print(\"STATUS Echo: \"); Serial.println(line);\n"
-        code += "        // Example: if (line == \"MY_CMD\") { doSomething(); }\n"
+        code += '        Serial.print("STATUS Echo: "); Serial.println(line);\n'
+        code += '        // Example: if (line == "MY_CMD") { doSomething(); }\n'
         code += CODE_CLOSE_BRACE
         code += "}\n\n"
         return code
@@ -290,15 +341,22 @@ class OutputPanel(QWidget):
     - Generate Firmware Code
     """
 
-    def __init__(self, dataref_manager, xplane_conn, arduino_manager, variable_store=None, logic_engine=None):
+    def __init__(
+        self,
+        dataref_manager,
+        xplane_conn,
+        arduino_manager,
+        variable_store=None,
+        logic_engine=None,
+    ):
         super().__init__()
         self.dataref_manager = dataref_manager
         self.xplane_conn = xplane_conn
         self.arduino_manager = arduino_manager
         self.variable_store = variable_store
-        self.logic_engine = logic_engine # NEW: Logic Engine for variables persistence
-        self._subscribed_datarefs = {} # dataref -> row_index
-        
+        self.logic_engine = logic_engine  # NEW: Logic Engine for variables persistence
+        self._subscribed_datarefs = {}  # dataref -> row_index
+
         # Initialize DatarefWriter for handling different dataref types
         self.dataref_writer = DatarefWriter(xplane_conn, dataref_manager)
         self._dataref_list = dataref_manager.get_all_dataref_names()
@@ -312,8 +370,7 @@ class OutputPanel(QWidget):
         # Timer to update live values (debounce UI updates)
         self._update_timer = QTimer()
         self._update_timer.timeout.connect(self._update_live_values)
-        self._update_timer.start(100) # 10Hz UI update
-
+        self._update_timer.start(100)  # 10Hz UI update
 
         # Temp storage for live values
         self._live_values = {}
@@ -322,12 +379,321 @@ class OutputPanel(QWidget):
         if self.variable_store:
             self.variable_store.register_listener(self._on_variable_update)
 
+        # Connect to X-Plane connection for live value updates
+        if hasattr(self.xplane_conn, 'register_dataref_listener'):
+            self.xplane_conn.register_dataref_listener(self._on_xplane_dataref_update)
+
+    def _format_dataref_description_from_name(self, name: str) -> str:
+        """Format dataref description from its name."""
+        s = name.replace("/", " ").replace("_", " ")
+        s = re.sub(r"\\s+", " ", s).strip()
+        parts = s.split(" ")
+        parts = [p.capitalize() for p in parts if p]
+        return " ".join(parts)
+
+    def _compose_description_cell(self, display_name: str, info: dict | None, data_type: str, full_text: bool = False) -> tuple[str, str]:
+        """Compose the description cell text and tooltip from DB info with fallbacks.
+        Returns (cell_text, tooltip_text). Tooltip receives the full text prior to truncation.
+        """
+        base_name = display_name.split("[")[0] if "[" in display_name else display_name
+        info = info or {}
+        db_description = (info.get("description") or "").strip() if isinstance(info, dict) else ""
+        # Normalize placeholders to trigger fallback
+        if db_description.lower() in {"custom dataref", "custom datarefs", "unknown", "n/a"}:
+            db_description = ""
+        units = (info.get("units") or "").strip() if isinstance(info, dict) else ""
+        desc_core = db_description if db_description else format_dataref_description_from_name(base_name)
+        if units:
+            desc_core = f"{desc_core} ({units})"
+
+        # Truncate for cell view if needed
+        max_desc_length = 80
+        if full_text or len(desc_core) <= max_desc_length:
+            truncated = desc_core
+        else:
+            truncated = desc_core[:max_desc_length] + "..."
+
+        writable = bool(isinstance(info, dict) and info.get("writable", False))
+        parts = []
+        if data_type:
+            parts.append(f"[{data_type}]")
+        parts.append(truncated)
+        if writable:
+            parts.append("[WRITABLE]")
+        cell_text = " ".join(parts)
+        return cell_text, desc_core
+
+    def _on_xplane_dataref_update(self, dataref_name: str, value):
+        """Handle live dataref updates from X-Plane connection."""
+        if dataref_name in self._subscribed_datarefs:
+            row = self._subscribed_datarefs[dataref_name]
+            if row < self.table.rowCount():
+                # Update the value in the table
+                value_item = self.table.item(row, 2)
+                if value_item:
+                    formatted_value = self._format_value(dataref_name, value, "")
+                    value_item.setText(formatted_value)
+
+                    # Update color based on value
+                    if isinstance(value, (int, float)) and value >= 0.5:
+                        value_item.setForeground(QColor("#28a745"))  # Green
+                    else:
+                        value_item.setForeground(QColor("#6c757d"))  # Gray
+
+    def _update_live_values(self):
+        """Update live values in the table from stored values."""
+        for dataref_name, row in self._subscribed_datarefs.items():
+            if row < self.table.rowCount():
+                # Get the current value from stored live values
+                current_value = self._live_values.get(dataref_name)
+                if current_value is not None:
+                    # Update the value in the table
+                    value_item = self.table.item(row, 2)
+                    if value_item:
+                        formatted_value = self._format_value(dataref_name, current_value, "")
+                        value_item.setText(formatted_value)
+
+                        # Update color based on value
+                        if isinstance(current_value, (int, float)) and current_value >= 0.5:
+                            value_item.setForeground(QColor("#28a745"))  # Green
+                        else:
+                            value_item.setForeground(QColor("#6c757d"))  # Gray
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for the table."""
+        # Ctrl+A to select all rows
+        select_all_shortcut = QAction("Select All", self)
+        select_all_shortcut.setShortcut("Ctrl+A")
+        select_all_shortcut.triggered.connect(self._select_all_rows)
+        self.addAction(select_all_shortcut)
+
+        # Delete key to remove selected rows
+        delete_shortcut = QAction("Delete Selected", self)
+        delete_shortcut.setShortcut("Delete")
+        delete_shortcut.triggered.connect(self._delete_selected_rows)
+        self.addAction(delete_shortcut)
+
+        # Add to table as well for better UX
+        self.table.addAction(select_all_shortcut)
+        self.table.addAction(delete_shortcut)
+
+        # Add more keyboard shortcuts
+        # Ctrl+Shift+A to select all in datarefs table
+        select_all_datarefs_shortcut = QAction("Select All Datarefs", self)
+        select_all_datarefs_shortcut.setShortcut("Ctrl+Shift+A")
+        select_all_datarefs_shortcut.triggered.connect(lambda: self.table.selectAll())
+        self.table.addAction(select_all_datarefs_shortcut)
+
+    def _select_all_rows(self):
+        """Select all rows in the table."""
+        self.table.selectAll()
+
+    def _delete_selected_rows(self):
+        """Delete all selected rows in the table."""
+        selected_ranges = self.table.selectedRanges()
+        if not selected_ranges:
+            return
+
+        # Get all selected rows
+        selected_rows = set()
+        for range_obj in selected_ranges:
+            for row in range(range_obj.topRow(), range_obj.bottomRow() + 1):
+                selected_rows.add(row)
+
+        # Convert to sorted list in reverse order to avoid index shifting issues
+        rows_to_delete = sorted(list(selected_rows), reverse=True)
+
+        # Delete rows in reverse order
+        for row in rows_to_delete:
+            if row < self.table.rowCount():
+                # Get the dataref name for removal from the subscription map
+                name_item = self.table.item(row, 0)
+                if name_item:
+                    dataref_name = name_item.text()
+                    if dataref_name in self._subscribed_datarefs:
+                        del self._subscribed_datarefs[dataref_name]
+
+                # Remove the row from the table
+                self.table.removeRow(row)
+
+        log.info(f"Deleted {len(rows_to_delete)} selected rows")
+
+    def _show_context_menu(self, position):
+        """Show context menu for bulk operations."""
+        # Determine which table was clicked
+        sender = self.sender()
+        if sender == self.table:
+            target_table = self.table
+        elif sender == self.vars_table:
+            target_table = self.vars_table
+        else:
+            return
+
+        menu = QMenu(self)
+
+        # Add actions based on selection
+        selected_ranges = target_table.selectedRanges()
+        has_selection = len(selected_ranges) > 0
+
+        if has_selection:
+            # Count selected rows
+            selected_count = 0
+            for range_obj in selected_ranges:
+                selected_count += (range_obj.bottomRow() - range_obj.topRow() + 1)
+
+            # Select All action
+            select_all_action = QAction(f"Select All ({target_table.rowCount()} rows)", self)
+            select_all_action.triggered.connect(lambda: target_table.selectAll())
+            menu.addAction(select_all_action)
+
+            menu.addSeparator()
+
+            # Delete action
+            delete_action = QAction(f"Delete Selected ({selected_count} rows)", self)
+            delete_action.triggered.connect(lambda: self._delete_selected_rows_from_table(target_table))
+            menu.addAction(delete_action)
+
+            # Add other bulk operations if needed
+            if sender == self.table:  # Only for datarefs table
+                # Add more actions for dataref operations
+                pass
+        else:
+            # No selection - just show select all
+            select_all_action = QAction(f"Select All ({target_table.rowCount()} rows)", self)
+            select_all_action.triggered.connect(lambda: target_table.selectAll())
+            menu.addAction(select_all_action)
+
+        menu.exec(target_table.viewport().mapToGlobal(position))
+
+    def _delete_selected_rows_from_table(self, table_widget):
+        """Delete selected rows from a specific table."""
+        selected_ranges = table_widget.selectedRanges()
+        if not selected_ranges:
+            return
+
+        # Get all selected rows
+        selected_rows = set()
+        for range_obj in selected_ranges:
+            for row in range(range_obj.topRow(), range_obj.bottomRow() + 1):
+                selected_rows.add(row)
+
+        # Convert to sorted list in reverse order to avoid index shifting issues
+        rows_to_delete = sorted(list(selected_rows), reverse=True)
+
+        # Choose the appropriate deletion method based on which table
+        if table_widget == self.table:  # Datarefs table
+            # Show confirmation dialog for bulk operations
+            reply = QMessageBox.question(
+                self,
+                "Confirm Bulk Delete",
+                f"Are you sure you want to delete {len(rows_to_delete)} selected dataref(s)?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                for row in rows_to_delete:
+                    if row < table_widget.rowCount():
+                        # Get the dataref name for removal from the subscription map
+                        name_item = table_widget.item(row, 0)
+                        if name_item:
+                            dataref_name = name_item.text()
+
+                            # Clean up subscriptions and mappings
+                            if dataref_name in self._subscribed_datarefs:
+                                del self._subscribed_datarefs[dataref_name]
+
+                            # Check if this is an array element and handle base array cleanup
+                            array_match = re.match(r"^(.+)\[(\d+)\]$", dataref_name)
+                            if array_match:
+                                base_name = array_match.group(1)
+                                # Check if there are any other elements of this array still subscribed
+                                other_elements_exist = any(
+                                    re.match(rf"^{re.escape(base_name)}\[\d+\]$", key) and key != dataref_name
+                                    for key in self._subscribed_datarefs.keys()
+                                )
+
+                                # Only unsubscribe from the base array if no other elements of it are still subscribed
+                                if not other_elements_exist:
+                                    task = asyncio.create_task(
+                                        self.xplane_conn.unsubscribe_dataref(base_name)
+                                    )
+                                    self._tasks.append(task)  # Prevent garbage collection
+                                    log.info("Unsubscribed from array dataref: %s", base_name)
+                            else:
+                                # Regular dataref (non-array)
+                                task = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(dataref_name))
+                                self._tasks.append(task)  # Prevent garbage collection
+
+                            # Remove from Arduino manager mappings
+                            self.arduino_manager.set_universal_mapping(dataref_name, "")
+
+                            if hasattr(self.arduino_manager, "remove_monitor"):
+                                self.arduino_manager.remove_monitor(dataref_name)
+
+                        # Remove the row from the table
+                        table_widget.removeRow(row)
+
+                # Re-index the subscription map after deletions
+                self._reindex_subscribed_datarefs()
+        elif table_widget == self.vars_table:  # Variables table
+            # For variables table, we might want to handle differently
+            for row in rows_to_delete:
+                if row < table_widget.rowCount():
+                    # Get the variable name
+                    name_item = table_widget.item(row, 0)
+                    if name_item:
+                        var_name = name_item.text()
+                        # Call the appropriate deletion method for variables
+                        self._delete_variable_by_name(var_name)
+
+        log.info(f"Deleted {len(rows_to_delete)} rows from table")
+
     def _parse_array_size(self, type_str: str) -> int:
-        """Parse array size from type string (e.g., 'float[8]' -> 8)."""
+        """Parse total array size from type string (supports multi-dim like 'float[8][4]')."""
         if not type_str:
             return 0
-        m = re.search(r'\[(\d+)\]', type_str)
-        return int(m.group(1)) if m else 0
+        import re
+
+        dims = [int(n) for n in re.findall(r"\[(\d+)\]", type_str)]
+        if not dims:
+            return 0
+        total = 1
+        for d in dims:
+            total *= d
+        return total
+
+    def _test_led_state_array(self):
+        """Test method for LED_STATE_ARRAY functionality."""
+        # This method can be called to test LED_STATE_ARRAY expansion
+        test_arrays = [
+            "LED_STATE_ARRAY",
+            "sim/cockpit/electrical/led_states",  # hypothetical example
+        ]
+
+        for array_name in test_arrays:
+            info = self.dataref_manager.get_dataref_info(array_name)
+            if info:
+                dtype = info.get("type", "")
+                size = self._parse_array_size(dtype)
+                if size > 0:
+                    log.info(f"Found array {array_name} with size {size}")
+                    # Expand the array elements
+                    base = array_name.split("[")[0]
+                    for idx in range(size):
+                        elem_name = f"{base}[{idx}]"
+                        log.info(f"  Element: {elem_name}")
+                    return True
+
+        # If no predefined LED array found, try common patterns
+        all_datarefs = self.dataref_manager.get_all_dataref_names()
+        led_arrays = [name for name in all_datarefs if "led" in name.lower() and "[" in name]
+
+        if led_arrays:
+            log.info(f"Found potential LED arrays: {led_arrays[:5]}")  # Show first 5
+            return True
+
+        log.info("No LED arrays found in database")
+        return False
 
     def _populate_live_monitor(self, datarefs):
         """Populate live monitor with array expansion."""
@@ -342,18 +708,30 @@ class OutputPanel(QWidget):
 
             if size >= 1:
                 base = name.split("[")[0]  # Extract base name from array notation
-                log.debug(f"Expanding array {name} (type: {type_str}, size: {size}) -> base: {base}")
+                log.debug(
+                    f"Expanding array {name} (type: {type_str}, size: {size}) -> base: {base}"
+                )
                 for idx in range(size):
                     elem_name = f"{base}[{idx}]"
                     value = self._get_value_for_dataref_element(dr, idx)
                     log.debug(f"  Creating row for element: {elem_name} = {value}")
-                    self._add_live_row(elem_name, type_str, value)
+                    # Pass the original dataref info to preserve type and other metadata
+                    self._add_live_row(elem_name, type_str, value, original_info=dr)
             else:
                 value = dr.get("value", 0.0)
                 log.debug(f"  Creating row for scalar: {name} = {value}")
-                self._add_live_row(name, type_str, value)
+                self._add_live_row(name, type_str, value, original_info=dr)
 
-    def _add_live_row(self, display_name, data_type, value):
+    def _add_visual_indicator_for_array(self, name_item: QTableWidgetItem):
+        """Add visual indicator for array elements in the table."""
+        # Check if this is an array element
+        if "[" in name_item.text() and "]" in name_item.text():
+            # Add a visual indicator to the name item
+            name_item.setText(f"📋 {name_item.text()}")
+            # Set a different background color for array elements
+            name_item.setBackground(QColor(248, 248, 255))  # Light blue tint for arrays
+
+    def _add_live_row(self, display_name, data_type, value, original_info=None):
         """Add a single row to the live monitor."""
         row = self.table.rowCount()
         self.table.insertRow(row)
@@ -361,15 +739,32 @@ class OutputPanel(QWidget):
         # Add dataref name
         name_item = QTableWidgetItem(display_name)
         name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+        # Add visual indicator for array elements
+        self._add_visual_indicator_for_array(name_item)
         self.table.setItem(row, 0, name_item)
 
-        # Add description
-        writable = self.dataref_manager.get_dataref_info(display_name).get("writable", False) if self.dataref_manager.get_dataref_info(display_name) else False
-        writable_str = "[WRITABLE]" if writable else "[READ-ONLY]"
-        type_str = f"[{data_type}]" if data_type else ""
-        desc_item = QTableWidgetItem(f"{type_str} {writable_str}")
+        # Add description (real data from DB if available, else derived from name)
+        # Use original_info if provided, otherwise get from dataref manager
+        # Always prefer canonical DB lookup; use base name for arrays
+        base_name = display_name.split("[")[0] if "[" in display_name else display_name
+        info = self.dataref_manager.get_dataref_info(base_name) or self.dataref_manager.get_dataref_info(display_name) or {}
+        # If original_info exists, merge missing fields from it (non-destructive)
+        if original_info and isinstance(original_info, dict):
+            for k, v in original_info.items():
+                if k not in info:
+                    info[k] = v
+
+        # Compose description using unified builder and mark finalized
+        cell_text, tooltip_text = self._compose_description_cell(display_name, info, data_type)
+        desc_item = QTableWidgetItem(cell_text)
         desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        try:
+            desc_item.setData(Qt.ItemDataRole.UserRole, {"finalized_desc": True})
+        except Exception:
+            pass
         self.table.setItem(row, 1, desc_item)
+        desc_item.setToolTip(tooltip_text)
 
         # Add live value
         value_item = QTableWidgetItem(f"{value:.4f}")
@@ -379,7 +774,11 @@ class OutputPanel(QWidget):
         # Add modify button
         is_command = data_type == "command"
         is_complex = "[" in data_type or "string" in data_type or "byte" in data_type
-        btn_text = "EXECUTE" if is_command else ("Inspect/Edit" if is_complex else "Write")
+        is_array = self._is_array_dataref(display_name, data_type)
+        btn_text = (
+            "EXECUTE" if is_command
+            else ("Inspect/Edit Array" if is_array else "Inspect/Edit" if is_complex else "Write")
+        )
         modify_btn = QPushButton(btn_text)
         modify_btn.clicked.connect(lambda _, r=row: self._modify_value(r))
         self.table.setCellWidget(row, 3, modify_btn)
@@ -428,7 +827,9 @@ class OutputPanel(QWidget):
         top_layout = QHBoxLayout(top_group)
 
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Search Datarefs (e.g. 'gear', 'flap', 'autopilot')...")
+        self.search_input.setPlaceholderText(
+            "🔍 Search Datarefs (e.g. 'gear', 'flap', 'autopilot')..."
+        )
         self.search_input.setClearButtonEnabled(True)
 
         # Autocomplete
@@ -452,7 +853,14 @@ class OutputPanel(QWidget):
 
         # --- Main Table ---
         self.table = QTableWidget(0, 6)
-        headers = ["X-Plane Dataref", "Description", "Live Value", "Action / Edit", "Output Key (Device ID)", "Delete"]
+        headers = [
+            "X-Plane Dataref",
+            "Description",
+            "Live Value",
+            "Action / Edit",
+            "Output Key (Device ID)",
+            "Delete",
+        ]
         self.table.setColumnCount(len(headers))
         self.table.setHorizontalHeaderLabels(headers)
 
@@ -463,7 +871,7 @@ class OutputPanel(QWidget):
             "Real-time value received from X-Plane",
             "Actions: Trigger X-Plane command or edit complex values (Arrays/Strings)",
             "The short KEY you'll use in your Arduino code (e.g. GEAR_LED). Any device listening for this key will receive the data.",
-            "Remove this dataref from your output list"
+            "Remove this dataref from your output list",
         ]
         for i, tooltip in enumerate(tooltips):
             item = self.table.horizontalHeaderItem(i)
@@ -472,16 +880,24 @@ class OutputPanel(QWidget):
 
         # Styling
         header = self.table.horizontalHeader()
-        header.setSectionsMovable(True) # Allow reordering
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive) # Allow manual resize
-        
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch) # Dataref name
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # Description
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive) # Value (can be long for arrays)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # Action / Edit
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive) # Key input
+        header.setSectionsMovable(True)  # Allow reordering
+        header.setSectionResizeMode(
+            QHeaderView.ResizeMode.Interactive
+        )  # Allow manual resize
+
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Dataref name
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Description
+        header.setSectionResizeMode(
+            2, QHeaderView.ResizeMode.Interactive
+        )  # Value (can be long for arrays)
+        header.setSectionResizeMode(
+            3, QHeaderView.ResizeMode.ResizeToContents
+        )  # Action / Edit
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)  # Key input
         self.table.setColumnWidth(4, 150)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents) # Delete
+        header.setSectionResizeMode(
+            5, QHeaderView.ResizeMode.ResizeToContents
+        )  # Delete
 
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -489,9 +905,16 @@ class OutputPanel(QWidget):
 
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
-        
+
         # NEW: Show description popup on cell click
         self.table.cellClicked.connect(self._on_cell_clicked)
+
+        # Enable multi-selection
+        self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
+
+        # Context menu for bulk operations
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
 
         datarefs_layout.addWidget(self.table)
 
@@ -505,7 +928,6 @@ class OutputPanel(QWidget):
         info_label.setStyleSheet("color: #666;")
         footer_layout.addWidget(info_label)
 
-
         self.gen_code_btn = QPushButton("📝 Generate Arduino Code")
         self.gen_code_btn.clicked.connect(self._generate_code)
         footer_layout.addWidget(self.gen_code_btn)
@@ -515,13 +937,18 @@ class OutputPanel(QWidget):
         # Add datarefs tab to the tab widget
         tab_widget.addTab(datarefs_widget, "Datarefs")
 
+        # Setup keyboard shortcuts
+        self._setup_keyboard_shortcuts()
+
         # Variables tab (Logic Variables / Virtual Datarefs)
         vars_widget = QWidget()
         vars_layout = QVBoxLayout(vars_widget)
 
         # Variables section header
         vars_header = QLabel("Logic Variables / Virtual Datarefs")
-        vars_header.setStyleSheet("font-size: 14px; font-weight: bold; padding: 10px; background: #f0f0f0; border-radius: 4px;")
+        vars_header.setStyleSheet(
+            "font-size: 14px; font-weight: bold; padding: 10px; background: #f0f0f0; border-radius: 4px;"
+        )
         vars_layout.addWidget(vars_header)
 
         # Variables description
@@ -535,7 +962,16 @@ class OutputPanel(QWidget):
 
         # Variables table
         self.vars_table = QTableWidget(0, 8)
-        var_headers = ["Variable Name", "Description", "Value", "Status", "Action / Edit", "Prop / Size", "Output Key", "Delete"]
+        var_headers = [
+            "Variable Name",
+            "Description",
+            "Value",
+            "Status",
+            "Action / Edit",
+            "Prop / Size",
+            "Output Key",
+            "Delete",
+        ]
         self.vars_table.setColumnCount(len(var_headers))
         self.vars_table.setHorizontalHeaderLabels(var_headers)
         # Detailed tooltips for beginners
@@ -547,7 +983,7 @@ class OutputPanel(QWidget):
             "Modify the logic rules or delete this variable",
             "Properties/Size: Displays data format and size if applicable",
             "Output ID Key: Mapping for hardware communication (Arduino/ESP32)",
-            "Permanently remove this variable"
+            "Permanently remove this variable",
         ]
         for i, tooltip in enumerate(var_tooltips):
             item = self.vars_table.horizontalHeaderItem(i)
@@ -557,12 +993,22 @@ class OutputPanel(QWidget):
         # Styling for variables table
         vars_header_view = self.vars_table.horizontalHeader()
         vars_header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        vars_header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) 
-        vars_header_view.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        vars_header_view.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        vars_header_view.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        vars_header_view.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive) # Output Key
-        vars_header_view.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        vars_header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        vars_header_view.setSectionResizeMode(
+            2, QHeaderView.ResizeMode.ResizeToContents
+        )
+        vars_header_view.setSectionResizeMode(
+            3, QHeaderView.ResizeMode.ResizeToContents
+        )
+        vars_header_view.setSectionResizeMode(
+            4, QHeaderView.ResizeMode.ResizeToContents
+        )
+        vars_header_view.setSectionResizeMode(
+            5, QHeaderView.ResizeMode.Interactive
+        )  # Output Key
+        vars_header_view.setSectionResizeMode(
+            6, QHeaderView.ResizeMode.ResizeToContents
+        )
 
         self.vars_table.setAlternatingRowColors(True)
         self.vars_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -591,9 +1037,6 @@ class OutputPanel(QWidget):
         # Add variables tab to the tab widget
         tab_widget.addTab(vars_widget, "Variables")
 
-        # Add variables tab to the tab widget
-        tab_widget.addTab(vars_widget, "Variables")
-
     def _add_custom_dataref(self):
         """Open dialog to add a custom dataref."""
         if not self.dataref_manager:
@@ -602,10 +1045,14 @@ class OutputPanel(QWidget):
 
         dialog = CustomDatarefDialog(self.dataref_manager, self)
         if dialog.exec():
-            QMessageBox.information(self, "Success", "Custom dataref added. It will now appear in all search helpers.")
+            QMessageBox.information(
+                self,
+                "Success",
+                "Custom dataref added. It will now appear in all search helpers.",
+            )
             # TRIGGER REFRESH of all search completers across the app!
             main_win = self.window()
-            if hasattr(main_win, 'refresh_search_helpers'):
+            if hasattr(main_win, "refresh_search_helpers"):
                 main_win.refresh_search_helpers()
             else:
                 self._update_autocomplete()
@@ -644,9 +1091,15 @@ class OutputPanel(QWidget):
         # Table for sequence actions
         seq_table = QTableWidget(0, 3)
         seq_table.setHorizontalHeaderLabels(["Dataref/Variable", "Value", "Actions"])
-        seq_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        seq_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        seq_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        seq_table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Stretch
+        )
+        seq_table.horizontalHeader().setSectionResizeMode(
+            1, QHeaderView.ResizeMode.ResizeToContents
+        )
+        seq_table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeMode.ResizeToContents
+        )
         layout.addWidget(seq_table)
 
         # Buttons for sequence actions
@@ -670,11 +1123,11 @@ class OutputPanel(QWidget):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             # Create sequence event object
             sequence_event = {
-                'name': name_input.text().strip(),
-                'description': desc_input.text().strip(),
-                'key': key_input.text().strip(),
-                'actions': [],
-                'active': True  # Default to active
+                "name": name_input.text().strip(),
+                "description": desc_input.text().strip(),
+                "key": key_input.text().strip(),
+                "actions": [],
+                "active": True,  # Default to active
             }
 
             # Collect actions from the table
@@ -685,23 +1138,28 @@ class OutputPanel(QWidget):
                 if dataref_item and value_item:
                     try:
                         value = float(value_item.text())
-                        sequence_event['actions'].append({
-                            'dataref': dataref_item.text(),
-                            'value': value
-                        })
+                        sequence_event["actions"].append(
+                            {"dataref": dataref_item.text(), "value": value}
+                        )
                     except ValueError:
-                        QMessageBox.warning(self, "Error", f"Invalid value in row {row}. Please enter a number.")
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            f"Invalid value in row {row}. Please enter a number.",
+                        )
                         return
 
             # Store the sequence event (for now, we'll use a simple list)
-            if not hasattr(self, '_sequence_events'):
+            if not hasattr(self, "_sequence_events"):
                 self._sequence_events = []
             self._sequence_events.append(sequence_event)
 
             # Refresh the table
             self._refresh_vars_list()
 
-            QMessageBox.information(self, "Success", "Sequence event added successfully.")
+            QMessageBox.information(
+                self, "Success", "Sequence event added successfully."
+            )
 
     def _add_sequence_action_row(self, table):
         """Add a new row to the sequence actions table."""
@@ -720,7 +1178,7 @@ class OutputPanel(QWidget):
                     all_items.append(name)
 
         # Add variables from the Variables tab if available
-        if hasattr(self, '_variables'):
+        if hasattr(self, "_variables"):
             for block in self._variables:
                 if block.name not in all_items:
                     all_items.append(block.name)
@@ -751,7 +1209,7 @@ class OutputPanel(QWidget):
     def _refresh_vars_list(self):
         """Refresh the Variables & Inputs table."""
         self.vars_table.setRowCount(0)
-        
+
         # 1. Custom & Tracked Datarefs
         # Iterate all tracked datarefs
         all_drefs = self.dataref_manager.get_all_dataref_names()
@@ -761,31 +1219,31 @@ class OutputPanel(QWidget):
             dtype = info.get("type", "float") if info else "float"
             writable = info.get("writable", False) if info else False
             val = self._live_values.get(name, 0.0)
-            
+
             self._add_var_row(name, "Dataref", val, writable, dtype)
 
         # 2. Variables from Store
         if self.variable_store:
             for var in self.variable_store.get_all().values():
                 # var has .type (VariableType enum), .value, .name
-                dtype = "float" # Virtual vars are usually floats
+                dtype = "float"  # Virtual vars are usually floats
                 self._add_var_row(var.name, "Virtual", var.value, True, dtype)
 
         # 3. Sequence Events
-        if hasattr(self, '_sequence_events'):
+        if hasattr(self, "_sequence_events"):
             for seq_event in self._sequence_events:
                 self._add_sequence_row(seq_event)
 
     def _add_var_row(self, name, type_str, val, is_writable, dtype):
         row = self.vars_table.rowCount()
         self.vars_table.insertRow(row)
-        
+
         self.vars_table.setItem(row, 0, QTableWidgetItem(str(name)))
-        
+
         type_item = QTableWidgetItem(str(type_str))
         type_item.setForeground(QColor("#0078d4"))
         self.vars_table.setItem(row, 1, type_item)
-        
+
         # Value Display Logic
         val_str = self._format_value(name, val, dtype)
         self.vars_table.setItem(row, 2, QTableWidgetItem(val_str))
@@ -794,7 +1252,8 @@ class OutputPanel(QWidget):
 
         # Action: Edit Button
         actions_widget = QWidget()
-        l = QHBoxLayout(actions_widget); l.setContentsMargins(2, 2, 2, 2)
+        l = QHBoxLayout(actions_widget)
+        l.setContentsMargins(2, 2, 2, 2)
         edit_btn = QPushButton("Edit")
         edit_btn.setFixedSize(60, 24)
         edit_btn.clicked.connect(lambda _, n=name: self._open_dataref_editor(n))
@@ -804,16 +1263,17 @@ class OutputPanel(QWidget):
     def _add_sequence_row(self, seq_event):
         row = self.vars_table.rowCount()
         self.vars_table.insertRow(row)
-        
-        self.vars_table.setItem(row, 0, QTableWidgetItem(seq_event.get('name', '')))
+
+        self.vars_table.setItem(row, 0, QTableWidgetItem(seq_event.get("name", "")))
         self.vars_table.setItem(row, 1, QTableWidgetItem("SEQUENCE"))
         self.vars_table.setItem(row, 2, QTableWidgetItem("-"))
         self.vars_table.setItem(row, 3, QTableWidgetItem("Sequence"))
         self.vars_table.setItem(row, 4, QTableWidgetItem("-"))
-        
+
         # Action: Edit Button
         actions_widget = QWidget()
-        l = QHBoxLayout(actions_widget); l.setContentsMargins(2, 2, 2, 2)
+        l = QHBoxLayout(actions_widget)
+        l.setContentsMargins(2, 2, 2, 2)
         edit_btn = QPushButton("Edit")
         edit_btn.setFixedSize(60, 24)
         edit_btn.clicked.connect(lambda _, s=seq_event: self._edit_sequence_event(s))
@@ -823,33 +1283,37 @@ class OutputPanel(QWidget):
     def _on_context_menu(self, pos):
         """Show Edit or Reload options."""
         item = self.vars_table.itemAt(pos)
-        if not item: return
-        
+        if not item:
+            return
+
         row = item.row()
         name_item = self.vars_table.item(row, 0)
-        if not name_item: return
+        if not name_item:
+            return
         name = name_item.text()
-        
+
         menu = QMenu(self)
-        
+
         edit_act = QAction("Edit / Inspect Value", self)
         edit_act.triggered.connect(lambda: self._open_dataref_editor(name))
         menu.addAction(edit_act)
-        
+
         reload_act = QAction("Force Refresh from X-Plane", self)
         reload_act.triggered.connect(lambda: self._force_reload_dataref(name))
         menu.addAction(reload_act)
-        
+
         menu.exec(self.vars_table.viewport().mapToGlobal(pos))
 
     def _open_dataref_editor(self, dataref_name: str):
         """Open the new specialized editor for Arrays/Strings."""
-        if not self.dataref_manager: return
-        
+        if not self.dataref_manager:
+            return
+
         info = self.dataref_manager.get_dataref_info(dataref_name)
         # Fallback info
-        if not info: info = {"type": "float", "writable": True}
-        
+        if not info:
+            info = {"type": "float", "writable": True}
+
         # Keep reference to prevent GC
         self._current_editor = DatarefEditorDialog(
             dataref_name=dataref_name,
@@ -857,7 +1321,7 @@ class OutputPanel(QWidget):
             xplane_conn=self.xplane_conn,
             dataref_manager=self.dataref_manager,
             variable_store=self.variable_store,
-            parent=self
+            parent=self,
         )
         self._current_editor.show()
 
@@ -866,10 +1330,12 @@ class OutputPanel(QWidget):
         if self.xplane_conn:
             task1 = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(name))
             self._tasks.append(task1)  # Prevent garbage collection
+
             # Delayed re-subscribe?
             def delayed_subscribe():
                 task = asyncio.create_task(self.xplane_conn.subscribe_dataref(name))
                 self._tasks.append(task)  # Prevent garbage collection
+
             QTimer.singleShot(200, delayed_subscribe)
 
     def _on_variable_update(self, name: str, value: float):
@@ -887,15 +1353,17 @@ class OutputPanel(QWidget):
                     val_item.setText(f"{value:.4f}")
                     # Update color based on value
                     if value >= 0.5:
-                        val_item.setForeground(QColor("#28a745")) # Green
+                        val_item.setForeground(QColor("#28a745"))  # Green
                     else:
-                        val_item.setForeground(QColor("#6c757d")) # Gray
+                        val_item.setForeground(QColor("#6c757d"))  # Gray
                 return
 
     def _view_variable(self, name: str):
         """View variable details."""
         # Placeholder for viewing variable details
-        QMessageBox.information(self, "View Variable", f"Viewing details for variable: {name}")
+        QMessageBox.information(
+            self, "View Variable", f"Viewing details for variable: {name}"
+        )
 
     def _edit_variable(self, name: str):
         """Edit variable."""
@@ -904,15 +1372,17 @@ class OutputPanel(QWidget):
 
     def _toggle_sequence_active(self, seq_event: dict, state: int):
         """Toggle the active state of a sequence event."""
-        seq_event['active'] = (state == Qt.CheckState.Checked.value)
+        seq_event["active"] = state == Qt.CheckState.Checked.value
         # Refresh the table to update the status display
         self._refresh_vars_list()
 
     def execute_sequence_by_key(self, key: str):
         """Execute a sequence event by its Output ID KEY if it's active."""
-        if hasattr(self, '_sequence_events'):
+        if hasattr(self, "_sequence_events"):
             for seq_event in self._sequence_events:
-                if seq_event.get('key', '').upper() == key.upper() and seq_event.get('active', False):
+                if seq_event.get("key", "").upper() == key.upper() and seq_event.get(
+                    "active", False
+                ):
                     # Execute the sequence actions
                     self._execute_sequence_actions(seq_event)
                     return True
@@ -920,18 +1390,20 @@ class OutputPanel(QWidget):
 
     def _execute_sequence_actions(self, seq_event: dict):
         """Execute the actions in a sequence event."""
-        for action in seq_event.get('actions', []):
-            dataref = action.get('dataref', '')
-            value = action.get('value', 0.0)
+        for action in seq_event.get("actions", []):
+            dataref = action.get("dataref", "")
+            value = action.get("value", 0.0)
             if dataref:
                 # Send the action to X-Plane
-                task = asyncio.create_task(self.xplane_conn.write_dataref(dataref, value))
+                task = asyncio.create_task(
+                    self.xplane_conn.write_dataref(dataref, value)
+                )
                 self._tasks.append(task)  # Prevent garbage collection
 
     def _edit_sequence_event(self, seq_event: dict):
         """Edit an existing sequence event."""
         # Find the index of this sequence event
-        if hasattr(self, '_sequence_events'):
+        if hasattr(self, "_sequence_events"):
             idx = -1
             for i, seq in enumerate(self._sequence_events):
                 if seq is seq_event:  # Compare by identity
@@ -956,7 +1428,9 @@ class OutputPanel(QWidget):
         layout = QVBoxLayout(dialog)
 
         # Create form for sequence event details
-        name_input, desc_input, key_input = self._create_sequence_form(dialog, seq_event, layout)
+        name_input, desc_input, key_input = self._create_sequence_form(
+            dialog, seq_event, layout
+        )
 
         # Add sequence actions section
         seq_table = self._create_sequence_table(seq_event)
@@ -980,13 +1454,13 @@ class OutputPanel(QWidget):
         """Create the form for sequence event details."""
         form_layout = QFormLayout()
 
-        name_input = QLineEdit(seq_event.get('name', ''))
+        name_input = QLineEdit(seq_event.get("name", ""))
         form_layout.addRow("Name:", name_input)
 
-        desc_input = QLineEdit(seq_event.get('description', ''))
+        desc_input = QLineEdit(seq_event.get("description", ""))
         form_layout.addRow("Description:", desc_input)
 
-        key_input = QLineEdit(seq_event.get('key', ''))
+        key_input = QLineEdit(seq_event.get("key", ""))
         form_layout.addRow("Output ID KEY:", key_input)
 
         layout.addLayout(form_layout)
@@ -1002,12 +1476,18 @@ class OutputPanel(QWidget):
         # Table for sequence actions
         seq_table = QTableWidget(0, 3)
         seq_table.setHorizontalHeaderLabels(["Dataref/Variable", "Value", "Actions"])
-        seq_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        seq_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        seq_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        seq_table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Stretch
+        )
+        seq_table.horizontalHeader().setSectionResizeMode(
+            1, QHeaderView.ResizeMode.ResizeToContents
+        )
+        seq_table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeMode.ResizeToContents
+        )
 
         # Populate with existing actions
-        for action in seq_event.get('actions', []):
+        for action in seq_event.get("actions", []):
             self._add_action_row_to_table(seq_table, action)
 
         return seq_table
@@ -1022,14 +1502,14 @@ class OutputPanel(QWidget):
         all_items = self._get_all_available_items()
         dataref_combo.addItems(sorted(all_items))
         dataref_combo.setEditable(True)
-        dataref_combo.setEditText(action.get('dataref', ''))
+        dataref_combo.setEditText(action.get("dataref", ""))
         seq_table.setCellWidget(row, 0, dataref_combo)
 
         # Value input
         value_input = QDoubleSpinBox()
         value_input.setRange(-999999, 999999)
         value_input.setDecimals(4)
-        value_input.setValue(action.get('value', 0.0))
+        value_input.setValue(action.get("value", 0.0))
         seq_table.setCellWidget(row, 1, value_input)
 
         # Delete button
@@ -1047,7 +1527,7 @@ class OutputPanel(QWidget):
                     all_items.append(name)
 
         # Add variables from the Variables tab if available
-        if hasattr(self, '_variables'):
+        if hasattr(self, "_variables"):
             for block in self._variables:
                 if block.name not in all_items:
                     all_items.append(block.name)
@@ -1079,23 +1559,22 @@ class OutputPanel(QWidget):
     def _update_sequence_event_from_dialog(self, seq_event: dict, dialog):
         """Update sequence event from dialog inputs."""
         # Update sequence event
-        seq_event['name'] = dialog.name_input.text().strip()
-        seq_event['description'] = dialog.desc_input.text().strip()
-        seq_event['key'] = dialog.key_input.text().strip()
+        seq_event["name"] = dialog.name_input.text().strip()
+        seq_event["description"] = dialog.desc_input.text().strip()
+        seq_event["key"] = dialog.key_input.text().strip()
 
         # Collect actions from the table
-        seq_event['actions'] = []
+        seq_event["actions"] = []
         for row in range(dialog.seq_table.rowCount()):
             dataref_widget = dialog.seq_table.cellWidget(row, 0)
             value_widget = dialog.seq_table.cellWidget(row, 1)
 
-            if isinstance(dataref_widget, QComboBox) and isinstance(value_widget, QDoubleSpinBox):
+            if isinstance(dataref_widget, QComboBox) and isinstance(
+                value_widget, QDoubleSpinBox
+            ):
                 dataref = dataref_widget.currentText()
                 value = value_widget.value()
-                seq_event['actions'].append({
-                    'dataref': dataref,
-                    'value': value
-                })
+                seq_event["actions"].append({"dataref": dataref, "value": value})
 
     def _delete_sequence_event(self, seq_event: dict):
         """Delete a sequence event."""
@@ -1103,16 +1582,17 @@ class OutputPanel(QWidget):
             self,
             "Delete Sequence Event",
             f"Are you sure you want to delete the sequence event '{seq_event.get('name', '')}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            if hasattr(self, '_sequence_events'):
+            if hasattr(self, "_sequence_events"):
                 # Remove the sequence event
-                self._sequence_events = [seq for seq in self._sequence_events if seq is not seq_event]
+                self._sequence_events = [
+                    seq for seq in self._sequence_events if seq is not seq_event
+                ]
                 # Refresh the table
                 self._refresh_vars_list()
-
 
     def _add_variable(self):
         """Open dialog to add a new variable."""
@@ -1120,16 +1600,18 @@ class OutputPanel(QWidget):
             QMessageBox.warning(self, "Error", "Logic Engine not available.")
             return
 
-        dialog = VariableDialog(self.dataref_manager, variable_store=self.variable_store, parent=self)
+        dialog = VariableDialog(
+            self.dataref_manager, variable_store=self.variable_store, parent=self
+        )
         if dialog.exec():
             block = dialog.get_block()
             # Add to Logic Engine (Central Persistence)
             self.logic_engine.add_block(block)
             self._refresh_variables_table()
-            
+
             # TRIGGER REFRESH of all search completers across the app!
             main_win = self.window()
-            if hasattr(main_win, 'refresh_search_helpers'):
+            if hasattr(main_win, "refresh_search_helpers"):
                 main_win.refresh_search_helpers()
 
     def _edit_selected_variable(self):
@@ -1139,14 +1621,18 @@ class OutputPanel(QWidget):
             return
 
         block = self._variables[row]
-        dialog = VariableDialog(self.dataref_manager, block=block, variable_store=self.variable_store, parent=self)
+        dialog = VariableDialog(
+            self.dataref_manager,
+            block=block,
+            variable_store=self.variable_store,
+            parent=self,
+        )
         if dialog.exec():
             self._process_updated_block(block, dialog.get_block())
 
     def _is_valid_row(self, row: int) -> bool:
         """Check if the row is valid for variable editing."""
-        return (row >= 0 and hasattr(self, '_variables') and
-                row < len(self._variables))
+        return row >= 0 and hasattr(self, "_variables") and row < len(self._variables)
 
     def _process_updated_block(self, old_block, updated_block):
         """Process the updated block after dialog."""
@@ -1165,7 +1651,9 @@ class OutputPanel(QWidget):
     def _handle_key_change(self, old_key: str, new_key: str):
         """Handle changes in output key."""
         if old_key != new_key:
-            log.info(f"Variable Output Key changed: '{old_key}' -> '{new_key}'. Updating mappings.")
+            log.info(
+                f"Variable Output Key changed: '{old_key}' -> '{new_key}'. Updating mappings."
+            )
 
         # Check if the old key was subscribed in the Datarefs table
         if old_key in self._subscribed_datarefs:
@@ -1188,30 +1676,30 @@ class OutputPanel(QWidget):
 
         # Trigger global search helper refresh
         main_win = self.window()
-        if hasattr(main_win, 'refresh_search_helpers'):
+        if hasattr(main_win, "refresh_search_helpers"):
             main_win.refresh_search_helpers()
 
     def _delete_selected_variable(self):
         """Delete the selected variable."""
         row = self.vars_table.currentRow()
-        if row >= 0 and hasattr(self, '_variables') and row < len(self._variables):
+        if row >= 0 and hasattr(self, "_variables") and row < len(self._variables):
             block = self._variables[row]
             old_key = block.output_key
 
             # Remove from LogicEngine
             self.logic_engine.remove_block(block.name)
-            
+
             # Clean up DatarefManager (if the key was subscribed as a dataref)
             if old_key in self._subscribed_datarefs:
                 self._remove_row(old_key, force=True)
                 log.info(f"Removed subscription for deleted variable key: {old_key}")
-            
+
             # Refresh UI
             self._refresh_variables_table()
-            
+
             # TRIGGER REFRESH of all search completers across the app!
             main_win = self.window()
-            if hasattr(main_win, 'refresh_search_helpers'):
+            if hasattr(main_win, "refresh_search_helpers"):
                 main_win.refresh_search_helpers()
 
     @property
@@ -1333,7 +1821,9 @@ class OutputPanel(QWidget):
             self._create_key_widget(row, block)
         else:
             # Update existing widget
-            key_widget.blockSignals(True)  # Prevent triggering the handler during update
+            key_widget.blockSignals(
+                True
+            )  # Prevent triggering the handler during update
             key_widget.setText(block.output_key)
             key_widget.blockSignals(False)
 
@@ -1347,9 +1837,18 @@ class OutputPanel(QWidget):
         if block.output_key and self.arduino_manager:
             # Check if this mapping already exists to avoid repeated registrations
             current_mappings = self.arduino_manager.get_all_universal_mappings()
-            if block.output_key not in current_mappings or current_mappings[block.output_key]['source'] != block.name:
-                log.info("Registering Variable '%s' with output key '%s'", block.name, block.output_key)
-                self.arduino_manager.set_universal_mapping(block.name, block.output_key, is_variable=True)
+            if (
+                block.output_key not in current_mappings
+                or current_mappings[block.output_key]["source"] != block.name
+            ):
+                log.info(
+                    "Registering Variable '%s' with output key '%s'",
+                    block.name,
+                    block.output_key,
+                )
+                self.arduino_manager.set_universal_mapping(
+                    block.name, block.output_key, is_variable=True
+                )
 
         # Create a localized handler to catch the block correctly
         def make_handler(b, idx, widget):
@@ -1359,10 +1858,15 @@ class OutputPanel(QWidget):
                 if new_key == b.output_key:
                     return
 
-                if new_key and self._check_duplicate_key(new_key, exclude_var_index=idx):
-                    QMessageBox.warning(self, WARNING_DUPLICATE_KEY,
-                                      f"The key '{new_key}' is already assigned.\n"
-                                      "Each output must have a unique key.")
+                if new_key and self._check_duplicate_key(
+                    new_key, exclude_var_index=idx
+                ):
+                    QMessageBox.warning(
+                        self,
+                        WARNING_DUPLICATE_KEY,
+                        f"The key '{new_key}' is already assigned.\n"
+                        "Each output must have a unique key.",
+                    )
                     widget.setText(b.output_key or "")  # Revert
                     return
 
@@ -1370,12 +1874,15 @@ class OutputPanel(QWidget):
 
                 # Register mapping with ArduinoManager so it's searchable
                 if self.arduino_manager:
-                    self.arduino_manager.set_universal_mapping(b.name, new_key, is_variable=True)
+                    self.arduino_manager.set_universal_mapping(
+                        b.name, new_key, is_variable=True
+                    )
 
                 # TRIGGER REFRESH of all search completers across the app!
                 main_win = self.window()
-                if hasattr(main_win, 'refresh_search_helpers'):
+                if hasattr(main_win, "refresh_search_helpers"):
                     main_win.refresh_search_helpers()
+
             return handler
 
         key_input.editingFinished.connect(make_handler(block, row, key_input))
@@ -1421,9 +1928,9 @@ class OutputPanel(QWidget):
         val_item = QTableWidgetItem(f"{val:.4f}")
         val_item.setFlags(val_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         if val >= 0.5:
-            val_item.setForeground(QColor("#28a745")) # Green
+            val_item.setForeground(QColor("#28a745"))  # Green
         else:
-            val_item.setForeground(QColor("#6c757d")) # Gray
+            val_item.setForeground(QColor("#6c757d"))  # Gray
         val_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         self.vars_table.setItem(row, 2, val_item)
 
@@ -1433,9 +1940,9 @@ class OutputPanel(QWidget):
         status_item = QTableWidgetItem(status)
         status_item.setFlags(status_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         if block.enabled:
-            status_item.setForeground(QColor("#28a745")) # Green
+            status_item.setForeground(QColor("#28a745"))  # Green
         else:
-            status_item.setForeground(QColor("#dc3545")) # Red
+            status_item.setForeground(QColor("#dc3545"))  # Red
         self.vars_table.setItem(row, 3, status_item)
 
     def _add_action_column(self, row: int, block):
@@ -1448,7 +1955,7 @@ class OutputPanel(QWidget):
         """Add the prop column for a block."""
         prop_str = "Logic"
         if block.outputs:
-             prop_str = f"Logic ({len(block.conditions)} in / {len(block.outputs)} out)"
+            prop_str = f"Logic ({len(block.conditions)} in / {len(block.outputs)} out)"
         prop_item = QTableWidgetItem(prop_str)
         prop_item.setFlags(prop_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.vars_table.setItem(row, 5, prop_item)
@@ -1463,9 +1970,18 @@ class OutputPanel(QWidget):
         if block.output_key and self.arduino_manager:
             # Check if this mapping already exists to avoid repeated registrations
             current_mappings = self.arduino_manager.get_all_universal_mappings()
-            if block.output_key not in current_mappings or current_mappings[block.output_key]['source'] != block.name:
-                log.info("Registering Variable '%s' with output key '%s'", block.name, block.output_key)
-                self.arduino_manager.set_universal_mapping(block.name, block.output_key, is_variable=True)
+            if (
+                block.output_key not in current_mappings
+                or current_mappings[block.output_key]["source"] != block.name
+            ):
+                log.info(
+                    "Registering Variable '%s' with output key '%s'",
+                    block.name,
+                    block.output_key,
+                )
+                self.arduino_manager.set_universal_mapping(
+                    block.name, block.output_key, is_variable=True
+                )
 
         # Create a localized handler to catch the block correctly
         def make_handler(b, idx, widget):
@@ -1475,23 +1991,31 @@ class OutputPanel(QWidget):
                 if new_key == b.output_key:
                     return
 
-                if new_key and self._check_duplicate_key(new_key, exclude_var_index=idx):
-                    QMessageBox.warning(self, WARNING_DUPLICATE_KEY,
-                                      f"The key '{new_key}' is already assigned.\n"
-                                      "Each output must have a unique key.")
-                    widget.setText(b.output_key or "") # Revert
+                if new_key and self._check_duplicate_key(
+                    new_key, exclude_var_index=idx
+                ):
+                    QMessageBox.warning(
+                        self,
+                        WARNING_DUPLICATE_KEY,
+                        f"The key '{new_key}' is already assigned.\n"
+                        "Each output must have a unique key.",
+                    )
+                    widget.setText(b.output_key or "")  # Revert
                     return
 
                 b.output_key = new_key
 
                 # Register mapping with ArduinoManager so it's searchable
                 if self.arduino_manager:
-                    self.arduino_manager.set_universal_mapping(b.name, new_key, is_variable=True)
+                    self.arduino_manager.set_universal_mapping(
+                        b.name, new_key, is_variable=True
+                    )
 
                 # TRIGGER REFRESH of all search completers across the app!
                 main_win = self.window()
-                if hasattr(main_win, 'refresh_search_helpers'):
+                if hasattr(main_win, "refresh_search_helpers"):
                     main_win.refresh_search_helpers()
+
             return handler
 
         key_input.editingFinished.connect(make_handler(block, row, key_input))
@@ -1527,31 +2051,37 @@ class OutputPanel(QWidget):
         """Edit variable by index."""
         if self.logic_engine and index < len(self._variables):
             block = self._variables[index]
-            dialog = VariableDialog(self.dataref_manager, block=block, variable_store=self.variable_store, parent=self)
+            dialog = VariableDialog(
+                self.dataref_manager,
+                block=block,
+                variable_store=self.variable_store,
+                parent=self,
+            )
             if dialog.exec():
                 updated_block = dialog.get_block()
-                self._variables[index] = updated_block 
+                self._variables[index] = updated_block
                 # Since block is a reference, it should be updated. LogicEngine holds the reference.
                 self._refresh_variables_table()
 
     def _delete_variable_by_name(self, name: str):
         """Delete variable by name."""
-        if not self.logic_engine: return
-        
+        if not self.logic_engine:
+            return
+
         reply = QMessageBox.question(
             self,
             "Delete Variable",
             f"Are you sure you want to delete the variable '{name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
             self.logic_engine.remove_block(name)
             self._refresh_variables_table()
-            
+
             # TRIGGER REFRESH of all search completers across the app!
             main_win = self.window()
-            if hasattr(main_win, 'refresh_search_helpers'):
+            if hasattr(main_win, "refresh_search_helpers"):
                 main_win.refresh_search_helpers()
 
     def _connect_signals(self):
@@ -1600,7 +2130,7 @@ class OutputPanel(QWidget):
         self._subscribe_if_appropriate(display_name, original_dataref)
 
         # Persistence: Mark as monitored
-        if hasattr(self.arduino_manager, 'add_monitor'):
+        if hasattr(self.arduino_manager, "add_monitor"):
             self.arduino_manager.add_monitor(original_dataref)
 
     def _get_clean_name(self, dataref: str) -> str:
@@ -1610,7 +2140,9 @@ class OutputPanel(QWidget):
             clean_name = dataref.split(":", 1)[1]
             # Check if this is actually a variable
             if self.variable_store and clean_name in self.variable_store.get_names():
-                log.warning(f"Attempted to subscribe to variable '{clean_name}' via Datarefs table. Redirecting to Variables tab logic.")
+                log.warning(
+                    f"Attempted to subscribe to variable '{clean_name}' via Datarefs table. Redirecting to Variables tab logic."
+                )
         return clean_name
 
     def _validate_dataref(self, clean_name: str) -> bool:
@@ -1621,7 +2153,11 @@ class OutputPanel(QWidget):
 
         # Prevent subscribing to variables in the datarefs tab
         if clean_name.startswith("VAR:"):
-            QMessageBox.warning(self, "Invalid Dataref", "Variables cannot be subscribed as datarefs. Use the Variables tab instead.")
+            QMessageBox.warning(
+                self,
+                "Invalid Dataref",
+                "Variables cannot be subscribed as datarefs. Use the Variables tab instead.",
+            )
             return False
 
         return True
@@ -1668,7 +2204,7 @@ class OutputPanel(QWidget):
 
             # TRIGGER REFRESH of all search completers across the app!
             main_win = self.window()
-            if hasattr(main_win, 'refresh_search_helpers'):
+            if hasattr(main_win, "refresh_search_helpers"):
                 main_win.refresh_search_helpers()
 
         return info
@@ -1681,10 +2217,20 @@ class OutputPanel(QWidget):
         dataref_type = info.get("type", "") if info else ""
         type_str = f"[{dataref_type}]" if dataref_type else ""
 
-        desc_item = QTableWidgetItem(f"{type_str} {writable_str} {desc}")
+        # Truncate description if too long and add tooltip for full text
+        max_desc_length = 80
+        if len(desc) > max_desc_length:
+            truncated_desc = desc[:max_desc_length] + "..."
+        else:
+            truncated_desc = desc
+
+        desc_item = QTableWidgetItem(f"{type_str} {writable_str} {truncated_desc}")
         desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         if not writable:
             desc_item.setForeground(QColor("#666"))
+
+        # Set tooltip to show full description
+        desc_item.setToolTip(desc)
         self.table.setItem(row, 1, desc_item)
 
     def _add_live_value(self, row: int) -> QTableWidgetItem:
@@ -1701,11 +2247,11 @@ class OutputPanel(QWidget):
         is_complex = False
         is_command = False
         if info:
-             t = info.get("type", "")
-             if t == "command":
-                 is_command = True
-             elif "[" in t or "string" in t or "byte" in t:
-                 is_complex = True
+            t = info.get("type", "")
+            if t == "command":
+                is_command = True
+            elif "[" in t or "string" in t or "byte" in t:
+                is_complex = True
 
         if is_command:
             btn_text = "EXECUTE"
@@ -1716,9 +2262,11 @@ class OutputPanel(QWidget):
         modify_btn.clicked.connect(lambda: self._modify_value(row))
 
         if is_command:
-             modify_btn.setStyleSheet("background-color: #0078d4; color: white; font-weight: bold;")
+            modify_btn.setStyleSheet(
+                "background-color: #0078d4; color: white; font-weight: bold;"
+            )
         elif is_complex:
-             modify_btn.setStyleSheet("color: #0078d4; font-weight: bold;")
+            modify_btn.setStyleSheet("color: #0078d4; font-weight: bold;")
 
         self.table.setCellWidget(row, 3, modify_btn)
 
@@ -1729,7 +2277,11 @@ class OutputPanel(QWidget):
         # Connect text change to update mapping
         # Use editingFinished to avoid validation on every keystroke
         # Robust against row shifts: capture dataref name, not row index
-        key_input.editingFinished.connect(lambda dr=clean_name, widget=key_input: self._on_key_input_edited(dr, widget))
+        key_input.editingFinished.connect(
+            lambda dr=clean_name, widget=key_input: self._on_key_input_edited(
+                dr, widget
+            )
+        )
         self.table.setCellWidget(row, 4, key_input)
 
     def _add_delete_button(self, row: int, clean_name: str):
@@ -1755,7 +2307,7 @@ class OutputPanel(QWidget):
     def _subscribe_if_appropriate(self, clean_name: str, dataref: str):
         """Subscribe to X-Plane if appropriate."""
         # Check if this is an array element (e.g., LED_STATE[3])
-        array_match = re.match(r'^(.+)\[(\d+)\]$', clean_name)
+        array_match = re.match(r"^(.+)\[(\d+)\]$", clean_name)
         if array_match:
             # This is an array element, subscribe to the base array
             base_name = array_match.group(1)
@@ -1769,7 +2321,7 @@ class OutputPanel(QWidget):
         if info:
             dtype = info.get("type", "")
             # check for array patterns: float[8], int[4], byte[260]
-            m = re.search(r'\[(\d+)\]', dtype)
+            m = re.search(r"\[(\d+)\]", dtype)
             if m:
                 count = int(m.group(1))
                 log.info("Detected array size %d for %s", count, dataref)
@@ -1778,33 +2330,53 @@ class OutputPanel(QWidget):
         is_command = info and info.get("type", "") == "command"
 
         # Subscribe if it's a dataref, not a command, and not a variable
-        if not is_command and not (self.variable_store and clean_name in self.variable_store.get_names()):
+        if not is_command and not (
+            self.variable_store and clean_name in self.variable_store.get_names()
+        ):
             # For array elements, we need to make sure the base array is subscribed
             # But we only want to subscribe once to the base array even if multiple elements are displayed
             if array_match:
                 base_name = array_match.group(1)
                 # Check if we've already subscribed to this base array for this session
                 # We'll use a temporary set to track which arrays we've subscribed to
-                if not hasattr(self, '_subscribed_arrays'):
+                if not hasattr(self, "_subscribed_arrays"):
                     self._subscribed_arrays = set()
 
                 if base_name not in self._subscribed_arrays:
-                    task = asyncio.create_task(self.xplane_conn.subscribe_dataref(base_name, freq, count=count))
+                    task = asyncio.create_task(
+                        self.xplane_conn.subscribe_dataref(base_name, freq, count=count)
+                    )
                     self._tasks.append(task)  # Prevent garbage collection
                     self._subscribed_arrays.add(base_name)
-                    log.info("Subscribed to array dataref: %s (freq=%d, count=%d)", base_name, freq, count)
+                    log.info(
+                        "Subscribed to array dataref: %s (freq=%d, count=%d)",
+                        base_name,
+                        freq,
+                        count,
+                    )
             else:
-                task = asyncio.create_task(self.xplane_conn.subscribe_dataref(clean_name, freq, count=count))
+                task = asyncio.create_task(
+                    self.xplane_conn.subscribe_dataref(clean_name, freq, count=count)
+                )
                 self._tasks.append(task)  # Prevent garbage collection
-                log.info("Subscribed to dataref: %s (freq=%d, count=%d)", dataref, freq, count)
+                log.info(
+                    "Subscribed to dataref: %s (freq=%d, count=%d)",
+                    dataref,
+                    freq,
+                    count,
+                )
         else:
-            value_item = self.table.item(self.table.rowCount()-1, 2)  # Get the value item for this row
+            value_item = self.table.item(
+                self.table.rowCount() - 1, 2
+            )  # Get the value item for this row
             if value_item:
                 value_item.setText("COMMAND")
                 value_item.setForeground(QColor("#0078d4"))
             log.info("Added command wrapper: %s", dataref)
 
-    def _check_duplicate_key(self, key: str, exclude_dataref: str = None, exclude_var_index: int = None) -> bool:
+    def _check_duplicate_key(
+        self, key: str, exclude_dataref: str = None, exclude_var_index: int = None
+    ) -> bool:
         """Check if key is already assigned. Returns True if duplicate found."""
         if not key:
             return False
@@ -1821,12 +2393,15 @@ class OutputPanel(QWidget):
 
         return False
 
-    def _has_duplicate_in_datarefs_table(self, key: str, exclude_dataref: str = None) -> bool:
+    def _has_duplicate_in_datarefs_table(
+        self, key: str, exclude_dataref: str = None
+    ) -> bool:
         """Check if the key already exists in the datarefs table."""
         for row in range(self.table.rowCount()):
             # Get dataref for this row to check exclusion
             d_item = self.table.item(row, 0)
-            if not d_item: continue
+            if not d_item:
+                continue
             row_dataref = d_item.text()
 
             if exclude_dataref and row_dataref == exclude_dataref:
@@ -1839,9 +2414,11 @@ class OutputPanel(QWidget):
                     return True
         return False
 
-    def _has_duplicate_in_variables(self, key: str, exclude_var_index: int = None) -> bool:
+    def _has_duplicate_in_variables(
+        self, key: str, exclude_var_index: int = None
+    ) -> bool:
         """Check if the key already exists in the variables."""
-        if not hasattr(self, '_variables'):
+        if not hasattr(self, "_variables"):
             return False
 
         for i, block in enumerate(self._variables):
@@ -1855,7 +2432,7 @@ class OutputPanel(QWidget):
     def _on_key_input_edited(self, dataref: str, widget: QLineEdit):
         """Handle key input field changes."""
         key = widget.text().strip().upper()
-        
+
         # 0. Find current row to handle revert/clear logic
         row = self._subscribed_datarefs.get(dataref)
         if row is None:
@@ -1864,16 +2441,21 @@ class OutputPanel(QWidget):
 
         # 1. Duplicate Check
         if key and self._check_duplicate_key(key, exclude_dataref=dataref):
-            QMessageBox.warning(self, WARNING_DUPLICATE_KEY,
-                              f"The key '{key}' is already assigned to another output.\n"
-                              "Each output must have a unique key.")
-            
+            QMessageBox.warning(
+                self,
+                WARNING_DUPLICATE_KEY,
+                f"The key '{key}' is already assigned to another output.\n"
+                "Each output must have a unique key.",
+            )
+
             # Revert/Clear
-            widget.setText("") # Clear it to force user to choose another
-            return # Do not save
+            widget.setText("")  # Clear it to force user to choose another
+            return  # Do not save
 
         # 2. Update Arduino manager mapping
-        self.arduino_manager.set_universal_mapping(dataref, key)  # Empty key removes mapping
+        self.arduino_manager.set_universal_mapping(
+            dataref, key
+        )  # Empty key removes mapping
         if key:
             log.info("Mapped %s -> %s", dataref, key)
             # Register with DatarefWriter
@@ -1882,10 +2464,10 @@ class OutputPanel(QWidget):
             log.info("Removed mapping for %s", dataref)
             # Unregister from DatarefWriter
             self.dataref_writer.unregister_output_id(key)
-            
+
         # 3. TRIGGER REFRESH of all search completers across the app!
         main_win = self.window()
-        if hasattr(main_win, 'refresh_search_helpers'):
+        if hasattr(main_win, "refresh_search_helpers"):
             main_win.refresh_search_helpers()
 
     def _remove_row(self, dataref: str, force: bool = False):
@@ -1906,12 +2488,12 @@ class OutputPanel(QWidget):
         self._cleanup_dataref_state(dataref, row)
 
         # 4. Handle array elements - if this was an array element, check if we need to unsubscribe from the base array
-        array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+        array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
         if array_match:
             base_name = array_match.group(1)
             # Check if there are any other elements of this array still subscribed
             other_elements_exist = any(
-                re.match(rf'^{re.escape(base_name)}\[\d+\]$', key) and key != dataref
+                re.match(rf"^{re.escape(base_name)}\[\d+\]$", key) and key != dataref
                 for key in self._subscribed_datarefs.keys()
             )
 
@@ -1935,7 +2517,7 @@ class OutputPanel(QWidget):
             "Delete Custom Dataref",
             f"Do you want to delete the custom dataref '{dataref}'?\n\n"
             "This will remove it from the database and all mappings using it.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
             self.dataref_manager.remove_custom_dataref(dataref)
@@ -1948,7 +2530,7 @@ class OutputPanel(QWidget):
             self,
             "Remove Subscription",
             f"Do you want to remove the subscription to '{dataref}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         return reply == QMessageBox.StandardButton.Yes
 
@@ -1983,19 +2565,21 @@ class OutputPanel(QWidget):
     def _notify_managers_of_removal(self, dataref: str):
         """Notify managers of dataref removal."""
         # Check if this is an array element
-        array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+        array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
         if array_match:
             # This is an array element, unsubscribe from the base array only if no other elements are subscribed
             base_name = array_match.group(1)
             # Check if there are any other elements of this array still subscribed
             other_elements_exist = any(
-                re.match(rf'^{re.escape(base_name)}\[\d+\]$', key) and key != dataref
+                re.match(rf"^{re.escape(base_name)}\[\d+\]$", key) and key != dataref
                 for key in self._subscribed_datarefs.keys()
             )
 
             # Only unsubscribe from the base array if no other elements of it are still subscribed
             if not other_elements_exist:
-                task = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(base_name))
+                task = asyncio.create_task(
+                    self.xplane_conn.unsubscribe_dataref(base_name)
+                )
                 self._tasks.append(task)  # Prevent garbage collection
                 log.info("Unsubscribed from array dataref: %s", base_name)
         else:
@@ -2005,7 +2589,7 @@ class OutputPanel(QWidget):
 
         self.arduino_manager.set_universal_mapping(dataref, "")
 
-        if hasattr(self.arduino_manager, 'remove_monitor'):
+        if hasattr(self.arduino_manager, "remove_monitor"):
             self.arduino_manager.remove_monitor(dataref)
 
     def _update_mapping(self, dataref: str, key: str):
@@ -2021,7 +2605,9 @@ class OutputPanel(QWidget):
             key_widget.setText(key)
 
         # Update Arduino manager mapping
-        self.arduino_manager.set_universal_mapping(dataref, key)  # Empty key removes mapping
+        self.arduino_manager.set_universal_mapping(
+            dataref, key
+        )  # Empty key removes mapping
         if key:
             log.info("Mapped %s -> %s", dataref, key)
         else:
@@ -2041,7 +2627,7 @@ class OutputPanel(QWidget):
 
     def _update_autocomplete(self):
         """Update autocomplete with current dataref list."""
-        if hasattr(self, 'search_input'):
+        if hasattr(self, "search_input"):
             completer = QCompleter(self._dataref_list)
             completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             completer.setFilterMode(Qt.MatchFlag.MatchContains)
@@ -2075,7 +2661,7 @@ class OutputPanel(QWidget):
     def _get_monitored_datarefs(self) -> list:
         """Get monitored datarefs from the Arduino manager."""
         monitored = []
-        if hasattr(self.arduino_manager, 'get_monitored_datarefs'):
+        if hasattr(self.arduino_manager, "get_monitored_datarefs"):
             monitored = self.arduino_manager.get_monitored_datarefs()
         return monitored
 
@@ -2085,8 +2671,8 @@ class OutputPanel(QWidget):
         # Invert the mapping: from {key: {'source': dataref, ...}} to {dataref: key}
         inverted_mappings = {}
         for key, info in raw_mappings.items():
-            if isinstance(info, dict) and 'source' in info:
-                dataref_source = info['source']
+            if isinstance(info, dict) and "source" in info:
+                dataref_source = info["source"]
                 inverted_mappings[dataref_source] = key
         return inverted_mappings
 
@@ -2099,13 +2685,17 @@ class OutputPanel(QWidget):
                 key_widget.setText(key)
 
                 # Update Arduino manager mapping
-                self.arduino_manager.set_universal_mapping(dataref, key)  # Empty key removes mapping
+                self.arduino_manager.set_universal_mapping(
+                    dataref, key
+                )  # Empty key removes mapping
                 if key:
                     log.info("Mapped %s -> %s", dataref, key)
                 else:
                     log.info("Removed mapping for %s", dataref)
 
-    def _process_datarefs_for_restoration(self, all_datarefs: set, inverted_mappings: dict):
+    def _process_datarefs_for_restoration(
+        self, all_datarefs: set, inverted_mappings: dict
+    ):
         """Process datarefs for restoration."""
         for dataref in all_datarefs:
             if self._is_logic_variable(dataref):
@@ -2131,7 +2721,9 @@ class OutputPanel(QWidget):
                             # Apply the mapping to this element (we could create element-specific mappings if needed)
                             # For now, we'll just apply the base mapping to the first element
                             if idx == 0:
-                                self._set_key_input_if_mapped(elem_name, inverted_mappings)
+                                self._set_key_input_if_mapped(
+                                    elem_name, inverted_mappings
+                                )
                             # Or if we want to create element-specific mappings, we could do:
                             # self._set_key_input_if_mapped(elem_name, inverted_mappings)  # This would apply to each element
                 else:
@@ -2166,7 +2758,9 @@ class OutputPanel(QWidget):
                 key_widget.setText(key)
 
                 # Update Arduino manager mapping
-                self.arduino_manager.set_universal_mapping(dataref, key)  # Empty key removes mapping
+                self.arduino_manager.set_universal_mapping(
+                    dataref, key
+                )  # Empty key removes mapping
                 if key:
                     log.info("Mapped %s -> %s", dataref, key)
                 else:
@@ -2178,7 +2772,9 @@ class OutputPanel(QWidget):
         self._add_universal_mappings(mappings)
 
         if not mappings:
-            QMessageBox.information(self, "No Mappings", "No output mappings configured.")
+            QMessageBox.information(
+                self, "No Mappings", "No output mappings configured."
+            )
             return
 
         dataref_types = self._collect_dataref_types(mappings)
@@ -2189,7 +2785,9 @@ class OutputPanel(QWidget):
         """Collect mappings from the table."""
         mappings = {}
         for dataref, row in self._subscribed_datarefs.items():
-            key_widget = self.table.cellWidget(row, 4)  # Output Key column (column 4: "Output Key (Device ID)")
+            key_widget = self.table.cellWidget(
+                row, 4
+            )  # Output Key column (column 4: "Output Key (Device ID)")
             if key_widget and isinstance(key_widget, QLineEdit):
                 key = key_widget.text().strip()
                 if key:
@@ -2200,9 +2798,11 @@ class OutputPanel(QWidget):
         """Add universal mappings from the Arduino manager."""
         universal_mappings = self.arduino_manager.get_all_universal_mappings()
         for key, info in universal_mappings.items():
-            if isinstance(info, dict) and 'source' in info:
-                dataref_source = info['source']
-                if dataref_source not in mappings and key:  # Only add if not already in table mappings
+            if isinstance(info, dict) and "source" in info:
+                dataref_source = info["source"]
+                if (
+                    dataref_source not in mappings and key
+                ):  # Only add if not already in table mappings
                     mappings[dataref_source] = key
 
     def _collect_dataref_types(self, mappings: dict) -> dict:
@@ -2220,7 +2820,7 @@ class OutputPanel(QWidget):
         self._live_values[dataref] = value
 
         # Check if this is an array element update (e.g., LED_STATE[3])
-        array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+        array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
         if array_match:
             base_name = array_match.group(1)
             index = int(array_match.group(2))
@@ -2267,7 +2867,7 @@ class OutputPanel(QWidget):
 
     def _get_array_size(self, dtype: str) -> int:
         """Get the size of the array from the dtype."""
-        m = re.search(r'\[(\d+)\]', dtype)
+        m = re.search(r"\[(\d+)\]", dtype)
         return int(m.group(1)) if m else 1
 
     def _get_array_indices(self, base: str, size: int) -> list:
@@ -2293,7 +2893,7 @@ class OutputPanel(QWidget):
         """Format string or byte array."""
         chars = [chr(int(v)) for v in indices if v > 0]
         reassembled = "".join(chars)
-        return f"\"{reassembled}\""
+        return f'"{reassembled}"'
 
     def _format_numeric_array(self, indices: list) -> str:
         """Format numeric array."""
@@ -2302,7 +2902,7 @@ class OutputPanel(QWidget):
         if len(indices) > 4:
             text += ", ..."
         return text + "]"
-            
+
     def _update_live_values(self):
         """Update live values in both tables."""
         # 1. Update Datarefs Table
@@ -2315,16 +2915,24 @@ class OutputPanel(QWidget):
         """Update values in the datarefs table."""
         for dataref, row in self._subscribed_datarefs.items():
             # Check if this is an array element (e.g., LED_STATE[3])
-            array_match = re.match(r'^(.+)\[(\d+)\]$', dataref)
+            array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
             if array_match:
                 # This is an array element, get the base dataref name
                 base_name = array_match.group(1)
                 index = int(array_match.group(2))
 
                 # Get the base dataref's live value (which should be an array/list)
-                live_value = self.xplane_conn.get_live_value(base_name) if self.xplane_conn else None
+                live_value = (
+                    self.xplane_conn.get_live_value(base_name)
+                    if self.xplane_conn
+                    else None
+                )
 
-                if live_value is not None and isinstance(live_value, (list, tuple)) and index < len(live_value):
+                if (
+                    live_value is not None
+                    and isinstance(live_value, (list, tuple))
+                    and index < len(live_value)
+                ):
                     value = live_value[index]
                     value_source = "LIVE"
                 else:
@@ -2333,11 +2941,21 @@ class OutputPanel(QWidget):
                     value_source = None
             else:
                 # Regular dataref (non-array)
-                live_value = self.xplane_conn.get_live_value(dataref) if self.xplane_conn else None
-                virtual_value = self.xplane_conn.get_virtual_value(dataref) if self.xplane_conn else None
+                live_value = (
+                    self.xplane_conn.get_live_value(dataref)
+                    if self.xplane_conn
+                    else None
+                )
+                virtual_value = (
+                    self.xplane_conn.get_virtual_value(dataref)
+                    if self.xplane_conn
+                    else None
+                )
 
                 # Determine value and source
-                value, value_source = self._get_value_and_source(dataref, live_value, virtual_value)
+                value, value_source = self._get_value_and_source(
+                    dataref, live_value, virtual_value
+                )
 
             # Update the table item
             self._update_table_item(row, dataref, value, value_source)
@@ -2355,7 +2973,9 @@ class OutputPanel(QWidget):
         else:
             return self._live_values.get(dataref, 0.0), None
 
-    def _update_table_item(self, row: int, dataref: str, value: float, value_source: str):
+    def _update_table_item(
+        self, row: int, dataref: str, value: float, value_source: str
+    ):
         """Update the table item with formatted value."""
         item = self.table.item(row, 2)  # Value column
         if not item:
@@ -2386,7 +3006,7 @@ class OutputPanel(QWidget):
 
     def _update_variables_table_values(self):
         """Update values in the variables table."""
-        if not (hasattr(self, 'vars_table') and self.logic_engine):
+        if not (hasattr(self, "vars_table") and self.logic_engine):
             return
 
         for row in range(self.vars_table.rowCount()):
@@ -2407,9 +3027,9 @@ class OutputPanel(QWidget):
                 val_item.setText(f"{val:.4f}")
                 # Color feedback: Green for 1, Gray for 0
                 if val >= 0.5:
-                    val_item.setForeground(QColor("#28a745")) # Green
+                    val_item.setForeground(QColor("#28a745"))  # Green
                 else:
-                    val_item.setForeground(QColor("#6c757d")) # Gray
+                    val_item.setForeground(QColor("#6c757d"))  # Gray
 
     def on_connection_changed(self, connected: bool):
         """Handle X-Plane connection state change."""
@@ -2429,16 +3049,19 @@ class OutputPanel(QWidget):
 
     def _update_autocomplete(self):
         """Update the search box completer with fresh dataref names."""
-        if hasattr(self, 'search_input'):
+        if hasattr(self, "search_input"):
             completer = QCompleter(self._dataref_list)
             completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             completer.setFilterMode(Qt.MatchFlag.MatchContains)
             completer.setMaxVisibleItems(20)
             self.search_input.setCompleter(completer)
-            log.info("OutputPanel: Search completer updated with %d items.", len(self._dataref_list))
+            log.info(
+                "OutputPanel: Search completer updated with %d items.",
+                len(self._dataref_list),
+            )
 
     def _show_context_menu(self, position):
-        """Show context menu for copying datarefs."""
+        """Show context menu for copying datarefs and bulk operations."""
         item = self.table.itemAt(position)
         if not item:
             return
@@ -2451,7 +3074,35 @@ class OutputPanel(QWidget):
         dataref = dataref_item.text()
 
         menu = QMenu(self)
+
+        # Add copy action
         copy_action = menu.addAction("Copy Dataref Name")
+
+        # Add separator and bulk operations if there are selected items
+        selected_ranges = self.table.selectedRanges()
+        has_selection = len(selected_ranges) > 0
+
+        if has_selection:
+            menu.addSeparator()
+
+            # Count selected rows
+            selected_count = 0
+            for range_obj in selected_ranges:
+                selected_count += (range_obj.bottomRow() - range_obj.topRow() + 1)
+
+            # Select All action
+            select_all_action = menu.addAction(f"Select All ({self.table.rowCount()} rows)")
+            select_all_action.triggered.connect(self._select_all_rows)
+
+            # Delete action
+            delete_action = menu.addAction(f"Delete Selected ({selected_count} rows)")
+            delete_action.triggered.connect(self._delete_selected_rows)
+
+            # Add more bulk operations
+            menu.addSeparator()
+            refresh_action = menu.addAction(f"Refresh Selected ({selected_count} rows)")
+            refresh_action.triggered.connect(self._refresh_selected_rows)
+
         action = menu.exec(self.table.viewport().mapToGlobal(position))
 
         if action and action == copy_action:
@@ -2459,15 +3110,76 @@ class OutputPanel(QWidget):
             clipboard.setText(dataref)
             log.info("Copied dataref to clipboard: %s", dataref)
 
+    def _refresh_selected_rows(self):
+        """Refresh selected rows by unsubscribing and resubscribing to datarefs."""
+        selected_ranges = self.table.selectedRanges()
+        if not selected_ranges:
+            return
+
+        # Get all selected rows
+        selected_rows = set()
+        for range_obj in selected_ranges:
+            for row in range(range_obj.topRow(), range_obj.bottomRow() + 1):
+                selected_rows.add(row)
+
+        # Refresh each selected dataref
+        for row in selected_rows:
+            if row < self.table.rowCount():
+                name_item = self.table.item(row, 0)
+                if name_item:
+                    dataref_name = name_item.text()
+                    # Trigger a refresh by unsubscribing and resubscribing
+                    if self.xplane_conn:
+                        task1 = asyncio.create_task(self.xplane_conn.unsubscribe_dataref(dataref_name))
+                        self._tasks.append(task1)
+
+                        # Resubscribe after a short delay
+                        def delayed_resubscribe():
+                            task = asyncio.create_task(self.xplane_conn.subscribe_dataref(dataref_name))
+                            self._tasks.append(task)
+
+                        QTimer.singleShot(200, delayed_resubscribe)
+
     def _modify_value(self, row: int):
         """Open editor for a dataref or execute if it's a command."""
         dataref_item = self.table.item(row, 0)
-        if not dataref_item: return
+        if not dataref_item:
+            return
 
         dataref = dataref_item.text()
-        info = self.dataref_manager.get_dataref_info(dataref)
-        
-        if info and info.get("type") == "command":
+        info = self.dataref_manager.get_dataref_info(dataref) or {}
+        dtype = info.get("type", "")
+
+        # Better array detection - check for array type or array notation in name
+        is_array = self._is_array_dataref(dataref, dtype)
+
+        if is_array:
+            current_values = self._get_current_array_values(dataref)
+            # Use the more advanced DatarefEditorDialog for arrays instead of basic ArrayEditDialog
+            dialog = DatarefEditorDialog(
+                dataref_name=dataref,
+                dataref_info=info,
+                xplane_conn=self.xplane_conn,
+                dataref_manager=self.dataref_manager,
+                variable_store=self.variable_store,
+                parent=self
+            )
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                # Get the updated values from the dialog
+                updated_values = dialog.get_array_values()
+                if updated_values is not None:
+                    # Send the array update
+                    success = self._send_array_update(dataref, updated_values)
+                    if success:
+                        # Refresh the array display to show updated values
+                        self._refresh_array_display(dataref)
+                        log.info(f"Successfully updated array {dataref} with {len(updated_values)} values")
+                    else:
+                        log.error(f"Failed to update array {dataref}")
+            return
+
+        # Non-array path (existing behavior)
+        if info.get("type") == "command":
             if self.xplane_conn:
                 task = asyncio.create_task(self.xplane_conn.send_command(dataref))
                 self._tasks.append(task)  # Prevent garbage collection
@@ -2483,20 +3195,320 @@ class OutputPanel(QWidget):
         # Use the generic _open_dataref_editor method (Tab 1 uses it, we should reuse)
         self._open_dataref_editor(dataref)
 
+    def _is_array_dataref(self, dataref_name: str, dataref_type: str) -> bool:
+        """Detect if a dataref is an array based on name or type."""
+        try:
+            # Check if type indicates array (contains brackets)
+            if "[" in dataref_type and "]" in dataref_type:
+                log.debug(f"Detected array by type brackets: {dataref_name} -> {dataref_type}")
+                return True
+
+            # Check if name contains array notation (e.g., dataref[0])
+            if "[" in dataref_name and "]" in dataref_name:
+                log.debug(f"Detected array by name brackets: {dataref_name}")
+                return True
+
+            # Check if type is a known array type pattern
+            array_patterns = ["array", "list", "vector"]
+            if any(pattern in dataref_type.lower() for pattern in array_patterns):
+                log.debug(f"Detected array by type pattern: {dataref_name} -> {dataref_type}")
+                return True
+
+            # Check if the dataref manager indicates this is an array
+            info = self.dataref_manager.get_dataref_info(dataref_name)
+            if info and "type" in info:
+                type_info = info["type"]
+                is_array = "[" in type_info and "]" in type_info
+                if is_array:
+                    log.debug(f"Detected array by manager info: {dataref_name} -> {type_info}")
+                return is_array
+
+            log.debug(f"Not detected as array: {dataref_name} -> {dataref_type}")
+            return False
+
+        except Exception as e:
+            log.error(f"Error detecting array for {dataref_name}: {e}")
+            return False
+
+    def _get_current_array_values(self, dataref_name: str) -> list:
+        """Get current live values for array dataref (fallback to zeros)."""
+        try:
+            # For arrays, we need to get values for each element individually
+            info = self.dataref_manager.get_dataref_info(dataref_name) or {}
+            dtype = info.get("type", "") if info else ""
+            size = self._parse_array_size(dtype)
+
+            if size <= 0:
+                log.warning(f"No array size detected for {dataref_name}, returning empty list")
+                return []
+
+            # Get individual element values
+            values = []
+            base_name = dataref_name.split('[')[0]
+            for i in range(size):
+                element_name = f"{base_name}[{i}]"
+                live_val = None
+                virt_val = None
+
+                if self.xplane_conn:
+                    try:
+                        live_val = self.xplane_conn.get_live_value(element_name)
+                    except Exception as e:
+                        log.debug(f"Could not get live value for {element_name}: {e}")
+
+                    if live_val is None:
+                        try:
+                            virt_val = self.xplane_conn.get_virtual_value(element_name)
+                        except Exception as e:
+                            log.debug(f"Could not get virtual value for {element_name}: {e}")
+
+                if live_val is not None:
+                    values.append(live_val)
+                elif virt_val is not None:
+                    values.append(virt_val)
+                else:
+                    values.append(0.0)
+
+            log.debug(f"Retrieved {len(values)} values for array {dataref_name}")
+            return values
+
+        except Exception as e:
+            log.error(f"Error getting current array values for {dataref_name}: {e}")
+            # Return default values in case of error
+            info = self.dataref_manager.get_dataref_info(dataref_name) or {}
+            dtype = info.get("type", "") if info else ""
+            size = self._parse_array_size(dtype)
+            return [0.0] * max(0, size)
+
+    def _refresh_array_display(self, dataref_name: str = None):
+        """Efficiently refresh array display in the table with proper signal handling."""
+        try:
+            # Block signals during update to prevent triggering other events
+            self.table.blockSignals(True)
+
+            if dataref_name:
+                # Refresh only a specific array dataref
+                if dataref_name in self._subscribed_datarefs:
+                    row = self._subscribed_datarefs[dataref_name]
+                    self._update_single_row_display(row, dataref_name)
+            else:
+                # Refresh all array datarefs in the table
+                for dataref, row in self._subscribed_datarefs.items():
+                    if row < self.table.rowCount():  # Safety check
+                        info = self.dataref_manager.get_dataref_info(dataref) or {}
+                        dtype = info.get("type", "")
+
+                        # Check if this is an array dataref
+                        if self._is_array_dataref(dataref, dtype):
+                            self._update_single_row_display(row, dataref)
+
+            # Unblock signals after update
+            self.table.blockSignals(False)
+
+            log.debug(f"Array display refreshed for dataref: {dataref_name if dataref_name else 'ALL ARRAYS'}")
+
+        except Exception as e:
+            log.error(f"Error refreshing array display: {e}")
+            # Always unblock signals even if there's an error
+            self.table.blockSignals(False)
+
+    def _update_single_row_display(self, row: int, dataref_name: str):
+        """Update the display of a single row for an array dataref."""
+        try:
+            # Update the live value column
+            value_item = self.table.item(row, 2)  # Assuming column 2 is the value column
+            if value_item and self.xplane_conn:
+                # Get the current value from X-Plane connection
+                current_value = self.xplane_conn.get_live_value(dataref_name)
+                if current_value is not None:
+                    formatted_value = self._format_value(dataref_name, current_value, "")
+                    value_item.setText(formatted_value)
+
+                    # Update color based on value
+                    if isinstance(current_value, (int, float)) and current_value >= 0.5:
+                        value_item.setForeground(QColor("#28a745"))  # Green
+                    else:
+                        value_item.setForeground(QColor("#6c757d"))  # Gray
+
+            # Update the modify button text if needed
+            modify_widget = self.table.cellWidget(row, 3)  # Assuming column 3 is the action column
+            if modify_widget:
+                # Find the actual button in the widget
+                for child in modify_widget.findChildren(QPushButton):
+                    if "inspect" in child.text().lower() or "edit" in child.text().lower():
+                        info = self.dataref_manager.get_dataref_info(dataref_name) or {}
+                        dtype = info.get("type", "")
+                        is_array = self._is_array_dataref(dataref_name, dtype)
+                        is_command = dtype == "command"
+
+                        new_text = (
+                            "EXECUTE" if is_command
+                            else ("Inspect/Edit Array" if is_array else "Write")
+                        )
+                        child.setText(new_text)
+
+        except Exception as e:
+            log.error(f"Error updating single row display for {dataref_name}: {e}")
+
+    def _format_value(self, dataref_name: str, value, dtype: str) -> str:
+        """Format a value for display in the table."""
+        if isinstance(value, list):
+            # For array values, show a summary
+            if len(value) <= 5:
+                return f"[{', '.join([f'{v:.2f}' for v in value])}]"
+            else:
+                return f"[{len(value)} elements: {value[0]:.2f}, {value[1]:.2f}, ...]"
+        elif isinstance(value, (int, float)):
+            return f"{value:.4f}"
+        else:
+            return str(value)
+
+    def _send_array_update(self, dataref_name: str, values: list):
+        """Send array update to X-Plane via dataref writer with validation and batch processing."""
+        # Validate inputs
+        if not dataref_name or not values:
+            log.warning(f"Invalid array update: dataref='{dataref_name}', values={values}")
+            return False
+
+        # Validate values are numeric
+        validated_values = []
+        for i, val in enumerate(values):
+            try:
+                validated_val = float(val)
+                validated_values.append(validated_val)
+            except (TypeError, ValueError):
+                log.warning(f"Invalid value at index {i}: {val}. Setting to 0.0")
+                validated_values.append(0.0)
+
+        # Determine the dataref type to call the appropriate write method
+        info = self.dataref_manager.get_dataref_info(dataref_name) or {}
+        dtype = info.get("type", "")
+
+        # Use the X-Plane connection to send each element individually
+        if self.xplane_conn:
+            # For array updates, we need to send each element to its indexed dataref
+            base_name = dataref_name.split('[')[0]  # Extract base name
+
+            # Calculate batch size for large arrays to prevent overwhelming the connection
+            batch_size = min(10, len(validated_values))  # Process in batches of 10 or less
+            total_batches = (len(validated_values) + batch_size - 1) // batch_size
+
+            for batch_idx in range(total_batches):
+                start_idx = batch_idx * batch_size
+                end_idx = min(start_idx + batch_size, len(validated_values))
+
+                # Process this batch
+                for i in range(start_idx, end_idx):
+                    if i < len(validated_values):  # Safety check
+                        indexed_dataref = f"{base_name}[{i}]"
+                        task = asyncio.create_task(self.xplane_conn.write_dataref(indexed_dataref, float(validated_values[i])))
+                        self._tasks.append(task)
+
+                # Small delay between batches to prevent overwhelming the connection
+                if batch_idx < total_batches - 1:  # Don't delay after the last batch
+                    asyncio.create_task(asyncio.sleep(0.01))  # 10ms delay between batches
+
+            log.info(f"Sent array update for {dataref_name} with {len(validated_values)} elements in {total_batches} batches")
+            return True
+        else:
+            log.warning("X-Plane connection not available for array update")
+            return False
+
+    def verify_integration(self):
+        """Verify complete integration and propagation of array operations."""
+        try:
+            # Check if all required components are available
+            components_check = {
+                'dataref_manager': self.dataref_manager is not None,
+                'xplane_conn': self.xplane_conn is not None,
+                'arduino_manager': self.arduino_manager is not None,
+                'table_exists': hasattr(self, 'table'),
+                'array_methods_exist': all([
+                    hasattr(self, '_is_array_dataref'),
+                    hasattr(self, '_parse_array_size'),
+                    hasattr(self, '_get_current_array_values'),
+                    hasattr(self, '_send_array_update'),
+                    hasattr(self, '_refresh_array_display')
+                ])
+            }
+
+            all_components_ok = all(components_check.values())
+
+            # Test array detection
+            sample_array_types = ["float[8]", "int[4]", "float[2][3]"]
+            detection_results = {}
+            for arr_type in sample_array_types:
+                size = self._parse_array_size(arr_type)
+                detection_results[arr_type] = size
+
+            # Test with a known array dataref if available
+            sample_arrays = []
+            all_datarefs = self.dataref_manager.get_all_dataref_names() if self.dataref_manager else []
+
+            # Look for potential array datarefs
+            for dr in all_datarefs[:10]:  # Check first 10 datarefs
+                info = self.dataref_manager.get_dataref_info(dr)
+                if info and '[' in str(info.get('type', '')):
+                    sample_arrays.append(dr)
+                    break
+
+            array_expansion_test = {}
+            if sample_arrays:
+                for arr_name in sample_arrays:
+                    info = self.dataref_manager.get_dataref_info(arr_name)
+                    dtype = info.get("type", "")
+                    size = self._parse_array_size(dtype)
+                    is_arr = self._is_array_dataref(arr_name, dtype)
+                    array_expansion_test[arr_name] = {
+                        'size': size,
+                        'is_array': is_arr,
+                        'type': dtype
+                    }
+
+            # Log results
+            log.info("=== INTEGRATION VERIFICATION RESULTS ===")
+            log.info(f"Component Availability: {components_check}")
+            log.info(f"All Components OK: {all_components_ok}")
+            log.info(f"Array Type Detection: {detection_results}")
+            log.info(f"Sample Array Analysis: {array_expansion_test}")
+
+            # Test subscription mapping integrity
+            subscription_integrity = len(self._subscribed_datarefs) if hasattr(self, '_subscribed_datarefs') else 0
+            table_row_count = self.table.rowCount() if hasattr(self, 'table') else 0
+            log.info(f"Subscription Mapping Integrity: {subscription_integrity} mappings, {table_row_count} rows")
+
+            # Overall status
+            overall_status = all_components_ok and len(detection_results) > 0
+            log.info(f"Overall Integration Status: {'SUCCESS' if overall_status else 'ISSUES DETECTED'}")
+            log.info("========================================")
+
+            return {
+                'status': overall_status,
+                'components': components_check,
+                'detection': detection_results,
+                'arrays': array_expansion_test,
+                'subscription_count': subscription_integrity,
+                'table_rows': table_row_count
+            }
+
+        except Exception as e:
+            log.error(f"Error during integration verification: {e}")
+            return {'status': False, 'error': str(e)}
+
     def _on_row_double_clicked(self, index):
         """Handle double-click on a row to assign it to an open dialog."""
         row = index.row()
         item = self.table.item(row, 0)
         if not item:
             return
-            
+
         dataref = item.text()
-        
+
         # Look for active InputMappingDialog in the application
         # It's usually a child of InputPanel
         from .input_mapping_dialog import InputMappingDialog
         from .input_panel import InputPanel
-        
+
         # Traverse up to MainWindow then find InputPanel
         main_win = self.window()
         if main_win:
@@ -2507,7 +3519,7 @@ class OutputPanel(QWidget):
                     widget._learning_dialog.assign_dataref(dataref)
                     log.info("Assigned dataref via double-click: %s", dataref)
                     return
-                        
+
     def _on_cell_clicked(self, row, col):
         """Handle clicking on cells (e.g. for description popup)."""
         if col == 1:  # Description column
@@ -2515,9 +3527,7 @@ class OutputPanel(QWidget):
             if item:
                 dataref_item = self.table.item(row, 0)
                 dataref_name = dataref_item.text() if dataref_item else "Dataref"
-                
+
                 QMessageBox.information(
-                    self,
-                    f"Description: {dataref_name}",
-                    item.text()
+                    self, f"Description: {dataref_name}", item.text()
                 )

@@ -39,53 +39,236 @@ class DatarefManager:
         self.load_custom_datarefs()
         self._build_categories()
 
+    def parse_array_type(self, type_str: str) -> tuple[int, list[int]]:
+        """
+        Parse array type string and return (flattened_size, dimensions_list).
+
+        Examples:
+        - 'float[8]' -> (8, [8])
+        - 'float[8][4]' -> (32, [8, 4])
+        - 'int[5][3][2]' -> (30, [5, 3, 2])
+        - 'float' -> (0, [])
+        """
+        if not type_str:
+            return 0, []
+
+        # Find all bracketed numbers
+        dimension_matches = re.findall(r'\[(\d+)\]', type_str)
+
+        if not dimension_matches:
+            return 0, []  # Not an array
+
+        # Convert to integers
+        dimensions = [int(dim) for dim in dimension_matches]
+
+        # Calculate flattened size by multiplying all dimensions
+        flattened_size = 1
+        for dim in dimensions:
+            flattened_size *= dim
+
+        return flattened_size, dimensions
+
     def get_array_size_from_type(self, type_str: str) -> int:
         """Extract array size from type string (e.g., 'float[8]' -> 8)."""
-        if not type_str:
-            return 0
-        m = re.search(r'\[(\d+)\]', type_str)
-        return int(m.group(1)) if m else 0
+        flattened_size, _ = self.parse_array_type(type_str)
+        return flattened_size
 
     def get_expanded_datarefs(self):
         """Return datarefs with arrays expanded into per-element entries."""
         out = []
         for name, info in self._database.items():
             type_str = info.get("type", "")
-            size = self.get_array_size_from_type(type_str)
+            flattened_size = info.get("array_size", 0)
 
-            if size > 1:
+            if flattened_size > 0:
                 base = name.split("[")[0]  # Extract base name from array notation
+                dimensions = info.get("dimensions", [])
+
                 # If we have a value that's a list/array, use it; otherwise create placeholder values
-                original_value = info.get("value", [0] * size if isinstance(info.get("value"), list) else 0)
+                original_value = info.get("value", [0] * flattened_size if isinstance(info.get("value"), list) else 0)
 
                 # Handle case where original_value is a list/array
                 if isinstance(original_value, (list, tuple)):
-                    for i in range(min(size, len(original_value))):
-                        out.append({
-                            "name": f"{base}[{i}]",
-                            "type": type_str,
-                            "description": f"{info.get('description', '')} [{i}]",
-                            "writable": info.get("writable", False),
-                            "value": original_value[i],
-                            "custom": info.get("custom", False)
-                        })
+                    # Generate all possible indices for multidimensional arrays
+                    element_indices = self._generate_element_indices(dimensions)
+
+                    for idx, flat_idx in enumerate(element_indices):
+                        if idx < len(original_value):
+                            out.append({
+                                "name": f"{base}{flat_idx}",
+                                "type": type_str,
+                                "description": f"{info.get('description', '')} {flat_idx}",
+                                "writable": info.get("writable", False),
+                                "value": original_value[idx],
+                                "custom": info.get("custom", False),
+                                "base_name": base,
+                                "element_index": flat_idx,
+                                "flat_index": idx
+                            })
+                        else:
+                            # If we don't have enough values, use placeholder
+                            out.append({
+                                "name": f"{base}{flat_idx}",
+                                "type": type_str,
+                                "description": f"{info.get('description', '')} {flat_idx}",
+                                "writable": info.get("writable", False),
+                                "value": 0.0,  # Placeholder value
+                                "custom": info.get("custom", False),
+                                "base_name": base,
+                                "element_index": flat_idx,
+                                "flat_index": idx
+                            })
                 else:
                     # If not a list, create individual entries with placeholder values
-                    for i in range(size):
+                    element_indices = self._generate_element_indices(dimensions)
+
+                    for idx, flat_idx in enumerate(element_indices):
                         out.append({
-                            "name": f"{base}[{i}]",
+                            "name": f"{base}{flat_idx}",
                             "type": type_str,
-                            "description": f"{info.get('description', '')} [{i}]",
+                            "description": f"{info.get('description', '')} {flat_idx}",
                             "writable": info.get("writable", False),
                             "value": 0.0,  # Placeholder value
-                            "custom": info.get("custom", False)
+                            "custom": info.get("custom", False),
+                            "base_name": base,
+                            "element_index": flat_idx,
+                            "flat_index": idx
                         })
             else:
                 # Non-array dataref, add as-is
-                out.append(info.copy())
-                out[-1]["name"] = name
+                info_copy = info.copy()
+                info_copy["name"] = name
+                info_copy["base_name"] = name
+                info_copy["element_index"] = ""
+                info_copy["flat_index"] = -1
+                out.append(info_copy)
 
         return out
+
+    def _generate_element_indices(self, dimensions: list[int]) -> list[str]:
+        """
+        Generate all possible index combinations for multidimensional arrays.
+
+        Examples:
+        - [8] -> ["[0]", "[1]", ..., "[7]"]
+        - [2, 3] -> ["[0][0]", "[0][1]", "[0][2]", "[1][0]", "[1][1]", "[1][2]"]
+        - [2, 3, 4] -> ["[0][0][0]", "[0][0][1]", ..., "[1][2][3]"]
+        """
+        if not dimensions:
+            return []
+
+        # Generate all combinations of indices
+        combinations = [[]]
+
+        for dim_size in dimensions:
+            new_combinations = []
+            for combo in combinations:
+                for i in range(dim_size):
+                    new_combinations.append(combo + [i])
+            combinations = new_combinations
+
+        # Convert to string format like "[0][1][2]"
+        result = []
+        for combo in combinations:
+            index_str = "".join([f"[{idx}]" for idx in combo])
+            result.append(index_str)
+
+        return result
+
+    def get_base_dataref_from_element(self, element_name: str) -> tuple[str, int, list[int]]:
+        """
+        Map a per-element name back to its base dataref and determine the flat index.
+
+        Args:
+            element_name: Name of the element (e.g., "sim/flightmodel/controls/yawb_def[2]")
+
+        Returns:
+            Tuple of (base_name, flat_index, dimensions) or (None, -1, []) if not found
+        """
+        # Extract base name by removing the index part
+        base_match = re.match(r'^(.+?)(\[\d+\].*)$', element_name)
+        if not base_match:
+            return "", -1, []
+
+        base_name = base_match.group(1)
+        index_part = base_match.group(2)  # e.g., "[2][1]"
+
+        # Look up the base dataref in our database
+        if base_name not in self._database:
+            return "", -1, []
+
+        base_info = self._database[base_name]
+        dimensions = base_info.get("dimensions", [])
+
+        if not dimensions:
+            # Not an array, return as-is
+            return base_name, -1, []
+
+        # Parse the indices from the element name
+        indices = []
+        for match in re.finditer(r'\[(\d+)\]', index_part):
+            indices.append(int(match.group(1)))
+
+        # Validate indices against dimensions
+        if len(indices) != len(dimensions):
+            return "", -1, []
+
+        for i, (idx, dim_size) in enumerate(zip(indices, dimensions)):
+            if idx >= dim_size:
+                return "", -1, []
+
+        # Calculate the flat index based on multidimensional indices
+        flat_index = 0
+        multiplier = 1
+
+        # Calculate flat index using row-major order (last dimension changes fastest)
+        for i in range(len(dimensions) - 1, -1, -1):
+            if i == len(dimensions) - 1:
+                flat_index = indices[i]
+            else:
+                flat_index += indices[i] * multiplier
+            multiplier *= dimensions[i]
+
+        return base_name, flat_index, dimensions
+
+    def update_array_element_value(self, element_name: str, value: float) -> bool:
+        """
+        Update a specific element in an array dataref.
+
+        Args:
+            element_name: Name of the element to update (e.g., "sim/flightmodel/controls/yawb_def[2]")
+            value: New value for the element
+
+        Returns:
+            True if update was successful, False otherwise
+        """
+        base_name, flat_index, dimensions = self.get_base_dataref_from_element(element_name)
+
+        if not base_name or flat_index < 0 or not dimensions:
+            return False
+
+        # Get the base dataref info
+        base_info = self._database[base_name]
+        array_size = base_info.get("array_size", 0)
+
+        if array_size <= 0:
+            return False
+
+        # Initialize the value array if it doesn't exist
+        if "value" not in base_info or not isinstance(base_info["value"], list):
+            base_info["value"] = [0.0] * array_size
+
+        # Update the specific element
+        if 0 <= flat_index < len(base_info["value"]):
+            base_info["value"][flat_index] = value
+
+            # Also update the corresponding expanded element in the subscription cache if it exists
+            if element_name in self._subscriptions:
+                self._subscriptions[element_name] = value
+
+            return True
+
+        return False
 
     def _load_database(self) -> None:
         """Load dataref database from JSON file."""
@@ -98,6 +281,24 @@ class DatarefManager:
                 try:
                     with open(db_path, 'r', encoding='utf-8') as f:
                         self._database = json.load(f)
+
+                    # Enhance all entries with array metadata and ensure description field
+                    for name, info in self._database.items():
+                        if "description" not in info:
+                            info["description"] = ""
+
+                        # Add array metadata
+                        type_str = info.get("type", "")
+                        flattened_size, dimensions = self.parse_array_type(type_str)
+                        if flattened_size > 0:
+                            info["array_size"] = flattened_size
+                            info["dimensions"] = dimensions
+                            info["is_array"] = True
+                        else:
+                            info["array_size"] = 0
+                            info["dimensions"] = []
+                            info["is_array"] = False
+
                     log.info("Loaded %d datarefs from: %s", len(self._database), db_path)
                     return
                 except Exception as e:
@@ -142,11 +343,11 @@ class DatarefManager:
     def _create_default_database(self) -> None:
         """Create a minimal default database with common datarefs."""
         log.info("Creating default dataref database...")
-        
+
         self._database = {
             # Gear
             "sim/cockpit2/switches/gear_handle_status": {
-                "type": "int", "writable": True, 
+                "type": "int", "writable": True,
                 "description": "Gear handle: 0=up, 1=down",
                 "category": "gear"
             },
@@ -247,7 +448,20 @@ class DatarefManager:
                 "category": "instruments"
             },
         }
-        
+
+        # Enhance all entries with array metadata
+        for name, info in self._database.items():
+            type_str = info.get("type", "")
+            flattened_size, dimensions = self.parse_array_type(type_str)
+            if flattened_size > 0:
+                info["array_size"] = flattened_size
+                info["dimensions"] = dimensions
+                info["is_array"] = True
+            else:
+                info["array_size"] = 0
+                info["dimensions"] = []
+                info["is_array"] = False
+
         log.info("Created default database with %d datarefs", len(self._database))
     
     def _build_categories(self) -> None:
@@ -347,11 +561,96 @@ class DatarefManager:
         return sorted(set(suggestions))
 
     
+    def __init__(self, variable_store=None, arduino_manager=None, logic_engine=None) -> None:
+        self.variable_store = variable_store
+        self.arduino_manager = arduino_manager
+        self.logic_engine = logic_engine
+
+        self._database: Dict[str, Any] = {}
+        self._subscriptions: Dict[str, float] = {}
+        self._categories: Dict[str, List[str]] = {}
+        self._custom_datarefs: Dict[str, dict] = {}
+
+        # Add cache for frequently accessed descriptions
+        self._description_cache: Dict[str, str] = {}
+
+        self._load_database()
+        self.load_custom_datarefs()
+        self._build_categories()
+
+    def _get_description(self, name: str) -> str:
+        """
+        Retrieve a user-friendly description for a dataref with caching.
+        - Supports prefixed names (XP:, VAR:, ID:)
+        - Handles array elements by consulting element-specific description first, then base
+        - Normalizes placeholder descriptions (e.g., "Custom Dataref", "unknown", "N/A")
+        - Falls back to formatted name if neither element nor base provides a real description
+        """
+        # Check cache first
+        cached = self._description_cache.get(name)
+        if cached is not None:
+            return cached
+
+        # Strip prefixes for lookup
+        lookup_name = name
+        if lookup_name.startswith("XP:"):
+            lookup_name = lookup_name[3:]
+        elif lookup_name.startswith("VAR:"):
+            lookup_name = lookup_name[4:]
+        elif lookup_name.startswith("ID:"):
+            lookup_name = lookup_name[3:]
+
+        # Determine base name if this is an array element (supports multi-dim)
+        base_name = lookup_name.split("[")[0] if "[" in lookup_name else lookup_name
+
+        def is_placeholder(desc: str) -> bool:
+            return (desc or "").strip().lower() in {"custom dataref", "custom datarefs", "unknown", "n/a", ""}
+
+        # 1) Try exact element description
+        info = self._database.get(lookup_name)
+        if info:
+            element_desc = (info.get("description") or "").strip()
+            if not is_placeholder(element_desc):
+                self._description_cache[name] = element_desc
+                return element_desc
+
+        # 2) If element is placeholder or not found and it's an array element, try base dataref
+        if lookup_name != base_name:
+            base_info = self._database.get(base_name)
+            if base_info:
+                base_desc = (base_info.get("description") or "").strip()
+                if not is_placeholder(base_desc):
+                    self._description_cache[name] = base_desc
+                    return base_desc
+
+        # 3) If still not found, but base exists, try any non-empty description on the base
+        if not info and base_name in self._database:
+            base_info = self._database[base_name]
+            base_desc = (base_info.get("description") or "").strip()
+            if base_desc:
+                self._description_cache[name] = base_desc
+                return base_desc
+
+        # 4) Fallback: format from the cleaned lookup/base name
+        fallback_source = base_name if base_name else lookup_name
+        fallback_desc = self._format_description_from_name(fallback_source)
+        self._description_cache[name] = fallback_desc
+        return fallback_desc
+
+    def _format_description_from_name(self, name: str) -> str:
+        """
+        Format a description from a dataref name when no description is available.
+        """
+        # Replace slashes and underscores with spaces, capitalize words
+        formatted = name.replace("/", " ").replace("_", " ").strip()
+        words = [word.capitalize() for word in formatted.split() if word]
+        return " ".join(words)
+
     def get_dataref_info(self, name: str) -> Optional[Dict]:
         """Get information about a specific dataref. Handles prefixed names."""
         if not name:
             return None
-            
+
         # Strip prefixes for lookup
         lookup_name = name
         if lookup_name.startswith("XP:"):
@@ -362,8 +661,107 @@ class DatarefManager:
             # ID mappings are in ArduinoManager, but we might want info from the source dataref if possible
             # For now, just strip it.
             lookup_name = lookup_name[3:]
-            
+
         return self._database.get(lookup_name)
+
+    def get_array_metadata(self, name: str) -> Optional[Dict]:
+        """
+        Get array-specific metadata for a dataref.
+
+        Args:
+            name: Name of the dataref
+
+        Returns:
+            Dictionary with array metadata or None if not an array
+        """
+        info = self.get_dataref_info(name)
+        if not info or not info.get("is_array", False):
+            return None
+
+        return {
+            "is_array": True,
+            "array_size": info.get("array_size", 0),
+            "dimensions": info.get("dimensions", []),
+            "element_type": info.get("type", "").split('[')[0] if '[' in info.get("type", "") else info.get("type", "")
+        }
+
+    def is_array_dataref(self, name: str) -> bool:
+        """
+        Check if a dataref is an array.
+
+        Args:
+            name: Name of the dataref
+
+        Returns:
+            True if the dataref is an array, False otherwise
+        """
+        info = self.get_dataref_info(name)
+        return info.get("is_array", False) if info else False
+
+    def get_array_elements(self, base_name: str) -> List[Dict]:
+        """
+        Get all elements of an array dataref.
+
+        Args:
+            base_name: Base name of the array (e.g., "sim/flightmodel/controls/yawb_def")
+
+        Returns:
+            List of dictionaries representing each array element
+        """
+        info = self.get_dataref_info(base_name)
+        if not info or not info.get("is_array", False):
+            return []
+
+        array_size = info.get("array_size", 0)
+        dimensions = info.get("dimensions", [])
+
+        elements = []
+        base = base_name.split("[")[0]  # Extract base name
+
+        # Generate all possible indices for multidimensional arrays
+        element_indices = self._generate_element_indices(dimensions)
+
+        for idx, element_index in enumerate(element_indices):
+            element_name = f"{base}{element_index}"
+            element_info = {
+                "name": element_name,
+                "base_name": base,
+                "element_index": element_index,
+                "flat_index": idx,
+                "type": info.get("type", ""),
+                "description": f"{info.get('description', '')} {element_index}",
+                "writable": info.get("writable", False),
+                "custom": info.get("custom", False)
+            }
+
+            # Add current value if available
+            if "value" in info and isinstance(info["value"], list) and idx < len(info["value"]):
+                element_info["value"] = info["value"][idx]
+            else:
+                element_info["value"] = 0.0
+
+            elements.append(element_info)
+
+        return elements
+
+    def get_array_base_from_element(self, element_name: str) -> str:
+        """
+        Get the base name of an array from an element name.
+
+        Args:
+            element_name: Name of the array element (e.g., "sim/flightmodel/controls/yawb_def[2]")
+
+        Returns:
+            Base name of the array or empty string if not an array element
+        """
+        # Extract base name by removing the index part
+        match = re.match(r'^(.+?)(?:\[\d+\].*)?$', element_name)
+        if match:
+            base_name = match.group(1)
+            # Check if the base is actually an array in our database
+            if self.is_array_dataref(base_name):
+                return base_name
+        return ""
     
     def get_categories(self) -> List[str]:
         """Get list of all categories."""
@@ -476,6 +874,27 @@ class DatarefManager:
         }
         return self.add_custom_dataref_dict(name, info)
     
+    def reload_database(self) -> bool:
+        """Reload the dataref database from file."""
+        try:
+            # Clear current database
+            self._database.clear()
+
+            # Load fresh database
+            self._load_database()
+
+            # Reload custom datarefs
+            self.load_custom_datarefs()
+
+            # Rebuild categories
+            self._build_categories()
+
+            log.info("Database reloaded successfully")
+            return True
+        except Exception as e:
+            log.error("Failed to reload database: %s", e)
+            return False
+
     def save_database(self) -> bool:
         """Save the database to file (preserves custom datarefs)."""
         # Find the database path
@@ -484,12 +903,12 @@ class DatarefManager:
             if path.exists():
                 db_path = path
                 break
-            
+
         if not db_path:
             # Create in default location
             db_path = POSSIBLE_PATHS[0]
             db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         try:
             with open(db_path, 'w', encoding='utf-8') as f:
                 json.dump(self._database, f, indent=4, sort_keys=True)

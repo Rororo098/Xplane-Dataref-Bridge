@@ -1,0 +1,7 @@
+gui/output_panel_array_edit.py
+Purpose: Add ArrayEditDialog class for per-array popup editor
+
+Insert at line 22 (after existing imports):
+from .output_panel_array_edit import ArrayEditDialog
+
+---

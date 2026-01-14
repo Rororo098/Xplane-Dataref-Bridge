@@ -1,0 +1,32 @@
+---
+gui/output_panel_array_edit.py
+Purpose: Add ArrayEditDialog class for per-array popup editor
+
+Insert at line 42 (after existing imports):
+from .output_panel_array_edit import ArrayEditDialog
+
+---
+
+gui/output_panel.py
+Purpose: Wire array routing to popup, add helpers
+
+Add at line 236 (_modify_value function):
+Before line 236, insert:
+
+# Import popup dialog and add helpers
+def _get_current_array_values(self, dataref_name: str) -> list:
+    """Get current live values for array dataref."""
+    live = self.xplane_conn.get_live_value(dataref_name) if self.xplane_conn else None
+    if isinstance(live, (list, tuple)):
+        return list(live)
+    else:
+        info = self.dataref_manager.get_dataref_info(dataref_name) or {}
+        dtype = info.get("type", "") if info else ""
+        size = self._parse_array_size(dtype)
+        return [0.0] * size if size > 0 else []
+
+def _send_array_update(self, dataref_name: str, values: list):
+    """Send array update to Arduino as comma-separated values."""
+    value_str = ",".join([f"{v:.4f}" if isinstance(v, float) else str(v) for v in values])
+    if self.dataref_writer:
+        self.dataref_writer.send_dataref(dataref_name, value_str)

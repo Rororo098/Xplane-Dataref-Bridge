@@ -13,6 +13,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 
+from utils.dataref_utils import get_display_description
+
 log = logging.getLogger(__name__)
 
 
@@ -54,6 +56,13 @@ class DatarefPanel(QWidget):
         header_layout.addWidget(self.count_label)
 
         header_layout.addStretch()
+
+        # Reload database button
+        self.reload_btn = QPushButton("🔄 Reload DB")
+        self.reload_btn.setMaximumWidth(90)
+        self.reload_btn.setToolTip("Reload dataref database from file")
+        self.reload_btn.clicked.connect(self._reload_database)
+        header_layout.addWidget(self.reload_btn)
 
         # Add custom dataref button
         self.add_custom_btn = QPushButton("➕ Add Custom")
@@ -248,7 +257,7 @@ class DatarefPanel(QWidget):
 
             # Add tooltip
             if info:
-                desc = info.get("description", "")
+                desc = get_display_description(dr, info.get("description"))
                 dtype = info.get("type", "")
                 writable = "writable" if info.get("writable") else "read-only"
 
@@ -372,9 +381,10 @@ class DatarefPanel(QWidget):
 
                 self.info_details.setText(" | ".join(details))
 
-                if info.get("description"):
+                desc = get_display_description(dataref, info.get("description"))
+                if desc:
                     self.info_details.setText(
-                        self.info_details.text() + f"\n{info['description']}"
+                        self.info_details.text() + f"\n{desc}"
                     )
             else:
                 self.info_details.setText("No additional info available")
@@ -611,6 +621,22 @@ class DatarefPanel(QWidget):
             self.dataref_manager.remove_custom_dataref(dataref)
             self.dataref_manager.save_database()
             self._refresh_list()
+
+    def _reload_database(self):
+        """Reload the dataref database from file."""
+        success = self.dataref_manager.reload_database()
+        if success:
+            # Refresh the list after reloading
+            self._refresh_list()
+            QMessageBox.information(
+                self, "Database Reloaded",
+                "Dataref database has been successfully reloaded from file."
+            )
+        else:
+            QMessageBox.critical(
+                self, "Reload Failed",
+                "Failed to reload the dataref database. Check logs for details."
+            )
 
     def _refresh_list(self):
         """Refresh the dataref list."""
