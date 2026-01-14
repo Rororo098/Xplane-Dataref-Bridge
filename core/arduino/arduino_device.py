@@ -27,7 +27,7 @@ class DeviceState(Enum):
     ERROR = auto()
 
 
-@dataclass(slots=True)
+@dataclass
 class ArduinoDevice:
     """Represents a connected Arduino/ESP32 device."""
 

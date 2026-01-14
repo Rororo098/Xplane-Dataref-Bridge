@@ -35,7 +35,15 @@ const char *BOARD_TYPE = "AVR";
 #include "USB.h"
 #include "USBHIDGamepad.h"
 USBHIDGamepad MyJoystick;
+
+// Detect specific ESP32 variant
+#if CONFIG_IDF_TARGET_ESP32S2
+const char *BOARD_TYPE = "ESP32S2";
+#elif CONFIG_IDF_TARGET_ESP32S3
+const char *BOARD_TYPE = "ESP32S3";
+#else
 const char *BOARD_TYPE = "ESP32";
+#endif
 #else
 // --- FALLBACK (Uno, Mega) ---
 // These boards don't support Native USB HID, so they default to Serial only.
@@ -88,21 +96,40 @@ uint32_t espButtons = 0; // 32 Bits, each bit represents one button (0-31)
 // 4. SETUP
 // ================================================================
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // For ESP32-S2/S3: Initialize USB FIRST before Serial
+#if defined(ARDUINO_ARCH_ESP32)
+  USB.begin();
+  delay(1000);
+#endif
+
   // Start Serial communication at 115200 baud.
-  // This matches the baud rate used by the Python Bridge App.
   Serial.begin(115200);
 
+  // Wait for Serial to be ready (ESP32-S2 needs this)
+#if defined(ARDUINO_ARCH_ESP32)
+  unsigned long start = millis();
+  while (!Serial && (millis() - start) < 5000) {
+    delay(100);
+  }
+  delay(500);
+#endif
+
   // Initialize HID Stack (Hybrid Fix)
-  // This line is crucial. Without it, the PC might not detect the device
-  // properly as a Gamepad, causing the "Hybrid" features to fail.
 #if defined(ARDUINO_ARCH_AVR)
   MyJoystick.begin();
 #elif defined(ARDUINO_ARCH_ESP32)
   MyJoystick.begin();
-  USB.begin(); // Starts the internal USB stack on ESP32
 #endif
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  // Startup blink to show device is ready
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+  }
 }
 
 // ================================================================
@@ -112,10 +139,7 @@ void setup() {
 // ================================================================
 void loop() {
   // Check if data is available from the PC
-  while (
-      Serial.available() >
-      0) { //"Is there mail in the mailbox?" This checks if the PC has sent any
-           //data bytes that are waiting to be read. If yes, it enters the loop.
+  while (Serial.available() > 0) {
     char c = (char)Serial.read();
 
     // If we receive a Newline character, the message is complete.
@@ -126,6 +150,11 @@ void loop() {
     // Ignore Carriage Returns (Windows formatting)
     else if (c != '\r') {
       inputBuffer += c; // Add character to bucket
+      
+      // Prevent buffer overflow
+      if (inputBuffer.length() > 128) {
+        inputBuffer = "";
+      }
     }
   }
 

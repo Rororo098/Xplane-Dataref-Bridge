@@ -8,12 +8,137 @@ from typing import Dict, Callable, Optional, List, Any
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
+# Import serial with proper error handling for PyInstaller
 try:
     import serial
     import serial.tools.list_ports
+    import serial.serialwin32  # Explicitly import Windows backend for PyInstaller
+    import serial.serialutil   # Also import serialutil which contains Serial base class
+    import serial.win32       # Import Windows-specific constants
+
     SERIAL_AVAILABLE = True
-except ImportError:
+
+    # Define SerialException and Serial from the imported module
+    SerialException = getattr(serial, 'SerialException', Exception)
+
+    # Try multiple ways to get the Serial class in case of packaging issues
+    Serial = getattr(serial, 'Serial', None)
+    if Serial is None:
+        # If direct access fails, try importing directly
+        try:
+            from serial import Serial
+        except ImportError:
+            # Last resort: try to access from the serial module directly
+            Serial = None  # Reset to None if import failed
+            if hasattr(serial, 'serialwin32'):
+                # On Windows, try to use the Windows-specific implementation
+                try:
+                    Serial = serial.serialwin32.Serial
+                except (AttributeError, ImportError):
+                    Serial = None
+            # If serialwin32 doesn't have it, try other backends
+            if Serial is None:
+                try:
+                    from serial.serialposix import Serial  # For fallback
+                except ImportError:
+                    pass
+
+    if Serial is None:
+        # Create a mock Serial class if not available
+        class Serial:
+            def __init__(self, *args, **kwargs):
+                raise RuntimeError("pyserial Serial class not available")
+            def readline(self): return b""
+            def write(self, data): return len(data) if data else 0
+            @property
+            def in_waiting(self): return 0
+            def close(self): pass
+            @property
+            def is_open(self): return False
+
+    # Ensure critical constants exist in the serial module
+    if not hasattr(serial, 'FIVEBITS'):
+        try:
+            from serial import FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS
+            serial.FIVEBITS = FIVEBITS
+            serial.SIXBITS = SIXBITS
+            serial.SEVENBITS = SEVENBITS
+            serial.EIGHTBITS = EIGHTBITS
+        except ImportError:
+            # Define defaults if import fails
+            serial.FIVEBITS = 5
+            serial.SIXBITS = 6
+            serial.SEVENBITS = 7
+            serial.EIGHTBITS = 8
+
+    if not hasattr(serial, 'STOPBITS_ONE'):
+        try:
+            from serial import STOPBITS_ONE, STOPBITS_ONE_POINT_FIVE, STOPBITS_TWO
+            serial.STOPBITS_ONE = STOPBITS_ONE
+            serial.STOPBITS_ONE_POINT_FIVE = STOPBITS_ONE_POINT_FIVE
+            serial.STOPBITS_TWO = STOPBITS_TWO
+        except ImportError:
+            # Define defaults if import fails
+            serial.STOPBITS_ONE = 1
+            serial.STOPBITS_ONE_POINT_FIVE = 1.5
+            serial.STOPBITS_TWO = 2
+
+    if not hasattr(serial, 'PARITY_NONE'):
+        try:
+            from serial import PARITY_NONE, PARITY_EVEN, PARITY_ODD, PARITY_MARK, PARITY_SPACE
+            serial.PARITY_NONE = PARITY_NONE
+            serial.PARITY_EVEN = PARITY_EVEN
+            serial.PARITY_ODD = PARITY_ODD
+            serial.PARITY_MARK = PARITY_MARK
+            serial.PARITY_SPACE = PARITY_SPACE
+        except ImportError:
+            # Define defaults if import fails
+            serial.PARITY_NONE = 'N'
+            serial.PARITY_EVEN = 'E'
+            serial.PARITY_ODD = 'O'
+            serial.PARITY_MARK = 'M'
+            serial.PARITY_SPACE = 'S'
+
+    # Log the actual file path of the imported module for debugging
+    import logging
+    log = logging.getLogger(__name__)
+    log.info("pyserial imported successfully from: %s", getattr(serial, '__file__', 'None'))
+    log.info("Serial class available: %s", Serial is not None and Serial.__name__)
+    log.info("SerialBase available: %s", hasattr(serial, 'SerialBase'))
+    log.info("FIVEBITS available: %s", hasattr(serial, 'FIVEBITS'))
+    log.info("STOPBITS_ONE available: %s", hasattr(serial, 'STOPBITS_ONE'))
+    log.info("PARITY_NONE available: %s", hasattr(serial, 'PARITY_NONE'))
+
+except ImportError as e:
     SERIAL_AVAILABLE = False
+    # Log the import error for debugging
+    import logging
+    log = logging.getLogger(__name__)
+    log.warning("pyserial import failed: %s", e)
+
+    # Fallback to standard exceptions if all serial imports fail
+    SerialException = Exception  # Use standard exception
+    # Create a mock Serial class that mimics the basic interface
+    class Serial:
+        def __init__(self, *args, **kwargs):
+            # Store parameters but don't actually connect
+            self._port = args[0] if args else None
+            self._baudrate = args[1] if len(args) > 1 else kwargs.get('baudrate', 9600)
+            self._timeout = kwargs.get('timeout', 1.0)
+            self._write_timeout = kwargs.get('write_timeout', 1.0)
+            self._is_open = False
+        def readline(self):
+            return b""
+        def write(self, data):
+            return len(data) if data else 0
+        @property
+        def in_waiting(self):
+            return 0
+        def close(self):
+            self._is_open = False
+        @property
+        def is_open(self):
+            return self._is_open
 
 # Import shared definitions
 from .arduino_device import ArduinoDevice, DeviceState, DeviceType
@@ -32,7 +157,7 @@ class ArduinoManager:
 
     def __init__(self, variable_store=None, dataref_manager=None, xplane_conn=None) -> None:
         self._devices: Dict[str, ArduinoDevice] = {}
-        self._serials: Dict[str, serial.Serial] = {}
+        self._serials: Dict[str, Serial] = {}
         self._threads: Dict[str, threading.Thread] = {}
         self._lock = threading.Lock()
 
@@ -158,12 +283,15 @@ class ArduinoManager:
     def list_ports() -> List[Dict]:
         """Return list of available serial ports with device info."""
         if not SERIAL_AVAILABLE:
+            log.warning("SERIAL_AVAILABLE is False - cannot list ports")
             return []
-        
+
+        log.debug("Attempting to list serial ports...")
         try:
             ports = serial.tools.list_ports.comports()
+            log.info("Found %d serial port(s)", len(ports))
             result = []
-            
+
             for p in ports:
                 info = {
                     "port": p.device,
@@ -176,8 +304,9 @@ class ArduinoManager:
                     "product": p.product,
                     "is_esp32": p.vid in ArduinoManager.ESP32_VIDS if p.vid else False,
                 }
+                log.debug("Port: %s - %s", p.device, p.description)
                 result.append(info)
-            
+
             return result
             
         except Exception as e:
@@ -525,20 +654,52 @@ class ArduinoManager:
         """Main communication loop for a device."""
         port = device.port
         ser = None
-        
+
+        # Check if serial is available in this thread context
+        if not SERIAL_AVAILABLE:
+            log.error("Device loop error on %s: pyserial not available", port)
+            device.transition(DeviceState.ERROR, "pyserial not available")
+            self._notify_update()
+            return
+
         try:
             device.transition(DeviceState.CONNECTING)
             self._notify_update()
-            
+
             # Open serial port
             try:
-                ser = serial.Serial(
-                    device.port,
-                    device.baudrate,
+                log.info("Attempting to open serial port: %s at baudrate: %d", device.port, device.baudrate)
+
+                # Create Serial instance with more detailed parameters
+                ser = Serial(
+                    port=device.port,
+                    baudrate=device.baudrate,
+                    bytesize=8,
+                    parity='N',
+                    stopbits=1,
                     timeout=1.0,
-                    write_timeout=1.0
+                    write_timeout=1.0,
+                    xonxoff=False,
+                    rtscts=False,
+                    dsrdtr=False
                 )
-            except serial.SerialException as e:
+
+                # Verify the connection is established
+                if hasattr(ser, 'is_open') and ser.is_open:
+                    log.info("Serial port opened successfully: %s", device.port)
+                elif hasattr(ser, 'open') and callable(getattr(ser, 'open')):
+                    ser.open()
+                    log.info("Serial port opened via .open() method: %s", device.port)
+                else:
+                    log.warning("Serial port may not be open: %s", device.port)
+
+            except SerialException as e:
+                log.error("SerialException when opening port %s: %s", device.port, e)
+                device.transition(DeviceState.ERROR, f"Cannot open port: {e}")
+                self._notify_update()
+                return
+            except Exception as e:
+                log.error("Unexpected error opening port %s: %s", device.port, e)
                 device.transition(DeviceState.ERROR, f"Cannot open port: {e}")
                 self._notify_update()
                 return
@@ -573,7 +734,7 @@ class ArduinoManager:
             while device.state in (DeviceState.READY, DeviceState.ACTIVE):
                 try:
                     self._process_incoming(device, ser)
-                except serial.SerialException:
+                except SerialException:
                     break
                 
                 time.sleep(0.010)
@@ -598,30 +759,67 @@ class ArduinoManager:
             self._notify_update()
             log.info("Device loop ended for %s", port)
     
-    def _perform_handshake(self, device: ArduinoDevice, ser: serial.Serial) -> bool:
+    def _perform_handshake(self, device: ArduinoDevice, ser) -> bool:
         """Perform handshake with device."""
         try:
+            log.info("Starting handshake on %s", device.port)
+
+            # Flush input buffer before sending HELLO
+            try:
+                ser.reset_input_buffer()
+            except AttributeError:
+                # If reset_input_buffer doesn't exist, try flushInput
+                try:
+                    ser.flushInput()
+                except AttributeError:
+                    # If neither exists, skip flushing
+                    pass
+
+            try:
+                ser.reset_output_buffer()
+            except AttributeError:
+                # If reset_output_buffer doesn't exist, try flushOutput
+                try:
+                    ser.flushOutput()
+                except AttributeError:
+                    # If neither exists, skip flushing
+                    pass
+
             # Send hello
-            ser.write(b"HELLO\n")
-            
+            log.debug("Sending HELLO to %s", device.port)
+            bytes_written = ser.write(b"HELLO\n")
+            try:
+                ser.flush()  # Ensure data is sent
+            except AttributeError:
+                # flush method might not be available in all implementations
+                pass
+            log.debug("Sent %d bytes to %s", bytes_written, device.port)
+
             # Wait for response
             start = time.time()
             while time.time() - start < 5.0:
-                if ser.in_waiting:
+                if hasattr(ser, 'in_waiting') and ser.in_waiting > 0:
+                    log.debug("Data available on %s: %d bytes", device.port, ser.in_waiting)
                     line = ser.readline().decode(errors="ignore").strip()
-                    
-                    if line.startswith("XPDR"):
+                    log.debug("Received from %s: %s", device.port, repr(line))
+
+                    if line and line.startswith("XPDR"):
                         # Handshake format: XPDR;fw=1.0;board=ESP32S2;name=FGCP
+                        log.info("Handshake successful on %s: %s", device.port, line)
                         self._parse_handshake(device, line)
                         return True
-                
-                time.sleep(0.1)
-            
-            log.warning("Handshake timeout on %s", device.port)
+                else:
+                    # Small delay to prevent busy-waiting
+                    time.sleep(0.1)
+
+            log.warning("Handshake timeout on %s after 5 seconds", device.port)
+            log.debug("Port in_waiting: %s", getattr(ser, 'in_waiting', 'not available'))
             return False
-        
+
         except Exception as e:
             log.error("Handshake error on %s: %s", device.port, e)
+            import traceback
+            log.error("Handshake traceback: %s", traceback.format_exc())
             return False
     
     def _parse_handshake(self, device: ArduinoDevice, line: str) -> None:
@@ -658,7 +856,7 @@ class ArduinoManager:
         else:
             return DeviceType.UNKNOWN
     
-    def _process_incoming(self, device: ArduinoDevice, ser: serial.Serial) -> None:
+    def _process_incoming(self, device: ArduinoDevice, ser) -> None:
         """Process incoming messages from device."""
         while ser.in_waiting:
             try:
