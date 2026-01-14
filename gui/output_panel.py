@@ -340,14 +340,17 @@ class OutputPanel(QWidget):
             type_str = dr.get("type", "")
             size = self._parse_array_size(type_str)
 
-            if size > 1:
+            if size >= 1:
                 base = name.split("[")[0]  # Extract base name from array notation
+                log.debug(f"Expanding array {name} (type: {type_str}, size: {size}) -> base: {base}")
                 for idx in range(size):
                     elem_name = f"{base}[{idx}]"
                     value = self._get_value_for_dataref_element(dr, idx)
+                    log.debug(f"  Creating row for element: {elem_name} = {value}")
                     self._add_live_row(elem_name, type_str, value)
             else:
                 value = dr.get("value", 0.0)
+                log.debug(f"  Creating row for scalar: {name} = {value}")
                 self._add_live_row(name, type_str, value)
 
     def _add_live_row(self, display_name, data_type, value):

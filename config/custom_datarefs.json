@@ -784,5 +784,191 @@
         "description": "Custom Dataref",
         "writable": true,
         "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[8]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[9]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[10]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[11]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[12]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[13]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[14]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[15]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[16]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[17]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[18]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[19]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[20]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[21]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[22]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[23]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[24]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/controls/yawb_def[25]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[0]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[1]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[2]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[3]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[4]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[5]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[6]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[7]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel/weight/m_fuel[8]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[8]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[9]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[10]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/cockpit2/radios/actuators/nav_dme_frequency_hz[11]": {
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
     }
 }
