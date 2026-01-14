@@ -1,12 +1,24 @@
 from __future__ import annotations
 import logging
 import asyncio
+from PyQt6.QtWidgets import QApplication
 from core.input_mapper import InputMapper
 from core.profile_manager import ProfileManager
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QTabWidget, QLabel, QStatusBar, QPushButton,
-    QMessageBox, QMenu, QMenuBar, QInputDialog, QFileDialog
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabWidget,
+    QLabel,
+    QStatusBar,
+    QPushButton,
+    QMessageBox,
+    QMenu,
+    QMenuBar,
+    QInputDialog,
+    QFileDialog,
+    QApplication,
 )
 from PyQt6.QtGui import QAction, QDesktopServices
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QUrl
@@ -62,29 +74,36 @@ class MainWindow(QMainWindow):
 
         # Create input mapper with all dependencies
         self.input_mapper = InputMapper(
-            xplane_conn, 
-            dataref_manager, 
-            hid_manager=hid_manager, 
+            xplane_conn,
+            dataref_manager,
+            hid_manager=hid_manager,
             arduino_manager=arduino_manager,
-            variable_store=self.variable_store
+            variable_store=self.variable_store,
         )
 
         # Connect variable store to input mapper for updates
         self.variable_store.register_listener(self._on_variable_update)
 
         # Create logic engine and link back to input mapper
-        self.logic_engine = LogicEngine(xplane_conn, self.input_mapper, arduino_manager=arduino_manager)
+        self.logic_engine = LogicEngine(
+            xplane_conn, self.input_mapper, arduino_manager=arduino_manager
+        )
         self.logic_engine.variable_store = self.variable_store
-        
+
         # Give InputMapper the reference to LogicEngine
         self.input_mapper.logic_engine = self.logic_engine
 
         # Link Logic Engine to Dataref Manager for search discovery
         self.dataref_manager.logic_engine = self.logic_engine
 
-
         # Create profile manager
-        self.profile_manager = ProfileManager(arduino_manager, self.input_mapper, xplane_conn, self.logic_engine, self.hid_manager)
+        self.profile_manager = ProfileManager(
+            arduino_manager,
+            self.input_mapper,
+            xplane_conn,
+            self.logic_engine,
+            self.hid_manager,
+        )
 
         self._setup_ui()
         self._setup_menu()
@@ -95,7 +114,7 @@ class MainWindow(QMainWindow):
         # Aircraft tracking for auto-profile switching
         self._current_icao = ""
         self._icao_buffer = [0] * 40
-        self._auto_profile_enabled = True # Could be a setting
+        self._auto_profile_enabled = True  # Could be a setting
 
         # Connect the signal to the async handler
         self.arduino_input_signal.connect(self._handle_arduino_input)
@@ -103,14 +122,36 @@ class MainWindow(QMainWindow):
         # Set window icon if not already set by application
         from PyQt6.QtGui import QIcon
         import os
-        # Try ICO format first (for Windows), fallback to PNG
-        icon_path_ico = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "icon.ico")
-        icon_path_png = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "Gemini_Generated_Image_5v3gkv5v3gkv5v3g-removebg-preview.png")
 
+        # Try ICO format first (for Windows), fallback to PNG
+        icon_path_ico = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "resources", "icon.ico"
+        )
+        icon_path_png = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "resources",
+            "Gemini_Generated_Image_5v3gkv5v3gkv5v3g-removebg-preview.png",
+        )
+        icon_path_fallback = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "resources",
+            "Gemini_Generated_Image_5v3gkv5v3gkv5v3g-removebg-preview.png",
+        )
+
+        # Set application icon (for taskbar and window)
         if os.path.exists(icon_path_ico):
-            self.setWindowIcon(QIcon(icon_path_ico))
+            app_icon = QIcon(icon_path_ico)
+            self.setWindowIcon(app_icon)
         elif os.path.exists(icon_path_png):
-            self.setWindowIcon(QIcon(icon_path_png))
+            app_icon = QIcon(icon_path_png)
+            self.setWindowIcon(app_icon)
+        else:
+            app_icon = QIcon(icon_path_fallback)
+            self.setWindowIcon(app_icon)
+
+        # Set application icon for the entire app (fixes taskbar issue)
+        if QApplication.instance():
+            QApplication.instance().setWindowIcon(app_icon)
 
         # Status update timer
         self._status_timer = QTimer()
@@ -138,17 +179,16 @@ class MainWindow(QMainWindow):
         """Load default profile after startup."""
         if self.profile_manager.load_profile("default"):
             log.info("Loaded default profile")
-            if hasattr(self, 'output_panel'):
+            if hasattr(self, "output_panel"):
                 self.output_panel.refresh_from_manager()
-                if hasattr(self, 'output_panel') and hasattr(self.output_panel, 'restore_state'):
+                if hasattr(self, "output_panel") and hasattr(
+                    self.output_panel, "restore_state"
+                ):
                     self.output_panel.restore_state()
             # Refresh all search helpers now that IDs are loaded
             self.refresh_search_helpers()
         else:
             log.info("No default profile found (fresh start)")
-
-
-
 
     def _setup_ui(self) -> None:
         self.setWindowTitle("X-Plane Dataref Bridge")
@@ -210,7 +250,9 @@ class MainWindow(QMainWindow):
         status_layout.addWidget(self.connect_btn)
 
         self.sync_btn = QPushButton("Auto-Sync Output")
-        self.sync_btn.setToolTip("Tell X-Plane to send data output to this app (ISE4 + DSEL).")
+        self.sync_btn.setToolTip(
+            "Tell X-Plane to send data output to this app (ISE4 + DSEL)."
+        )
         self.sync_btn.setEnabled(False)
         self.sync_btn.clicked.connect(self._toggle_output_sync)
         status_layout.addWidget(self.sync_btn)
@@ -221,11 +263,22 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
 
         # Output Config panel (Data Center)
-        self.output_panel = OutputPanel(self.dataref_manager, self.xplane_conn, self.arduino_manager, self.variable_store, self.logic_engine)
+        self.output_panel = OutputPanel(
+            self.dataref_manager,
+            self.xplane_conn,
+            self.arduino_manager,
+            self.variable_store,
+            self.logic_engine,
+        )
         self.tabs.addTab(self.output_panel, "Output Config")
 
         # Input Config panel (Controller Lab)
-        self.input_panel = InputPanel(self.hid_manager, self.input_mapper, self.profile_manager, self.variable_store)
+        self.input_panel = InputPanel(
+            self.hid_manager,
+            self.input_mapper,
+            self.profile_manager,
+            self.variable_store,
+        )
         self.tabs.addTab(self.input_panel, "Input Config")
 
         # Hardware panel (Device Manager)
@@ -255,7 +308,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(load_action)
 
         file_menu.addSeparator()
-        
+
         # Import / Export
         import_action = QAction("Import Profile...", self)
         import_action.triggered.connect(self._import_profile_dialog)
@@ -288,95 +341,143 @@ class MainWindow(QMainWindow):
         help_menu.addAction(about_action)
 
     def _save_profile_dialog(self):
-        name, ok = QInputDialog.getText(self, self.SAVE_PROFILE_ACTION, "Profile Name:", text="default")
+        name, ok = QInputDialog.getText(
+            self, self.SAVE_PROFILE_ACTION, "Profile Name:", text="default"
+        )
         if ok and name:
             if self.profile_manager.save_profile(name):
-                self.status_bar.showMessage(f"Profile '{name}' saved successfully", 3000)
+                self.status_bar.showMessage(
+                    f"Profile '{name}' saved successfully", 3000
+                )
             else:
                 QMessageBox.critical(self, "Error", "Failed to save profile")
 
     def _load_profile_dialog(self):
-        name, ok = QInputDialog.getText(self, self.LOAD_PROFILE_ACTION, "Profile Name:", text="default")
+        name, ok = QInputDialog.getText(
+            self, self.LOAD_PROFILE_ACTION, "Profile Name:", text="default"
+        )
         if ok and name:
             if self.profile_manager.load_profile(name):
-                self.status_bar.showMessage(f"Profile '{name}' loaded successfully", 3000)
+                self.status_bar.showMessage(
+                    f"Profile '{name}' loaded successfully", 3000
+                )
                 # Refresh UI
-                if hasattr(self, 'output_panel') and hasattr(self.output_panel, 'restore_state'):
+                if hasattr(self, "output_panel") and hasattr(
+                    self.output_panel, "restore_state"
+                ):
                     self.output_panel.refresh_from_manager()
                     self.output_panel.restore_state()
             else:
-                QMessageBox.warning(self, "Error", f"Profile '{name}' not found or failed to load")
-
+                QMessageBox.warning(
+                    self, "Error", f"Profile '{name}' not found or failed to load"
+                )
 
     def _import_profile_dialog(self):
         """Dialog to import a profile from external file."""
-        file_path, _ = QFileDialog.getOpenFileName(self, "Import Profile JSON", "", "JSON Files (*.json)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Import Profile JSON", "", "JSON Files (*.json)"
+        )
         if not file_path:
             return
-            
+
         from pathlib import Path
+
         path = Path(file_path)
-        
+
         imported_name = self.profile_manager.import_profile(path)
         if imported_name:
-            QMessageBox.information(self, "Success", f"Profile imported successfully as '{imported_name}'")
+            QMessageBox.information(
+                self, "Success", f"Profile imported successfully as '{imported_name}'"
+            )
             # Ask to load?
-            if QMessageBox.question(self, self.LOAD_PROFILE_ACTION, f"Do you want to load the imported profile '{imported_name}' now?") == QMessageBox.StandardButton.Yes:
+            if (
+                QMessageBox.question(
+                    self,
+                    self.LOAD_PROFILE_ACTION,
+                    f"Do you want to load the imported profile '{imported_name}' now?",
+                )
+                == QMessageBox.StandardButton.Yes
+            ):
                 self.profile_manager.load_profile(imported_name)
                 # Refresh UI
-                if hasattr(self, 'output_panel') and hasattr(self.output_panel, 'restore_state'):
+                if hasattr(self, "output_panel") and hasattr(
+                    self.output_panel, "restore_state"
+                ):
                     self.output_panel.refresh_from_manager()
                     self.output_panel.restore_state()
         else:
-            QMessageBox.critical(self, "Error", "Failed to import profile. Check log for details.")
+            QMessageBox.critical(
+                self, "Error", "Failed to import profile. Check log for details."
+            )
 
     def _export_profile_dialog(self):
         """Dialog to export current profile to external file."""
         # Get current profile name? Or just ask user which one to export?
         # For simplicity, let's export the currently active state as a new file
-        
-        name, ok = QInputDialog.getText(self, "Export Profile", "Enter name for exported file (without .json):", text="my_profile_backup")
+
+        name, ok = QInputDialog.getText(
+            self,
+            "Export Profile",
+            "Enter name for exported file (without .json):",
+            text="my_profile_backup",
+        )
         if not ok or not name:
             return
-            
-        file_path, _ = QFileDialog.getSaveFileName(self, "Export Profile Location", f"{name}.json", "JSON Files (*.json)")
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Profile Location", f"{name}.json", "JSON Files (*.json)"
+        )
         if not file_path:
             return
-            
+
         from pathlib import Path
+
         if self.profile_manager.export_profile(name, Path(file_path)):
-             QMessageBox.information(self, "Success", f"Profile exported to {file_path}")
+            QMessageBox.information(self, "Success", f"Profile exported to {file_path}")
         else:
-             QMessageBox.critical(self, "Error", "Failed to export profile.")
+            QMessageBox.critical(self, "Error", "Failed to export profile.")
 
     def _open_log_file(self):
         """Open the application log file."""
         log_file = "bridge_log.txt"
         from pathlib import Path
         import os
-        
+
         path = Path.cwd() / log_file
         if path.exists():
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
         else:
-            QMessageBox.information(self, "Log File", "Log file not found yet (maybe write something first?)")
-
+            QMessageBox.information(
+                self,
+                "Log File",
+                "Log file not found yet (maybe write something first?)",
+            )
 
     def _open_paypal_page(self):
         """Open the PayPal donation page in the default browser."""
         from PyQt6.QtGui import QDesktopServices
         from PyQt6.QtCore import QUrl
+
         QDesktopServices.openUrl(QUrl("https://www.paypal.me/Ruzu26"))
 
     def _open_stripe_page(self):
         """Open the Stripe donation page in the default browser."""
         from PyQt6.QtGui import QDesktopServices
         from PyQt6.QtCore import QUrl
-        QDesktopServices.openUrl(QUrl("https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00"))
+
+        QDesktopServices.openUrl(
+            QUrl("https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00")
+        )
 
     def _show_donation_popup(self):
         """Show a dedicated donation popup window."""
-        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
+        from PyQt6.QtWidgets import (
+            QDialog,
+            QVBoxLayout,
+            QLabel,
+            QPushButton,
+            QHBoxLayout,
+        )
         from PyQt6.QtCore import QTimer, Qt
 
         # Create a custom dialog instead of QMessageBox to have more control
@@ -385,7 +486,11 @@ class MainWindow(QMainWindow):
         dialog.setModal(True)
         dialog.resize(550, 350)
         # Remove the close button (X) from the window
-        dialog.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint)
+        dialog.setWindowFlags(
+            Qt.WindowType.Dialog
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowSystemMenuHint
+        )
 
         layout = QVBoxLayout()
 
@@ -405,13 +510,17 @@ class MainWindow(QMainWindow):
         layout.addWidget(content_label)
 
         # PayPal link
-        paypal_label = QLabel("<p>PayPal: <a href='https://www.paypal.me/Ruzu26'>https://www.paypal.me/Ruzu26</a></p>")
+        paypal_label = QLabel(
+            "<p>PayPal: <a href='https://www.paypal.me/Ruzu26'>https://www.paypal.me/Ruzu26</a></p>"
+        )
         paypal_label.setTextFormat(Qt.TextFormat.RichText)
         paypal_label.setOpenExternalLinks(True)  # Allow clicking links
         layout.addWidget(paypal_label)
 
         # Stripe link
-        stripe_label = QLabel("<p>Stripe: <a href='https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00'>https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00</a></p>")
+        stripe_label = QLabel(
+            "<p>Stripe: <a href='https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00'>https://donate.stripe.com/test_dRm14n4gE5Av51d0cV7Vm00</a></p>"
+        )
         stripe_label.setTextFormat(Qt.TextFormat.RichText)
         stripe_label.setOpenExternalLinks(True)  # Allow clicking links
         layout.addWidget(stripe_label)
@@ -444,7 +553,9 @@ class MainWindow(QMainWindow):
 
         # Countdown mechanism
         countdown = 8
-        countdown_label.setText(f"You can dismiss this message in {countdown} seconds...")
+        countdown_label.setText(
+            f"You can dismiss this message in {countdown} seconds..."
+        )
 
         def update_countdown():
             nonlocal countdown
@@ -452,7 +563,9 @@ class MainWindow(QMainWindow):
             if countdown > 0:
                 # Check if the dialog still exists before updating
                 if dialog.isVisible():
-                    countdown_label.setText(f"You can dismiss this message in {countdown} seconds...")
+                    countdown_label.setText(
+                        f"You can dismiss this message in {countdown} seconds..."
+                    )
             else:
                 # Check if the dialog still exists before updating
                 if dialog.isVisible():
@@ -512,7 +625,7 @@ class MainWindow(QMainWindow):
         # 1. Check if this key matches a sequence event
         if value != 0:  # Only trigger sequences on press (not release)
             # Try to execute sequence by key first
-            if hasattr(self.output_panel, 'execute_sequence_by_key'):
+            if hasattr(self.output_panel, "execute_sequence_by_key"):
                 if self.output_panel.execute_sequence_by_key(key):
                     log.info("Executed sequence for key: %s", key)
                     return  # If sequence was executed, don't process as regular input
@@ -524,7 +637,7 @@ class MainWindow(QMainWindow):
         # 3. Process actual logic
         task = asyncio.create_task(self._process_arduino_input(port, key, value))
         # Store task to prevent garbage collection
-        if not hasattr(self, '_active_tasks'):
+        if not hasattr(self, "_active_tasks"):
             self._active_tasks = set()
         self._active_tasks.add(task)
         task.add_done_callback(lambda t: self._active_tasks.discard(t))
@@ -552,7 +665,7 @@ class MainWindow(QMainWindow):
         self.arduino_manager.on_command_send = self._on_arduino_command_send
 
         # Connect to variable store updates
-        if hasattr(self, 'variable_store'):
+        if hasattr(self, "variable_store"):
             self.variable_store.register_listener(self._on_variable_update)
 
     def _on_arduino_dataref_write(self, dataref: str, value: float) -> None:
@@ -560,7 +673,7 @@ class MainWindow(QMainWindow):
         if self.xplane_conn.connected:
             task = asyncio.create_task(self.xplane_conn.write_dataref(dataref, value))
             # Store task to prevent garbage collection
-            if not hasattr(self, '_active_tasks'):
+            if not hasattr(self, "_active_tasks"):
                 self._active_tasks = set()
             self._active_tasks.add(task)
             task.add_done_callback(lambda t: self._active_tasks.discard(t))
@@ -570,7 +683,7 @@ class MainWindow(QMainWindow):
         if self.xplane_conn.connected:
             task = asyncio.create_task(self.xplane_conn.send_command(command))
             # Store task to prevent garbage collection
-            if not hasattr(self, '_active_tasks'):
+            if not hasattr(self, "_active_tasks"):
                 self._active_tasks = set()
             self._active_tasks.add(task)
             task.add_done_callback(lambda t: self._active_tasks.discard(t))
@@ -579,9 +692,9 @@ class MainWindow(QMainWindow):
         """Handle variable update from the variable store."""
         # This is a notification callback - the store already has the updated value
         log.debug("Variable updated: %s = %.2f", name, value)
-        
+
         # Update Output Panel tables
-        if hasattr(self, 'output_panel'):
+        if hasattr(self, "output_panel"):
             self.output_panel._on_variable_update(name, value)
 
     def _start_managers(self) -> None:
@@ -593,7 +706,7 @@ class MainWindow(QMainWindow):
         """Toggle X-Plane connection."""
         task = asyncio.create_task(self._async_toggle_connection())
         # Store task to prevent garbage collection
-        if not hasattr(self, '_active_tasks'):
+        if not hasattr(self, "_active_tasks"):
             self._active_tasks = set()
         self._active_tasks.add(task)
         task.add_done_callback(lambda t: self._active_tasks.discard(t))
@@ -621,7 +734,7 @@ class MainWindow(QMainWindow):
                 # Perform immediate state sync
                 task = asyncio.create_task(self.input_mapper.sync_hardware_to_xplane())
                 # Store task to prevent garbage collection
-                if not hasattr(self, '_active_tasks'):
+                if not hasattr(self, "_active_tasks"):
                     self._active_tasks = set()
                 self._active_tasks.add(task)
                 task.add_done_callback(lambda t: self._active_tasks.discard(t))
@@ -632,7 +745,7 @@ class MainWindow(QMainWindow):
                     f"Failed to connect to X-Plane.\n\n"
                     f"Sending to: {ip}:{send_port}\n"
                     f"Receiving on port: {recv_port}\n\n"
-                    "Make sure X-Plane is running."
+                    "Make sure X-Plane is running.",
                 )
 
     def _subscribe_condition_datarefs(self) -> None:
@@ -679,7 +792,9 @@ class MainWindow(QMainWindow):
         # Subscribe to aircraft ICAO for auto-profile switching
         for i in range(40):
             self._create_and_track_task(
-                self.xplane_conn.subscribe_dataref(f"sim/aircraft/view/acf_ICAO[{i}]", 1)
+                self.xplane_conn.subscribe_dataref(
+                    f"sim/aircraft/view/acf_ICAO[{i}]", 1
+                )
             )
 
     def _handle_xplane_disconnected(self) -> None:
@@ -695,7 +810,7 @@ class MainWindow(QMainWindow):
     def _create_and_track_task(self, coro):
         """Helper method to create and track asyncio tasks to prevent garbage collection."""
         task = asyncio.create_task(coro)
-        if not hasattr(self, '_active_tasks'):
+        if not hasattr(self, "_active_tasks"):
             self._active_tasks = set()
         self._active_tasks.add(task)
         task.add_done_callback(lambda t: self._active_tasks.discard(t))
@@ -709,19 +824,19 @@ class MainWindow(QMainWindow):
         This updates the 'Completer' dropdowns without needing an app restart.
         """
         log.info("Refreshing search helpers across all panels...")
-        
+
         # 1. Update the Dataref Manager's internal cache if needed (it usually fetches live)
         # But we ensure it's called so the UI pulls fresh lists.
-        
+
         # 2. Refresh Output Panel (Subscribes search box)
-        if hasattr(self, 'output_panel'):
+        if hasattr(self, "output_panel"):
             self.output_panel.refresh_from_manager()
-            
+
         # 3. Refresh Arduino Panel (Mappings search box)
-        if hasattr(self, 'arduino_panel'):
-            if hasattr(self.arduino_panel, 'refresh_from_manager'):
-                 self.arduino_panel.refresh_from_manager()
-            
+        if hasattr(self, "arduino_panel"):
+            if hasattr(self.arduino_panel, "refresh_from_manager"):
+                self.arduino_panel.refresh_from_manager()
+
         # 4. Input Panels / Dialogs
         # These are often transient, but if they are open, we can't easily reach them
         # unless they registered themselves. However, most are recreated on demand.
@@ -729,15 +844,15 @@ class MainWindow(QMainWindow):
     def _on_dataref_update(self, dataref: str, value: float) -> None:
         """Handle dataref update from X-Plane."""
         # Update Output Panel
-        if hasattr(self, 'output_panel'):
+        if hasattr(self, "output_panel"):
             self.output_panel.on_dataref_update(dataref, value)
 
         # Update Input Mapper state (for logic evaluation)
-        if hasattr(self, 'input_mapper'):
+        if hasattr(self, "input_mapper"):
             self.input_mapper.on_dataref_update(dataref, value)
 
         # Forward to Arduino Manager (Universal Mappings handled inside manager now)
-        if hasattr(self, 'arduino_manager'):
+        if hasattr(self, "arduino_manager"):
             self.arduino_manager.on_dataref_update(dataref, value)
 
         # Update input mapper (for condition evaluation and toggle tracking)
@@ -751,7 +866,7 @@ class MainWindow(QMainWindow):
         """Handle aircraft ICAO change detection and auto-profile loading."""
         try:
             # Extract index
-            idx = int(dataref.split('[')[1].split(']')[0])
+            idx = int(dataref.split("[")[1].split("]")[0])
             if 0 <= idx < 40:
                 old_icao = self._current_icao
                 self._icao_buffer[idx] = int(value)
@@ -759,7 +874,8 @@ class MainWindow(QMainWindow):
                 # Rebuild string
                 chars = []
                 for v in self._icao_buffer:
-                    if v == 0: break
+                    if v == 0:
+                        break
                     chars.append(chr(v))
                 new_icao = "".join(chars).strip()
 
@@ -785,50 +901,54 @@ class MainWindow(QMainWindow):
 
     def _toggle_output_sync(self) -> None:
         """Handle 'Auto-Sync Output' button click."""
-        # For now, we assume local host. 
+        # For now, we assume local host.
         # In the future, we could detect local IP or use discovered IP.
-        local_ip = "127.0.0.1" 
+        local_ip = "127.0.0.1"
         local_port = self.xplane_conn.recv_port
-        
+
         # Tell X-Plane to send data to us (ISE4)
-        task = asyncio.create_task(self.xplane_conn.set_data_output_target(local_ip, local_port))
+        task = asyncio.create_task(
+            self.xplane_conn.set_data_output_target(local_ip, local_port)
+        )
         # Store task to prevent garbage collection
-        if not hasattr(self, '_active_tasks'):
+        if not hasattr(self, "_active_tasks"):
             self._active_tasks = set()
         self._active_tasks.add(task)
         task.add_done_callback(lambda t: self._active_tasks.discard(t))
-        
+
         # Enable common interesting rows (DSEL)
         # 0=frame rate, 3=speeds, 4=G-load, 17=pitch/roll, 20=lat/lon
-        task = asyncio.create_task(self.xplane_conn.select_data_output([0, 3, 4, 17, 20]))
+        task = asyncio.create_task(
+            self.xplane_conn.select_data_output([0, 3, 4, 17, 20])
+        )
         # Store task to prevent garbage collection
-        if not hasattr(self, '_active_tasks'):
+        if not hasattr(self, "_active_tasks"):
             self._active_tasks = set()
         self._active_tasks.add(task)
         task.add_done_callback(lambda t: self._active_tasks.discard(t))
-        
+
         self.status_bar.showMessage("Sent Auto-Sync (ISE4/DSEL) to X-Plane")
         log.info("Sent Auto-Sync (ISE4 and DSEL) to X-Plane")
-        
+
         QMessageBox.information(
             self,
             "Auto-Sync Sent",
             f"Sent commands to X-Plane:\n\n"
             f"1. Set Data Output target to {local_ip}:{local_port}\n"
             f"2. Enabled common data rows (speeds, position, etc.)\n\n"
-            f"You should now start seeing values without ticking checkboxes manually."
+            f"You should now start seeing values without ticking checkboxes manually.",
         )
 
     def _update_status(self) -> None:
         """Periodic status update."""
         # Count connected devices
         arduino_count = sum(
-            1 for d in self.arduino_manager.devices_snapshot().values()
+            1
+            for d in self.arduino_manager.devices_snapshot().values()
             if d.is_connected
         )
         hid_count = sum(
-            1 for d in self.hid_manager.devices_snapshot().values()
-            if d.connected
+            1 for d in self.hid_manager.devices_snapshot().values() if d.connected
         )
 
         parts = []
@@ -854,7 +974,7 @@ class MainWindow(QMainWindow):
         if self.xplane_conn.connected:
             task = asyncio.create_task(self.xplane_conn.disconnect())
             # Store task to prevent garbage collection
-            if not hasattr(self, '_active_tasks'):
+            if not hasattr(self, "_active_tasks"):
                 self._active_tasks = set()
             self._active_tasks.add(task)
             task.add_done_callback(lambda t: self._active_tasks.discard(t))
