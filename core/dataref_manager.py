@@ -37,6 +37,9 @@ class DatarefManager:
         self._categories: Dict[str, List[str]] = {}
         self._custom_datarefs: Dict[str, dict] = {}
 
+        # Add cache for frequently accessed descriptions
+        self._description_cache: Dict[str, str] = {}
+
         self._load_database()
         self.load_custom_datarefs()
         self._build_categories()
@@ -598,7 +601,11 @@ class DatarefManager:
         return "other"
 
     def add_custom_dataref(
-        self, name: str, dtype: str, description: str, writable: bool
+        self,
+        name: str,
+        dtype: str = "float",
+        description: str = "Custom Dataref",
+        writable: bool = True,
     ) -> bool:
         """
         Add a new custom dataref.
@@ -651,25 +658,6 @@ class DatarefManager:
                 suggestions.append(f"ID:{key}")
 
         return sorted(set(suggestions))
-
-    def __init__(
-        self, variable_store=None, arduino_manager=None, logic_engine=None
-    ) -> None:
-        self.variable_store = variable_store
-        self.arduino_manager = arduino_manager
-        self.logic_engine = logic_engine
-
-        self._database: Dict[str, Any] = {}
-        self._subscriptions: Dict[str, float] = {}
-        self._categories: Dict[str, List[str]] = {}
-        self._custom_datarefs: Dict[str, dict] = {}
-
-        # Add cache for frequently accessed descriptions
-        self._description_cache: Dict[str, str] = {}
-
-        self._load_database()
-        self.load_custom_datarefs()
-        self._build_categories()
 
     def _get_description(self, name: str) -> str:
         """
@@ -876,7 +864,9 @@ class DatarefManager:
         """Get all datarefs in a category."""
         return self._categories.get(category, [])
 
-    def search(self, query: str, category: str = None, limit: int = 100) -> List[str]:
+    def search(
+        self, query: str, category: Optional[str] = None, limit: int = 100
+    ) -> List[str]:
         """
         Search for datarefs matching query.
 
@@ -969,20 +959,8 @@ class DatarefManager:
 
         return True
 
-    def add_custom_dataref(
-        self,
-        name: str,
-        dtype: str = "float",
-        description: str = "Custom Dataref",
-        writable: bool = True,
-    ) -> bool:
-        """Helper to add a custom dataref from the UI."""
-        info = {
-            "type": dtype,
-            "description": description,
-            "writable": writable,
-            "custom": True,
-        }
+    def add_custom_dataref_from_dict(self, name: str, info: Dict[str, Any]) -> bool:
+        """Helper to add a custom dataref from dictionary."""
         return self.add_custom_dataref_dict(name, info)
 
     def reload_database(self) -> bool:
@@ -1101,3 +1079,47 @@ class DatarefManager:
         except Exception as e:
             log.error("Failed to import custom datarefs: %s", e)
             return 0
+
+    def is_dataref_valid_for_version(self, dataref_name: str, version: int) -> bool:
+        """Check if dataref is valid for specific X-Plane version."""
+        # Check if dataref has version restrictions
+        if dataref_name in self._database:
+            min_version = self._database[dataref_name].get("min_version", 0)
+            max_version = self._database[dataref_name].get("max_version", float("inf"))
+            return min_version <= version <= max_version
+        return True  # Assume valid if not in database
+
+    def get_deprecated_datarefs_xp12(self) -> Dict[str, str]:
+        """Get list of datarefs deprecated in X-Plane 12 and their replacements."""
+        return {
+            # Flight model changes
+            "sim/flightmodel/position/mag_psi": "sim/flightmodel/position/true_psi",
+            "sim/flightmodel/position/mag_theta": "sim/flightmodel/position/true_theta",
+            "sim/flightmodel/position/mag_phi": "sim/flightmodel/position/true_phi",
+            # Engine changes
+            "sim/flightmodel/engine/ENGN_thro_use": "sim/cockpit2/engine/actuators/throttle_ratio",
+            "sim/flightmodel/engine/ENGN_mixt_use": "sim/cockpit2/engine/actuators/mixture_ratio",
+            # Control changes
+            "sim/flightmodel/controls/yoke1_pitch": "sim/cockpit2/controls/yoke_pitch_ratio",
+            "sim/flightmodel/controls/yoke1_roll": "sim/cockpit2/controls/yoke_roll_ratio",
+            # Gear changes
+            "sim/flightmodel/failures/fgear": "sim/operation/failures/fgear_deploy",
+            "sim/flightmodel/failures/lgear": "sim/operation/failures/lgear_deploy",
+            # Autopilot changes
+            "sim/cockpit/autopilot/heading": "sim/cockpit2/autopilot/heading_mag",
+            "sim/cockpit/autopilot/altitude_hold": "sim/cockpit2/autopilot/altitude_hold_status",
+            # Lighting changes
+            "sim/cockpit/electrical/landing_lights_on": "sim/cockpit2/switches/landing_lights_on",
+            "sim/cockpit/electrical/taxi_lights_on": "sim/cockpit2/switches/taxi_lights_on",
+            "sim/cockpit/electrical/beacon_on": "sim/cockpit2/switches/beacon_on",
+            "sim/cockpit/electrical/strobe_lights_on": "sim/cockpit2/switches/strobe_lights_on",
+            "sim/cockpit/electrical/nav_lights_on": "sim/cockpit2/switches/navigation_lights_on",
+        }
+
+    def suggest_replacement(self, old_dataref: str) -> Optional[str]:
+        """Suggest replacement for deprecated dataref."""
+        if not old_dataref:
+            return None
+        deprecated = self.get_deprecated_datarefs_xp12()
+        replacement = deprecated.get(old_dataref)
+        return replacement

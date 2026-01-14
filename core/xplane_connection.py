@@ -5,7 +5,7 @@ import socket
 import struct
 import time
 import errno
-from typing import Optional, Callable, Dict, List, Union
+from typing import Optional, Callable, Dict, List, Union, Any
 from dataclasses import dataclass, field
 import threading
 
@@ -25,7 +25,9 @@ class DatarefSubscription:
 
 
 class XPlaneConnection:
-    def __init__(self, ip: str = "127.0.0.1", send_port: int = 49000, recv_port: int = 49001) -> None:
+    def __init__(
+        self, ip: str = "127.0.0.1", send_port: int = 49000, recv_port: int = 49001
+    ) -> None:
         self.ip = ip
         self.port = send_port
         self.recv_port = recv_port
@@ -36,30 +38,37 @@ class XPlaneConnection:
         self._subscriptions: Dict[int, DatarefSubscription] = {}
         self._dataref_to_index: Dict[str, int] = {}
         self._next_index = 1
-        
+
         # Discovery status
         self._discovered_info: Dict[str, Any] = {}
         self._beacon_stop_event = threading.Event()
         self._beacon_thread: Optional[threading.Thread] = None
-        
+
+        # X-Plane version detection
+        self._detected_version: Optional[int] = None
+
         self.on_dataref_update: Optional[Callable[[str, float], None]] = None
         self.on_connection_changed: Optional[Callable[[bool], None]] = None
 
         # Separate storage for live values (from X-Plane) and virtual values (written by user/system)
         self._live_values: Dict[str, float] = {}  # Values received from X-Plane
         self._virtual_values: Dict[str, float] = {}  # Values written by user/system
-    
+
     @property
     def connected(self) -> bool:
         return self._connected
-    
+
     async def connect(self) -> bool:
-        if self._connected: return True
-        
+        if self._connected:
+            return True
+
         try:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            
+
+            # Detect X-Plane version after connection
+            self._detected_version = None
+
             try:
                 self._socket.bind(("0.0.0.0", self.recv_port))
                 log.info("Bound to receive port %d", self.recv_port)
@@ -68,61 +77,68 @@ class XPlaneConnection:
                 log.error("Make sure no other application is using this port")
                 self._cleanup()
                 return False
-            
+
             self._socket.setblocking(False)
-            
+
             self._connected = True
             self._running = True
-            
+
             self._recv_thread = threading.Thread(target=self._receive_loop, daemon=True)
             self._recv_thread.start()
-            
+
             # Start Beacon Listener for auto-discovery
             self.start_beacon_listener()
-            
+
             time.sleep(0.1)
-            
+
+            # Detect X-Plane version
+            await self._detect_xplane_version()
+
             # Re-send all stored subscriptions upon connection
             log.info("Synchronizing %d subscriptions...", len(self._subscriptions))
             for sub in self._subscriptions.values():
                 self._send_rref_sync(sub.name, sub.index, sub.frequency)
 
-            log.info("Connected to X-Plane: %s:%d", self.ip, self.port)
+            version_str = (
+                f" (v{self._detected_version})" if self._detected_version else ""
+            )
+            log.info("Connected to X-Plane%s: %s:%d", version_str, self.ip, self.port)
             if self.on_connection_changed:
                 self.on_connection_changed(True)
-            
+
             return True
-            
+
         except Exception as e:
             log.error("Failed to connect to X-Plane: %s", e)
             self._cleanup()
             return False
-    
+
     async def disconnect(self) -> None:
-        if not self._connected: return
-        
+        if not self._connected:
+            return
+
         log.info("Disconnecting from X-Plane...")
         self._running = False
         self.stop_beacon_listener()
-        
+
         # Unsubscribe all
         for sub in list(self._subscriptions.values()):
             try:
                 self._send_rref_sync(sub.name, sub.index, 0)
             except Exception:
                 pass
-        
+
         if self._recv_thread and self._recv_thread.is_alive():
             self._recv_thread.join(timeout=2.0)
-        
+
         self._subscriptions.clear()
         self._dataref_to_index.clear()
         self._next_index = 1
         self._cleanup()
-        
+
         if self.on_connection_changed:
             self.on_connection_changed(False)
-    
+
     def _cleanup(self) -> None:
         self._connected = False
         if self._socket:
@@ -132,16 +148,18 @@ class XPlaneConnection:
                 pass
             self._socket = None
 
-    async def subscribe_dataref(self, dataref: str, frequency: int = 5, count: int = 1) -> int:
+    async def subscribe_dataref(
+        self, dataref: str, frequency: int = 5, count: int = 1
+    ) -> int:
         # Strip prefixes
         if dataref.startswith("XP:"):
             dataref = dataref[3:]
-            
+
         # Determine if we should subscribe to a range (array)
         if count > 1:
             base_name = dataref.split("[")[0]
             first_idx = -1
-            
+
             for i in range(count):
                 name = f"{base_name}[{i}]"
                 if name in self._dataref_to_index:
@@ -149,60 +167,69 @@ class XPlaneConnection:
                 else:
                     idx = self._next_index
                     self._next_index += 1
-                    
+
                     sub = DatarefSubscription(
-                        name=name, 
-                        index=idx, 
-                        frequency=frequency, 
-                        is_array=True, 
-                        array_index=i, 
-                        base_name=base_name
+                        name=name,
+                        index=idx,
+                        frequency=frequency,
+                        is_array=True,
+                        array_index=i,
+                        base_name=base_name,
                     )
                     self._subscriptions[idx] = sub
                     self._dataref_to_index[name] = idx
-                
-                if first_idx == -1: first_idx = idx
+
+                if first_idx == -1:
+                    first_idx = idx
                 self._send_rref_sync(name, idx, frequency)
-            
+
             return first_idx
-        
+
         # Handle explicit indexed subscription (e.g. sim/foo[0]) if passed via name
         if "[" in dataref and "]" in dataref and count == 1:
             # We treat this as a single scalar subscription to an indexed element
             if dataref in self._dataref_to_index:
                 return self._dataref_to_index[dataref]
-            
+
             idx = self._next_index
             self._next_index += 1
-            
-            sub = DatarefSubscription(name=dataref, index=idx, frequency=frequency, is_array=False)
+
+            sub = DatarefSubscription(
+                name=dataref, index=idx, frequency=frequency, is_array=False
+            )
             self._subscriptions[idx] = sub
             self._dataref_to_index[dataref] = idx
             self._send_rref_sync(dataref, idx, frequency)
             return idx
-            
+
         # Standard Scalar Subscription
         if dataref in self._dataref_to_index:
             return self._dataref_to_index[dataref]
-        
+
         idx = self._next_index
         self._next_index += 1
-        
-        sub = DatarefSubscription(name=dataref, index=idx, frequency=frequency, is_array=False)
+
+        sub = DatarefSubscription(
+            name=dataref, index=idx, frequency=frequency, is_array=False
+        )
         self._subscriptions[idx] = sub
         self._dataref_to_index[dataref] = idx
-        
+
         self._send_rref_sync(dataref, idx, frequency)
         return idx
 
     async def unsubscribe_dataref(self, dataref: str) -> None:
         if dataref.startswith("XP:"):
             dataref = dataref[3:]
-            
+
         # Check if we have multiple subscriptions starting with this base
         base = dataref.split("[")[0]
-        keys_to_remove = [k for k in self._dataref_to_index if k == dataref or k.startswith(f"{base}[")]
-        
+        keys_to_remove = [
+            k
+            for k in self._dataref_to_index
+            if k == dataref or k.startswith(f"{base}[")
+        ]
+
         for k in keys_to_remove:
             idx = self._dataref_to_index[k]
             self._send_rref_sync(k, idx, 0)
@@ -210,6 +237,36 @@ class XPlaneConnection:
                 del self._subscriptions[idx]
             if k in self._dataref_to_index:
                 del self._dataref_to_index[k]
+
+    async def _detect_xplane_version(self):
+        """Detect X-Plane version by checking version dataref."""
+        try:
+            # Subscribe to version dataref temporarily
+            await self.subscribe_dataref("sim/version/xplane_internal_version", 1)
+
+            # Give it a moment to receive data
+            await asyncio.sleep(0.5)
+
+            # Get the version value
+            version_value = self.get_value("sim/version/xplane_internal_version")
+            if version_value:
+                self._detected_version = int(version_value)
+                log.info(f"Detected X-Plane version: {self._detected_version}")
+            else:
+                # Fallback: try legacy version check
+                await self.subscribe_dataref("sim/version/sim_build_number", 1)
+                await asyncio.sleep(0.5)
+                build_value = self.get_value("sim/version/sim_build_number")
+                if build_value:
+                    self._detected_version = int(build_value)
+                    log.info(f"Detected X-Plane build: {self._detected_version}")
+
+            # Clean up temporary subscription
+            await self.unsubscribe_dataref("sim/version/xplane_internal_version")
+            await self.unsubscribe_dataref("sim/version/sim_build_number")
+
+        except Exception as e:
+            log.warning(f"Failed to detect X-Plane version: {e}")
 
     async def write_dataref(self, dataref: str, value: float) -> bool:
         # Store original dataref for callback to maintain prefix information
@@ -246,7 +303,7 @@ class XPlaneConnection:
 
             # Fill the name buffer (index 9 to 508) with SPACES first (0x20)
             # This is suggested by some X-Plane docs for better reliability.
-            msg[9:509] = b' ' * 500
+            msg[9:509] = b" " * 500
 
             # Pack name at offset 9
             name_bytes = dataref.encode("utf-8")
@@ -259,7 +316,9 @@ class XPlaneConnection:
             msg[9 + len(name_bytes)] = 0x00
 
             self._socket.sendto(msg, (self.ip, self.port))
-            log.info("UDP DREF Pack: %s = %.4f to %s:%d", dataref, value, self.ip, self.port)
+            log.info(
+                "UDP DREF Pack: %s = %.4f to %s:%d", dataref, value, self.ip, self.port
+            )
 
             # Notify locally immediately so UI/Logic sees it (crucial for custom/ghost datarefs)
             # Use original dataref to preserve prefix information
@@ -270,8 +329,10 @@ class XPlaneConnection:
         except Exception as e:
             log.error("Failed to write dataref %s: %s", dataref, e)
             return False
-    
-    async def write_dataref_string(self, dataref: str, string_value: str, max_len: int = 0) -> bool:
+
+    async def write_dataref_string(
+        self, dataref: str, string_value: str, max_len: int = 0
+    ) -> bool:
         """
         Writes a string to a byte[n] dataref (e.g., acf_ICAO).
         Iterates through indices and sends each char as float.
@@ -293,7 +354,8 @@ class XPlaneConnection:
 
         # 1. Write characters from string
         for i, char_code in enumerate(string_value):
-            if i >= 499: break # UDP packet limit for one DREF
+            if i >= 499:
+                break  # UDP packet limit for one DREF
             await self.write_dataref(f"{base_name}[{i}]", float(ord(char_code)))
 
         # 2. Add Null Terminator
@@ -312,7 +374,8 @@ class XPlaneConnection:
 
     async def select_data_output(self, indices: List[int]) -> bool:
         """Sends DSEL packet to enable specific Data Output rows."""
-        if not self._socket or not self._connected: return False
+        if not self._socket or not self._connected:
+            return False
         try:
             # DSEL\0 (5 bytes) + array of 4-byte ints
             msg = bytearray(5 + len(indices) * 4)
@@ -328,17 +391,18 @@ class XPlaneConnection:
 
     async def set_data_output_target(self, target_ip: str, target_port: int) -> bool:
         """Sends ISE4 packet to tell X-Plane to send DATA outputs to this target."""
-        if not self._socket or not self._connected: return False
+        if not self._socket or not self._connected:
+            return False
         try:
             # ISE4\0 (5 bytes) + index (4) + ip(16) + pt(8) + use(4) = 37 bytes
             msg = bytearray(37)
             msg[0:4] = b"ISE4"
-            struct.pack_into("<i", msg, 5, 64) # 64 is index for Data Output
+            struct.pack_into("<i", msg, 5, 64)  # 64 is index for Data Output
             ip_b = target_ip.encode("utf-8")
-            msg[9:9+len(ip_b)] = ip_b
+            msg[9 : 9 + len(ip_b)] = ip_b
             pt_b = str(target_port).encode("utf-8")
-            msg[25:25+len(pt_b)] = pt_b
-            struct.pack_into("<i", msg, 33, 1) # 1 = Enable
+            msg[25 : 25 + len(pt_b)] = pt_b
+            struct.pack_into("<i", msg, 33, 1)  # 1 = Enable
             self._socket.sendto(msg, (self.ip, self.port))
             log.info("UDP ISE4: Set target to %s:%d", target_ip, target_port)
             return True
@@ -348,7 +412,8 @@ class XPlaneConnection:
 
     def start_beacon_listener(self):
         """Starts a thread to listen for X-Plane discovery beacons."""
-        if self._beacon_thread and self._beacon_thread.is_alive(): return
+        if self._beacon_thread and self._beacon_thread.is_alive():
+            return
         self._beacon_stop_event.clear()
         self._beacon_thread = threading.Thread(target=self._beacon_loop, daemon=True)
         self._beacon_thread.start()
@@ -375,17 +440,17 @@ class XPlaneConnection:
                     # BECN format: 'BECN' (4) + null (1) + ver_major(1) + ver_minor(1) + hostid(4) + ver(4) + role(4) + port(2)
                     xp_port = struct.unpack("<H", data[19:21])[0]
                     xp_ip = addr[0]
-                    
+
                     if xp_ip != self.ip or xp_port != self.port:
                         log.info("Discovered X-Plane at %s:%d", xp_ip, xp_port)
                         self.ip = xp_ip
                         self.port = xp_port
                         # Trigger any callbacks if needed?
-                    
+
                     self._discovered_info = {
                         "ip": xp_ip,
                         "port": xp_port,
-                        "last_seen": time.time()
+                        "last_seen": time.time(),
                     }
             except socket.timeout:
                 continue
@@ -395,7 +460,8 @@ class XPlaneConnection:
         b_sock.close()
 
     async def send_command(self, command: str) -> bool:
-        if not self._socket or not self._connected: return False
+        if not self._socket or not self._connected:
+            return False
         try:
             packet = b"CMND\x00"
             packet += command.encode("utf-8").ljust(500, b"\x00")
@@ -404,9 +470,10 @@ class XPlaneConnection:
         except Exception as e:
             log.error("Failed to send command %s: %s", command, e)
             return False
-    
+
     def _send_rref_sync(self, dataref: str, index: int, frequency: int) -> None:
-        if not self._socket: return
+        if not self._socket:
+            return
         try:
             packet = b"RREF\x00"
             packet += struct.pack("<ii", frequency, index)
@@ -414,10 +481,11 @@ class XPlaneConnection:
             self._socket.sendto(packet, (self.ip, self.port))
         except Exception as e:
             log.error("Failed to send RREF: %s", e)
-    
+
     def _receive_loop(self) -> None:
         log.info("Receive loop started on port %d", self.recv_port)
         while self._running and self._socket:
+            data = None
             try:
                 try:
                     data, addr = self._socket.recvfrom(4096)
@@ -425,34 +493,39 @@ class XPlaneConnection:
                     time.sleep(0.001)
                     continue
                 except OSError as e:
-                    if hasattr(e, 'winerror') and e.winerror == 10054:
+                    if hasattr(e, "winerror") and e.winerror == 10054:
                         continue
                     elif e.errno == errno.ECONNRESET:
                         continue
                     elif self._running:
                         log.error("Socket error in receive loop: %s", e)
                         break
-                
-                if len(data) < 5: continue
-                
-                header = data[:4].decode("utf-8", errors="ignore")
 
-                if header == "RREF":
-                    self._parse_rref(data)
-                elif header == "DATA":
-                    self._parse_data(data)
-                elif header == "DREF":
-                    self._parse_dref(data)
-                else:
-                    if len(data) > 0:
-                        log.debug("Unknown packet: %s (%d bytes)", header, len(data))
-                    
+                # Process received data if we got any
+                if data:
+                    if len(data) < 5:
+                        continue
+
+                    header = data[:4].decode("utf-8", errors="ignore")
+
+                    if header == "RREF":
+                        self._parse_rref(data)
+                    elif header == "DATA":
+                        self._parse_data(data)
+                    elif header == "DREF":
+                        self._parse_dref(data)
+                    else:
+                        if len(data) > 0:
+                            log.debug(
+                                "Unknown packet: %s (%d bytes)", header, len(data)
+                            )
+
             except Exception as e:
                 if self._running:
                     log.error("Receive loop error: %s", e)
-        
+
         log.info("Receive loop ended")
-    
+
     def _parse_rref(self, data: bytes) -> None:
         offset = 5
         while offset + 8 <= len(data):
@@ -485,20 +558,24 @@ class XPlaneConnection:
             # 8 float values follow
             values = struct.unpack_from("<8f", data, offset)
             offset += 32
-            
+
             # log.debug("Received DATA Row %d: %s", row_idx, values)
-            # We don't have a direct map to dataref names here, 
+            # We don't have a direct map to dataref names here,
             # so this is mostly for debugging or future mapping.
             pass
 
     def _parse_dref(self, data: bytes) -> None:
-        if len(data) < 9: return
+        if len(data) < 9:
+            return
         try:
             value = struct.unpack_from("<f", data, 5)[0]
             name_start = 9
-            name_end = data.find(b'\x00', name_start)
-            if name_end == -1: name_end = len(data)
-            dataref_name = data[name_start:name_end].decode("utf-8", errors="ignore").strip()
+            name_end = data.find(b"\x00", name_start)
+            if name_end == -1:
+                name_end = len(data)
+            dataref_name = (
+                data[name_start:name_end].decode("utf-8", errors="ignore").strip()
+            )
 
             if dataref_name and self.on_dataref_update:
                 # Check if this is an array index we are tracking
@@ -514,7 +591,7 @@ class XPlaneConnection:
 
         except Exception as e:
             log.debug("DREF parse error: %s", e)
-    
+
     def get_value(self, dataref: str, source: str = "any") -> Optional[float]:
         """
         Get value for a dataref.
@@ -569,6 +646,6 @@ class XPlaneConnection:
     def get_all_virtual_values(self) -> Dict[str, float]:
         """Get all virtual values written by user/system."""
         return self._virtual_values.copy()
-    
+
     def get_all_values(self) -> Dict[str, float]:
         return {sub.name: sub.value for sub in self._subscriptions.values()}
