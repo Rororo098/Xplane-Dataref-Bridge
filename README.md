@@ -50,7 +50,9 @@ The X-Plane Dataref Bridge is a Python/PyQt6 application that creates a communic
 - X-Plane 11 or 12
 - Arduino IDE (for microcontroller programming)
 
-### Quick Install
+### Cross-Platform Installation
+
+#### Windows
 ```bash
 # Clone the repository
 git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
@@ -61,6 +63,43 @@ pip install -r requirements.txt
 
 # Run the application
 python main.py
+```
+
+#### macOS
+```bash
+# Clone the repository
+git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
+cd Xplane-Dataref-Bridge
+
+# Install dependencies (use python3 and pip3 on macOS)
+pip3 install -r requirements.txt
+
+# Run the application
+python3 main.py
+```
+
+#### Linux
+```bash
+# Clone the repository
+git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
+cd Xplane-Dataref-Bridge
+
+# Install dependencies (use python3 and pip3 on Linux)
+pip3 install -r requirements.txt
+
+# Run the application
+python3 main.py
+```
+
+**Note for Linux users**: You may need to install additional system packages:
+- Ubuntu/Debian: `sudo apt install python3-pyqt6 python3-serial`
+- Fedora: `sudo dnf install python3-PyQt6 python3-pyserial`
+- Arch: `sudo pacman -S python-pyqt6 python-pyserial`
+
+You may also need to add your user to the dialout group for serial access:
+```bash
+sudo usermod -a -G dialout $USER
+# Then log out and log back in for changes to take effect
 ```
 
 ### Standalone Executable
