@@ -119,1039 +119,1101 @@ Pre-built executables are available in the releases section for Windows, macOS, 
 
 Comprehensive Arduino sketches demonstrating communication with the X-Plane Dataref Bridge. Each sketch focuses on a specific capability of the protocol.
 
-### 1. Handshake Protocol
+### 1. 4-Button Controller with OUTPUT_IDs
 
-#### handshake.ino
-Establishes the initial two-way handshake so the bridge recognizes your device and maintains a heartbeat.
+#### 4_button_controller_with_output_ids.ino
+A 4-button controller that performs different operations using OUTPUT_IDs.
 
-- Features: Two-way Serial handshake, heartbeat, device identification
-- Output ID: `HANDSHAKE_DEMO`
+- Features: Button debouncing, multiple operations, OUTPUT_ID system
+- Output ID: `FourButtonController`
 
 ```cpp
 /*
- * X-Plane Dataref Bridge - Handshake Protocol
- *
- * This sketch demonstrates the basic handshake protocol required for the bridge to recognize
- * your Arduino device. The handshake is the first communication step that establishes
- * the connection between your Arduino and the bridge app.
- */
+===============================================================================
+X-Plane Dataref Bridge - 4 Button Controller with OUTPUT_IDs (Beginner Version)
+===============================================================================
 
-// Device identification constants - these help the bridge recognize your device
-const char* DEVICE_NAME = "HandshakeDemo";     // Human-readable name for your device
-const char* FIRMWARE_VERSION = "1.0";         // Version of your Arduino firmware
-const char* BOARD_TYPE = "UNO";               // Board type identifier
+PURPOSE:
+This sketch creates a 4-button controller that sends different types of commands 
+to X-Plane through Dataref Bridge application. Each button demonstrates a 
+different type of dataref operation.
 
-// Heartbeat timing - keeps the connection alive
-unsigned long lastHeartbeat = 0;              // Timestamp of last heartbeat sent
-const unsigned long HEARTBEAT_INTERVAL = 5000; // Send heartbeat every 5 seconds
+REQUIRED HARDWARE:
+- Arduino UNO (or compatible board)
+- 4x Push buttons (momentary switches)
+- 4x 10kΩ resistors (optional, if not using internal pull-ups)
+- Jumper wires
+- USB cable for programming and communication
+
+WIRING INSTRUCTIONS:
+- Connect Button 1 between Pin 2 and GND
+- Connect Button 2 between Pin 3 and GND  
+- Connect Button 3 between Pin 4 and GND
+- Connect Button 4 between Pin 5 and GND
+- Arduino GND to common ground rail
+- USB connects to computer running X-Plane Dataref Bridge
+
+BUTTON FUNCTIONALITY:
+Button 1 (Pin 2): Sends GEAR_HANDLE command - controls landing gear
+Button 2 (Pin 3): Sends HEADING_SYNC command - synchronizes heading
+Button 3 (Pin 4): Sends LED_STATE_ELEM0 - controls individual LED array element
+Button 4 (Pin 5): Sends LED_STATE_ARRAY - controls multiple LED array elements
+
+OUTPUT_ID SYSTEM:
+OUTPUT_IDs are user-friendly names that you configure in bridge application 
+to map to actual X-Plane datarefs. This makes your Arduino code reusable across 
+different aircraft and easier to understand.
+
+BRIDGE CONFIGURATION:
+In your X-Plane Dataref Bridge application, map these OUTPUT_IDs:
+GEAR_HANDLE → sim/cockpit2/switches/gear_handle_status
+HEADING_SYNC → sim/autopilot/heading_sync  
+LED_STATE_ELEM0 → LED_STATE[0]
+LED_STATE_ARRAY → LED_STATE (full array)
+
+TROUBLESHOOTING:
+- Buttons not working? Check wiring and GND connection
+- No communication? Verify 115200 baud rate in Serial Monitor
+- Multiple triggers per press? Increase DEBOUNCE_DELAY value
+===============================================================================
+*/
+
+/* ==========================================================================
+   DEVICE IDENTIFICATION SECTION
+   These constants tell the bridge application what device it's talking to
+   ========================================================================== */
+
+const char* DEVICE_NAME = "FourButtonController";     // Human-readable name for your device
+const char* FIRMWARE_VERSION = "1.0";                 // Version number for updates/tracking
+const char* BOARD_TYPE = "UNO";                        // Arduino board type (UNO, MEGA, etc.)
+
+/* ==========================================================================
+   OUTPUT_ID DEFINITIONS SECTION
+   These are friendly names we'll use instead of hardcoding X-Plane datarefs
+   ========================================================================== */
+
+const char* OUTPUT_ID_GEAR = "GEAR_HANDLE";           // Landing gear control
+const char* OUTPUT_ID_HEADING = "HEADING_SYNC";       // Heading sync command
+const char* OUTPUT_ID_LED_ELEM = "LED_STATE_ELEM0";   // Individual LED element
+const char* OUTPUT_ID_LED_ARRAY = "LED_STATE_ARRAY";  // Full LED array
+
+/* ==========================================================================
+   HARDWARE PIN CONFIGURATION SECTION
+   Define which Arduino pins each physical component is connected to
+   ========================================================================== */
+
+const int BUTTON1_PIN = 2;  // Button for GEAR_HANDLE
+const int BUTTON2_PIN = 3;  // Button for HEADING_SYNC
+const int BUTTON3_PIN = 4;  // Button for LED_STATE_ELEM0
+const int BUTTON4_PIN = 5;  // Button for LED_STATE_ARRAY
+
+/* ==========================================================================
+   BUTTON STATE TRACKING SECTION
+   Variables to remember previous button states for proper detection
+   ========================================================================== */
+
+// Boolean variables to track if each button was pressed in the previous loop
+bool lastButton1State = false;  // Previous state of Button 1
+bool lastButton2State = false;  // Previous state of Button 2
+bool lastButton3State = false;  // Previous state of Button 3
+bool lastButton4State = false;  // Previous state of Button 4
+
+/* ==========================================================================
+   DEBOUNCING TIMERS SECTION
+   Debouncing prevents one physical button press from registering multiple times
+   ========================================================================== */
+
+// Timer variables to track when each button last changed state
+unsigned long lastDebounceTime1 = 0;  // Timer for Button 1
+unsigned long lastDebounceTime2 = 0;  // Timer for Button 2
+unsigned long lastDebounceTime3 = 0;  // Timer for Button 3
+unsigned long lastDebounceTime4 = 0;  // Timer for Button 4
+
+// Time in milliseconds to wait between button state changes
+const unsigned long DEBOUNCE_DELAY = 50;  // 50ms = 0.05 seconds debounce time
+
+/* ==========================================================================
+   TEST ARRAY SECTION
+   Array to demonstrate array operations for Buttons 3 and 4
+   ========================================================================== */
+
+// Example array for testing array operations (simulates LED states)
+float testArray[10] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+
+/* ==========================================================================
+   SETUP FUNCTION
+   This runs once when Arduino boots up - initializes all hardware and settings
+   ========================================================================== */
 
 void setup() {
-  // Initialize serial communication at 115200 baud rate (standard for the bridge)
+  // --- Initialize Button Pins ---
+  // Set each button pin as an input with internal pull-up resistor
+  // INPUT_PULLUP means: pin reads HIGH when not pressed, LOW when pressed
+  pinMode(BUTTON1_PIN, INPUT_PULLUP);  // Enable pull-up for Button 1
+  pinMode(BUTTON2_PIN, INPUT_PULLUP);  // Enable pull-up for Button 2
+  pinMode(BUTTON3_PIN, INPUT_PULLUP);  // Enable pull-up for Button 3
+  pinMode(BUTTON4_PIN, INPUT_PULLUP);  // Enable pull-up for Button 4
+
+  // --- Initialize Serial Communication ---
+  // Start serial communication at 115200 baud (bits per second)
+  // This is the speed required by X-Plane Dataref Bridge
   Serial.begin(115200);
 
-  // Wait for serial connection to be established (important for some boards)
+  // --- Wait for Serial Connection ---
+  // Some boards (like Leonardo) need time to establish serial connection
+  // This waits up to 5 seconds for serial to be ready
   while (!Serial && millis() < 5000) {
-    delay(10);
+    delay(10);  // Small delay to prevent overwhelming the processor
   }
 
-  // Print startup message to serial monitor for debugging
-  Serial.println("// Handshake Demo Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.print("// Waiting for HELLO command...");
+  // --- Send Startup Messages ---
+  // These messages help with debugging and confirm device is working
+  Serial.println("// Four Button Controller Started");  // Startup confirmation
+  Serial.print("// Device: "); 
+  Serial.println(DEVICE_NAME);                        // Send device name
+  Serial.println("// Button 1: GEAR_HANDLE | Button 2: HEADING_SYNC | Button 3: LED_ELEM | Button 4: LED_ARRAY");  // Function guide
 }
+
+/* ==========================================================================
+   MAIN LOOP FUNCTION
+   This runs continuously after setup() - checks buttons and handles communication
+   ========================================================================== */
 
 void loop() {
-  // Check for incoming serial commands
-  checkSerial();
-
-  // Send periodic heartbeat to maintain connection
-  sendHeartbeat();
-
-  // Small delay to prevent overwhelming the serial buffer
-  delay(1);
+  checkSerial();    // Listen for commands from bridge application
+  checkButtons();   // Check if any buttons have been pressed
+  delay(10);        // Small delay to prevent overwhelming processor
 }
 
+/* ==========================================================================
+   SERIAL COMMUNICATION HANDLER
+   Processes incoming messages from X-Plane Dataref Bridge
+   ========================================================================== */
+
 void checkSerial() {
-  // Process all available serial data
+  // Check if any data is available to read from serial port
   while (Serial.available()) {
-    // Read a complete line from serial input (terminated by newline)
+    // Read one complete line (until newline character)
     String line = Serial.readStringUntil('\n');
-    // Remove leading/trailing whitespace
-    line.trim();
+    line.trim();  // Remove any whitespace from beginning and end
 
-    // Handle the handshake request from the bridge
+    // --- Handle Handshake Request ---
+    // Bridge sends "HELLO" to check if device is responding
     if (line == "HELLO") {
-      // Send proper handshake response in the format expected by the bridge
-      // Format: XPDR;fw=version;board=type;name=device_name
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
-
-      // Log the handshake for debugging
-      Serial.println("// Handshake completed successfully");
+      // Respond with device information in expected format
+      Serial.print("XPDR;fw="); 
+      Serial.print(FIRMWARE_VERSION);    // Send firmware version
+      Serial.print(";board="); 
+      Serial.print(BOARD_TYPE);          // Send board type
+      Serial.print(";name="); 
+      Serial.println(DEVICE_NAME);       // Send device name
     }
-    // Handle LIST command to show available features
+    
+    // --- Handle LIST Command ---
+    // Bridge sends "LIST" to ask what functions this device provides
+    else if (line == "LIST") {
+      Serial.println("STATUS Available Functions:");
+      Serial.println("STATUS - Button 1: INPUT GEAR_HANDLE (gear status)");
+      Serial.println("STATUS - Button 2: INPUT HEADING_SYNC (heading command)");
+      Serial.println("STATUS - Button 3: INPUT LED_STATE_ELEM0 (LED element)");
+      Serial.println("STATUS - Button 4: INPUT LED_STATE_ARRAY (LED array)");
+    }
+    
+    // --- Handle STATUS Command ---
+    // Bridge sends "STATUS" to ask for device current state
+    else if (line == "STATUS") {
+      Serial.println("STATUS Controller Status:");
+      Serial.print("STATUS - Buttons: 4 configured");
+      Serial.print("STATUS - Array size: 10 elements");
+      Serial.println("STATUS - Ready for button presses");
+    }
+  }
+}
+
+/* ==========================================================================
+   BUTTON CHECKING FUNCTION
+   Checks all four buttons for state changes and handles debouncing
+   ========================================================================== */
+
+void checkButtons() {
+  // --- Read Current Button States ---
+  // digitalRead() returns HIGH or LOW
+  // We invert (!) the reading because INPUT_PULLUP gives HIGH when not pressed
+  bool currentButton1State = !digitalRead(BUTTON1_PIN);  // Read Button 1
+  bool currentButton2State = !digitalRead(BUTTON2_PIN);  // Read Button 2
+  bool currentButton3State = !digitalRead(BUTTON3_PIN);  // Read Button 3
+  bool currentButton4State = !digitalRead(BUTTON4_PIN);  // Read Button 4
+
+  /* ==========================================================================
+     BUTTON 1 PROCESSING - GEAR_HANDLE
+     ========================================================================== */
+  if (currentButton1State != lastButton1State) {
+    // Check if enough time has passed for debouncing
+    if ((millis() - lastDebounceTime1) > DEBOUNCE_DELAY) {
+      // Only act on button press (going from not pressed to pressed)
+      if (currentButton1State) {
+        writeDataref();                    // Send gear command
+        lastDebounceTime1 = millis();      // Reset debounce timer
+      }
+    }
+    lastButton1State = currentButton1State;  // Update stored state
+  }
+
+  /* ==========================================================================
+     BUTTON 2 PROCESSING - HEADING_SYNC
+     ========================================================================== */
+  if (currentButton2State != lastButton2State) {
+    if ((millis() - lastDebounceTime2) > DEBOUNCE_DELAY) {
+      if (currentButton2State) {
+        executeCommand();                  // Send heading sync command
+        lastDebounceTime2 = millis();      // Reset debounce timer
+      }
+    }
+    lastButton2State = currentButton2State;  // Update stored state
+  }
+
+  /* ==========================================================================
+     BUTTON 3 PROCESSING - LED_STATE_ELEM0
+     ========================================================================== */
+  if (currentButton3State != lastButton3State) {
+    if ((millis() - lastDebounceTime3) > DEBOUNCE_DELAY) {
+      if (currentButton3State) {
+        writeArrayElement();               // Send LED element command
+        lastDebounceTime3 = millis();      // Reset debounce timer
+      }
+    }
+    lastButton3State = currentButton3State;  // Update stored state
+  }
+
+  /* ==========================================================================
+     BUTTON 4 PROCESSING - LED_STATE_ARRAY
+     ========================================================================== */
+  if (currentButton4State != lastButton4State) {
+    if ((millis() - lastDebounceTime4) > DEBOUNCE_DELAY) {
+      if (currentButton4State) {
+        writeMultipleArrayElements();       // Send LED array command
+        lastDebounceTime4 = millis();      // Reset debounce timer
+      }
+    }
+    lastButton4State = currentButton4State;  // Update stored state
+  }
+}
+
+/* ==========================================================================
+   BUTTON ACTION FUNCTIONS
+   These functions are called when buttons are pressed - they send commands
+   ========================================================================== */
+
+// Button 1 Action: Send gear handle command
+void writeDataref() {
+  Serial.print("INPUT ");          // Start of input message
+  Serial.print(OUTPUT_ID_GEAR);    // Send OUTPUT_ID for gear
+  Serial.println(" 1");            // Send value 1 (gear down/engaged)
+  Serial.println("// Button 1: Sent GEAR_HANDLE input");  // Debug message
+}
+
+// Button 2 Action: Send heading sync command
+void executeCommand() {
+  Serial.print("INPUT ");            // Start of input message
+  Serial.print(OUTPUT_ID_HEADING);   // Send OUTPUT_ID for heading
+  Serial.println(" 1");              // Send value 1 (sync engaged)
+  Serial.println("// Button 2: Sent HEADING_SYNC command");  // Debug message
+}
+
+// Button 3 Action: Send LED array element command
+void writeArrayElement() {
+  Serial.print("INPUT ");              // Start of input message
+  Serial.print(OUTPUT_ID_LED_ELEM);    // Send OUTPUT_ID for LED element
+  Serial.println(" 1.0");              // Send float value 1.0 (full brightness)
+  Serial.println("// Button 3: Sent LED_STATE_ELEM0 input");  // Debug message
+}
+
+// Button 4 Action: Send LED array command
+void writeMultipleArrayElements() {
+  Serial.print("INPUT ");                // Start of input message
+  Serial.print(OUTPUT_ID_LED_ARRAY);     // Send OUTPUT_ID for LED array
+  Serial.println(" 1.0,0.5,0.0");      // Send multiple values (CSV format)
+  Serial.println("// Button 4: Sent LED_STATE_ARRAY input");  // Debug message
+
+  // Update local test array for demonstration
+  testArray[0] = 1.0;  // First element full brightness
+  testArray[1] = 0.5;  // Second element half brightness
+  testArray[2] = 0.0;  // Third element off
+  Serial.println("// Local array updated: [0]=1.0, [1]=0.5, [2]=0.0");  // Debug message
+}
+
+/* ==========================================================================
+   END OF SKETCH
+   Congratulations! You now have a working 4-button controller.
+   ========================================================================== */
+```
+
+### 2. 4-Axis Input Controller with OUTPUT_IDs
+
+#### 4_axis_input_controller_with_output_ids.ino
+A 4-axis input controller with different functionality per axis using OUTPUT_IDs.
+
+- Features: Analog input handling, threshold detection, OUTPUT_ID system
+- Output ID: `4AxisController`
+
+```cpp
+/*
+===============================================================================
+X-Plane Dataref Bridge - 4 Axis Input Controller with OUTPUT_IDs (Beginner Version)
+===============================================================================
+
+PURPOSE:
+This sketch creates a 4-axis input controller using analog inputs (potentiometers or
+joystick axes) to control different X-Plane systems. Each axis demonstrates a 
+different type of dataref operation.
+
+REQUIRED HARDWARE:
+- Arduino UNO (or compatible board)
+- 4x Potentiometers (10kΩ recommended) OR 2-axis joystick + 2x potentiometers
+- Breadboard and jumper wires
+- USB cable for programming and communication
+
+WIRING INSTRUCTIONS (for 4x potentiometers):
+- Potentiometer 1: Center pin → A0, Outer pins → 5V and GND
+- Potentiometer 2: Center pin → A1, Outer pins → 5V and GND  
+- Potentiometer 3: Center pin → A2, Outer pins → 5V and GND
+- Potentiometer 4: Center pin → A3, Outer pins → 5V and GND
+
+AXIS FUNCTIONALITY:
+Axis 1 (A0): THROTTLE_AXIS - Smooth throttle control (0.0 to 1.0)
+Axis 2 (A1): AUTOPILOT_TOGGLE - Binary control for autopilot on/off
+Axis 3 (A2): DOOR_ELEM[n] - Controls specific door elements based on position
+Axis 4 (A3): DOOR_ARRAY - Controls multiple door elements simultaneously
+
+OUTPUT_ID SYSTEM:
+OUTPUT_IDs are user-friendly names that you configure in the bridge application 
+to map to actual X-Plane datarefs. This makes your code reusable across different
+aircraft and much easier to understand than hardcoded X-Plane paths.
+
+BRIDGE CONFIGURATION:
+In your X-Plane Dataref Bridge application, map these OUTPUT_IDs:
+THROTTLE_AXIS → sim/cockpit2/engine/actuators/throttle_ratio_all
+AUTOPILOT_TOGGLE → sim/autopilot/autopilot_on (1) / sim/autopilot/autopilot_off (0)
+DOOR_ELEM[n] → sim/flightmodel2/misc/door_open_ratio[n]
+DOOR_ARRAY → sim/flightmodel2/misc/door_open_ratio (full array)
+
+ANALOG INPUT BASICS:
+- Arduino reads analog values from 0 (0V) to 1023 (5V)
+- We convert these to useful ranges (0.0-1.0 for percentages)
+- Potentiometers provide smooth, continuous control
+- Higher analog readings = higher voltage = higher control value
+
+TROUBLESHOOTING:
+- Erratic readings? Check power supply stability and ground connections
+- No response? Verify analog pins and potentiometer wiring
+- Jumping values? Add small capacitor (10nF) across potentiometer outer pins
+===============================================================================
+*/
+
+/* ==========================================================================
+   DEVICE IDENTIFICATION SECTION
+   These constants identify your device to the bridge application
+   ========================================================================== */
+
+const char* DEVICE_NAME = "4AxisController";       // Human-readable device name
+const char* FIRMWARE_VERSION = "1.0";             // Version for tracking updates
+const char* BOARD_TYPE = "UNO";                    // Arduino board type
+
+/* ==========================================================================
+   OUTPUT_ID DEFINITIONS SECTION
+   Friendly names for your controls instead of hardcoded X-Plane datarefs
+   ========================================================================== */
+
+const char* OUTPUT_ID_THROTTLE = "THROTTLE_AXIS";     // Main throttle control
+const char* OUTPUT_ID_AUTOPILOT = "AUTOPILOT_TOGGLE";  // Autopilot on/off
+const char* OUTPUT_ID_DOOR_ELEM_BASE = "DOOR_ELEM";    // Base for door elements
+const char* OUTPUT_ID_DOOR_ARRAY = "DOOR_ARRAY";       // Full door array
+
+/* ==========================================================================
+   ANALOG PIN CONFIGURATION SECTION
+   Define which Arduino analog pins each control is connected to
+   ========================================================================== */
+
+const int AXIS_1_PIN = A0;  // Throttle potentiometer
+const int AXIS_2_PIN = A1;  // Autopilot trigger potentiometer
+const int AXIS_3_PIN = A2;  // Door element selector potentiometer
+const int AXIS_4_PIN = A3;  // Multi-door control potentiometer
+
+/* ==========================================================================
+   THRESHOLD AND SENSITIVITY SETTINGS
+   Control how responsive each axis is to prevent unwanted triggers
+   ========================================================================== */
+
+// Threshold for triggering digital commands (Axis 2)
+// Analog range: 0-1023, so 800 = ~78% of maximum
+const int COMMAND_THRESHOLD = 800;
+
+/* ==========================================================================
+   PREVIOUS VALUE TRACKING SECTION
+   Store previous readings to detect changes and prevent flooding
+   ========================================================================== */
+
+// Variables to remember the last reading from each axis
+int prevAxis1Value = -1;  // Previous throttle reading
+int prevAxis2Trigger = -1; // Previous autopilot trigger state
+int prevAxis3Value = -1;  // Previous door element reading
+int prevAxis4Value = -1;  // Previous door array reading
+
+/* ==========================================================================
+   DEMONSTRATION ARRAY SECTION
+   Array to simulate door states for testing and demonstration
+   ========================================================================== */
+
+// Simulates door open ratios (0.0 = closed, 1.0 = fully open)
+float demoArray[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+
+/* ==========================================================================
+   SETUP FUNCTION
+   Runs once at startup - initializes hardware and establishes communication
+   ========================================================================== */
+
+void setup() {
+  // --- Initialize Serial Communication ---
+  // Start serial at 115200 baud (required by X-Plane Dataref Bridge)
+  Serial.begin(115200);
+
+  // --- Wait for Serial Connection ---
+  // Important for boards that don't immediately have serial available
+  while (!Serial && millis() < 5000) {
+    delay(10);  // Small delay to prevent CPU overload
+  }
+
+  // --- Send Startup Messages ---
+  // These help with debugging and confirm proper initialization
+  Serial.println("// 4-Axis Input Controller Started");
+  Serial.print("// Device: "); 
+  Serial.println(DEVICE_NAME);
+  Serial.println("// Axes: 1-THROTTLE, 2-AUTOPILOT, 3-DOOR_ELEM, 4-DOOR_ARRAY");
+
+  // --- Initialize Analog Pins ---
+  // Analog pins are inputs by default, but we set them explicitly for clarity
+  pinMode(AXIS_1_PIN, INPUT);  // Throttle as input
+  pinMode(AXIS_2_PIN, INPUT);  // Autopilot trigger as input
+  pinMode(AXIS_3_PIN, INPUT);  // Door element selector as input
+  pinMode(AXIS_4_PIN, INPUT);  // Door array control as input
+}
+
+/* ==========================================================================
+   MAIN LOOP FUNCTION
+   Runs continuously - reads all axes and processes their values
+   ========================================================================== */
+
+void loop() {
+  handleSerialCommands();    // Check for messages from bridge
+  
+  // --- Read All Analog Inputs ---
+  // analogRead() returns 0-1023 based on voltage (0V-5V)
+  int axis1Value = analogRead(AXIS_1_PIN);  // Read throttle position
+  int axis2Value = analogRead(AXIS_2_PIN);  // Read autopilot trigger
+  int axis3Value = analogRead(AXIS_3_PIN);  // Read door element selector
+  int axis4Value = analogRead(AXIS_4_PIN);  // Read door array control
+
+  // --- Process Each Axis ---
+  processAxis1(axis1Value);  // Handle throttle control
+  processAxis2(axis2Value);  // Handle autopilot trigger
+  processAxis3(axis3Value);  // Handle door element control
+  processAxis4(axis4Value);  // Handle door array control
+
+  delay(50);  // Small delay to prevent overwhelming serial connection
+}
+
+/* ==========================================================================
+   SERIAL COMMAND HANDLER
+   Processes incoming messages from X-Plane Dataref Bridge
+   ========================================================================== */
+
+void handleSerialCommands() {
+  // Check if any data is available from serial port
+  while (Serial.available()) {
+    // Read one complete line (message ends with newline)
+    String line = Serial.readStringUntil('\n');
+    line.trim();  // Remove whitespace
+
+    // --- Handle Handshake Request ---
+    // Bridge sends "HELLO" to identify connected devices
+    if (line == "HELLO") {
+      // Respond with device identification
+      Serial.print("XPDR;fw="); 
+      Serial.print(FIRMWARE_VERSION);    // Send firmware version
+      Serial.print(";board="); 
+      Serial.print(BOARD_TYPE);          // Send board type
+      Serial.print(";name="); 
+      Serial.println(DEVICE_NAME);       // Send device name
+      Serial.println("// Handshake completed successfully");  // Confirmation
+    }
+    
+    // --- Handle LIST Command ---
+    // Bridge asks what functions this device provides
     else if (line == "LIST") {
       Serial.println("STATUS Available Commands:");
       Serial.println("STATUS - HELLO (establish connection)");
       Serial.println("STATUS - LIST (show available commands)");
       Serial.println("STATUS - STATUS (show device status)");
     }
-    // Handle STATUS command to show current device status
+    
+    // --- Handle STATUS Command ---
+    // Bridge asks for current device status and sensor readings
     else if (line == "STATUS") {
-      Serial.println("STATUS Device Status:");
-      Serial.print("STATUS - Uptime: "); Serial.print(millis() / 1000); Serial.println(" seconds");
-      Serial.print("STATUS - Device: "); Serial.println(DEVICE_NAME);
-      Serial.print("STATUS - Next heartbeat in: ");
-      Serial.print((HEARTBEAT_INTERVAL - (millis() - lastHeartbeat)) / 1000);
-      Serial.println(" seconds");
+      Serial.println("STATUS 4-Axis Input Controller Status:");
+      Serial.print("STATUS - Device: "); 
+      Serial.println(DEVICE_NAME);
+      
+      // Show current readings from all axes for debugging
+      Serial.print("STATUS - Axes readings - 1:"); 
+      Serial.print(analogRead(AXIS_1_PIN));
+      Serial.print(", 2:"); 
+      Serial.print(analogRead(AXIS_2_PIN));
+      Serial.print(", 3:"); 
+      Serial.print(analogRead(AXIS_3_PIN));
+      Serial.print(", 4:"); 
+      Serial.println(analogRead(AXIS_4_PIN));
     }
   }
 }
 
-void sendHeartbeat() {
-  // Send periodic heartbeat every HEARTBEAT_INTERVAL milliseconds
-  if (millis() - lastHeartbeat > HEARTBEAT_INTERVAL) {
-    // Send heartbeat message to indicate device is still alive
-    Serial.print("HEARTBEAT;device="); Serial.println(DEVICE_NAME);
-    lastHeartbeat = millis();
-  }
-}
-```
+/* ==========================================================================
+   AXIS 1 PROCESSING - THROTTLE CONTROL
+   Converts potentiometer position to smooth throttle command (0.0 to 1.0)
+   ========================================================================== */
 
-### 2. Reading Datarefs
+void processAxis1(int value) {
+  // --- Normalize Analog Reading to 0.0-1.0 Range ---
+  // analogRead() returns 0-1023, we convert to 0.0-1.0 (percentage)
+  // 1023.0 = maximum reading, 0.0 = minimum reading
+  float normalizedValue = (float)value / 1023.0;
 
-#### read_dataref.ino
-Requests values for specific datarefs and parses VALUE responses.
-
-- Features: Request values, store locally, periodic polling
-- Output ID: `DATA_READER`
-
-```cpp
-/*
- * X-Plane Dataref Bridge - Read Dataref
- *
- * This sketch demonstrates how to read dataref values from the bridge app.
- * The Arduino sends a request to read a specific dataref, and the bridge
- * responds with the current value of that dataref.
- */
-
-// Device identification constants
-const char* DEVICE_NAME = "DataReader";
-const char* FIRMWARE_VERSION = "1.0";
-const char* BOARD_TYPE = "UNO";
-
-// Variables to store received dataref values
-float receivedFloatValue = 0.0;      // Stores received float values
-int receivedIntValue = 0;            // Stores received integer values
-bool receivedBoolValue = false;      // Stores received boolean values
-
-// Timing for periodic dataref requests
-unsigned long lastReadRequest = 0;   // Time of last read request
-const unsigned long READ_INTERVAL = 1000; // Request data every 1000ms
-
-void setup() {
-  Serial.begin(115200);
-  while (!Serial && millis() < 5000) {
-    delay(10);
-  }
-
-  Serial.println("// Data Reader Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.println("// Will request dataref values periodically");
-}
-
-void loop() {
-  checkSerial();
-  requestReadDataref();
-  delay(1);
-}
-
-void checkSerial() {
-  while (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
-
-    // Handle handshake request
-    if (line == "HELLO") {
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
-    }
-    // Handle incoming dataref values from the bridge
-    // Format: VALUE dataref_name value
-    else if (line.startsWith("VALUE ")) {
-      // Parse the VALUE message: VALUE dataref_name value
-      int firstSpace = line.indexOf(' ');
-      int secondSpace = line.indexOf(' ', firstSpace + 1);
-
-      if (firstSpace > 0 && secondSpace > firstSpace) {
-        String datarefName = line.substring(firstSpace + 1, secondSpace);
-        String valueStr = line.substring(secondSpace + 1);
-        float value = valueStr.toFloat();
-
-        // Store the received value based on dataref name
-        if (datarefName == "sim/cockpit2/gauges/indicators/airspeed_kts_pilot") {
-          receivedFloatValue = value;
-          Serial.print("// Received airspeed: "); Serial.println(receivedFloatValue);
-        }
-        else if (datarefName == "sim/cockpit2/switches/gear_handle_status") {
-          receivedIntValue = (int)value;
-          Serial.print("// Received gear status: "); Serial.println(receivedIntValue);
-        }
-        else if (datarefName == "sim/cockpit/warnings/master_warning") {
-          receivedBoolValue = (value != 0);
-          Serial.print("// Received warning: "); Serial.println(receivedBoolValue ? "ON" : "OFF");
-        }
-      }
-    }
+  // --- Only Send Updates if Value Changed Significantly ---
+  // This prevents flooding serial with identical values
+  // Change must be >10 to trigger an update
+  if (abs(value - prevAxis1Value) > 10) {
+    // --- Send Throttle Command ---
+    Serial.print("INPUT ");              // Start message
+    Serial.print(OUTPUT_ID_THROTTLE);    // Send OUTPUT_ID
+    Serial.print(" ");                   // Space separator
+    Serial.println(normalizedValue, 4);   // Send value with 4 decimal places
+    
+    prevAxis1Value = value;  // Update stored previous value
   }
 }
 
-void requestReadDataref() {
-  // Request dataref values periodically
-  if (millis() - lastReadRequest > READ_INTERVAL) {
-    // Request specific datarefs from the bridge
-    // Format: READ dataref_name type
-    Serial.println("READ sim/cockpit2/gauges/indicators/airspeed_kts_pilot float");
-    Serial.println("READ sim/cockpit2/switches/gear_handle_status int");
-    Serial.println("READ sim/cockpit/warnings/master_warning bool");
+/* ==========================================================================
+   AXIS 2 PROCESSING - AUTOPILOT TOGGLE
+   Uses threshold to trigger autopilot on/off commands
+   ========================================================================== */
 
-    lastReadRequest = millis();
-  }
-}
-```
+void processAxis2(int value) {
+  // --- Determine if Threshold is Exceeded ---
+  // Should trigger when potentiometer is above 800 (~78% of maximum)
+  bool shouldTrigger = (value > COMMAND_THRESHOLD);
 
-### 3. Writing Datarefs
-
-#### write_dataref.ino
-Sends SETDREF commands and handles acknowledgments.
-
-- Features: Write values, acknowledgments, periodic updates
-- Output ID: `DATA_WRITER`
-
-```cpp
-/*
- * X-Plane Dataref Bridge - Write Dataref
- *
- * This sketch demonstrates how to write dataref values to the bridge app.
- * The Arduino sends SETDREF commands to update specific dataref values in X-Plane.
- */
-
-// Device identification constants
-const char* DEVICE_NAME = "DataWriter";
-const char* FIRMWARE_VERSION = "1.0";
-const char* BOARD_TYPE = "UNO";
-
-// Variables for dataref values
-float throttleValue = 0.0;           // Throttle position (0.0 to 1.0)
-int gearPosition = 0;                // Gear position (0=up, 1=down)
-bool beaconOn = false;               // Beacon light status
-
-// Timing for periodic writes
-unsigned long lastWrite = 0;         // Time of last write
-const unsigned long WRITE_INTERVAL = 2000; // Write every 2000ms
-
-void setup() {
-  Serial.begin(115200);
-  while (!Serial && millis() < 5000) {
-    delay(10);
-  }
-
-  Serial.println("// Data Writer Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.println("// Will write dataref values periodically");
-}
-
-void loop() {
-  checkSerial();
-  writeDatarefValues();
-  delay(1);
-}
-
-void checkSerial() {
-  while (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
-
-    // Handle handshake request
-    if (line == "HELLO") {
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
-    }
-    // Handle SET commands from bridge (acknowledgment or direct values)
-    else if (line.startsWith("SET ")) {
-      // Parse SET command: SET key value
-      int firstSpace = line.indexOf(' ');
-      int secondSpace = line.indexOf(' ', firstSpace + 1);
-
-      if (firstSpace > 0 && secondSpace > firstSpace) {
-        String key = line.substring(firstSpace + 1, secondSpace);
-        String valueStr = line.substring(secondSpace + 1);
-        float value = valueStr.toFloat();
-
-        // Acknowledge receipt of SET command
-        Serial.print("ACK "); Serial.print(key); Serial.print(" "); Serial.println(value, 6);
-      }
-    }
+  // --- Check State Change from Low to High ---
+  if (shouldTrigger && !prevAxis2Trigger) {
+    // --- Send Autopilot ON Command ---
+    Serial.print("INPUT ");                // Start message
+    Serial.print(OUTPUT_ID_AUTOPILOT);     // Send OUTPUT_ID
+    Serial.println(" 1");                  // Value 1 = autopilot ON
+    Serial.println("// Command: Autopilot ON triggered");  // Debug message
+    prevAxis2Trigger = true;  // Update stored state
+  } 
+  // --- Check State Change from High to Low ---
+  else if (!shouldTrigger && prevAxis2Trigger) {
+    // --- Send Autopilot OFF Command ---
+    Serial.print("INPUT ");                // Start message
+    Serial.print(OUTPUT_ID_AUTOPILOT);     // Send OUTPUT_ID
+    Serial.println(" 0");                  // Value 0 = autopilot OFF
+    Serial.println("// Command: Autopilot OFF triggered");  // Debug message
+    prevAxis2Trigger = false;  // Update stored state
   }
 }
 
-void writeDatarefValues() {
-  // Write dataref values periodically
-  if (millis() - lastWrite > WRITE_INTERVAL) {
-    // Simulate changing values for demonstration
-    throttleValue = (throttleValue + 0.1) > 1.0 ? 0.0 : throttleValue + 0.1;
-    gearPosition = (gearPosition + 1) % 2;
-    beaconOn = !beaconOn;
+/* ==========================================================================
+   AXIS 3 PROCESSING - DOOR ELEMENT CONTROL
+   Maps potentiometer position to specific door array elements
+   ========================================================================== */
 
-    // Write values to X-Plane datarefs using SETDREF command
-    // Format: SETDREF dataref_name value
-    Serial.print("SETDREF sim/cockpit2/engine/actuators/throttle_ratio_all ");
-    Serial.println(throttleValue, 6);
+void processAxis3(int value) {
+  // --- Normalize Reading to 0.0-1.0 ---
+  float normalizedValue = (float)value / 1023.0;
 
-    Serial.print("SETDREF sim/cockpit2/switches/gear_handle_status ");
-    Serial.println(gearPosition);
+  // --- Map Pot Position to Array Index ---
+  // Convert 0-1023 range to 0-4 array index
+  // This lets you select which door element to control
+  int arrayIndex = map(value, 0, 1023, 0, 4);
 
-    Serial.print("SETDREF sim/cockpit2/switches/beacon_on ");
-    Serial.println(beaconOn ? 1 : 0);
+  // --- Only Update if Value Changed Significantly ---
+  if (abs(value - prevAxis3Value) > 10) {
+    // --- Update Local Demo Array ---
+    demoArray[arrayIndex] = normalizedValue;
 
-    Serial.println("// Dataref values written to X-Plane");
+    // --- Send Door Element Command ---
+    Serial.print("INPUT ");                              // Start message
+    Serial.print(OUTPUT_ID_DOOR_ELEM_BASE);              // Base OUTPUT_ID
+    Serial.print(arrayIndex);                             // Add element number
+    Serial.print(" ");                                   // Space separator
+    Serial.println(normalizedValue, 4);                  // Send value with 4 decimals
 
-    lastWrite = millis();
-  }
-}
-```
+    // --- Send Debug Information ---
+    Serial.print("// Updated DOOR_ELEM"); 
+    Serial.print(arrayIndex); 
+    Serial.print(" to value: "); 
+    Serial.println(normalizedValue, 4);
 
-### 4. Basic Types Read/Write
-
-#### read_write_basic_types.ino
-Bi-directional example for int, float, bool, and byte.
-
-- Features: Bi-directional, dynamic updates
-- Output ID: `BASIC_TYPES_RW`
-
-```cpp
-/*
- * X-Plane Dataref Bridge - Read/Write Basic Types
- *
- * This sketch demonstrates bidirectional communication for basic data types:
- * int, float, bool, and byte. It can both read values from the bridge and
- * write values back to X-Plane datarefs.
- */
-
-// Device identification constants
-const char* DEVICE_NAME = "BasicTypesRW";
-const char* FIRMWARE_VERSION = "1.0";
-const char* BOARD_TYPE = "UNO";
-
-// Storage for different data types
-int counterValue = 0;                // Integer value storage
-float rateValue = 0.0;               // Float value storage
-bool armedValue = false;             // Boolean value storage
-byte modeValue = 0;                  // Byte value storage
-
-void setup() {
-  Serial.begin(115200);
-  while (!Serial && millis() < 5000) {
-    delay(10);
-  }
-
-  Serial.println("// Basic Types Read/Write Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.println("// Supports int, float, bool, and byte data types");
-}
-
-void loop() {
-  checkSerial();
-  delay(1);
-}
-
-void checkSerial() {
-  while (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
-
-    // Handle handshake request
-    if (line == "HELLO") {
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
-    }
-    // Handle READ requests from bridge
-    // Format: READ dataref_name type
-    else if (line.startsWith("READ ")) {
-      String rest = line.substring(5);  // Remove "READ " prefix
-      rest.trim();
-      int spaceIndex = rest.indexOf(' ');
-
-      if (spaceIndex > 0) {
-        String name = rest.substring(0, spaceIndex);
-        String type = rest.substring(spaceIndex + 1);
-        type.trim();
-
-        // Respond with current value based on dataref name and type
-        if (name == "counter" && type == "int") {
-          Serial.print("VALUE counter ");
-          Serial.println(counterValue);
-        }
-        else if (name == "rate" && type == "float") {
-          Serial.print("VALUE rate ");
-          Serial.println(rateValue, 6);
-        }
-        else if (name == "armed" && type == "bool") {
-          Serial.print("VALUE armed ");
-          Serial.println(armedValue ? 1 : 0);
-        }
-        else if (name == "mode" && type == "byte") {
-          Serial.print("VALUE mode ");
-          Serial.println(modeValue);
-        }
-        else {
-          Serial.println("UNKNOWN");
-        }
-      }
-    }
-    // Handle WRITE requests from bridge
-    // Format: WRITE dataref_name type value
-    else if (line.startsWith("WRITE ")) {
-      String rest = line.substring(6);  // Remove "WRITE " prefix
-      rest.trim();
-      int firstSpace = rest.indexOf(' ');
-
-      if (firstSpace > 0) {
-        String name = rest.substring(0, firstSpace);
-        String rest2 = rest.substring(firstSpace + 1);
-        rest2.trim();
-        int secondSpace = rest2.indexOf(' ');
-
-        if (secondSpace > 0) {
-          String type = rest2.substring(0, secondSpace);
-          String valueStr = rest2.substring(secondSpace + 1);
-          valueStr.trim();
-
-          // Update internal storage based on dataref name and type
-          if (name == "counter" && type == "int") {
-            counterValue = valueStr.toInt();
-            Serial.println("OK");
-          }
-          else if (name == "rate" && type == "float") {
-            rateValue = valueStr.toFloat();
-            Serial.println("OK");
-          }
-          else if (name == "armed" && type == "bool") {
-            armedValue = (valueStr == "1" || valueStr.equalsIgnoreCase("true"));
-            Serial.println("OK");
-          }
-          else if (name == "mode" && type == "byte") {
-            modeValue = (byte)valueStr.toInt();
-            Serial.println("OK");
-          }
-          else {
-            Serial.println("ERR");
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-### 5. Array Datarefs
-
-#### array_dataref.ino
-Reads and writes entire arrays using comma-separated values.
-
-- Features: Array read/write across types
-- Output ID: `ARRAY_DATA_REF`
-
-```cpp
-/*
- * X-Plane Dataref Bridge - Array Dataref
- *
- * This sketch demonstrates reading and writing array datarefs for different types:
- * int, float, bool, and byte arrays. It handles comma-separated values for arrays.
- */
-
-// Device identification constants
-const char* DEVICE_NAME = "ArrayDataRef";
-const char* FIRMWARE_VERSION = "1.0";
-const char* BOARD_TYPE = "UNO";
-
-// Array storage for different types
-float floatArray[10] = {0};           // Float array with 10 elements
-int intArray[10] = {0};              // Integer array with 10 elements
-bool boolArray[10] = {false};        // Boolean array with 10 elements
-byte byteArray[10] = {0};            // Byte array with 10 elements
-
-void setup() {
-  Serial.begin(115200);
-  while (!Serial && millis() < 5000) {
-    delay(10);
-  }
-
-  Serial.println("// Array Dataref Handler Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.println("// Supports array datarefs for int, float, bool, byte");
-
-  // Initialize arrays with sample values
-  for (int i = 0; i < 10; i++) {
-    floatArray[i] = i * 0.1;
-    intArray[i] = i;
-    boolArray[i] = (i % 2 == 0);
-    byteArray[i] = i;
+    prevAxis3Value = value;  // Update stored previous value
   }
 }
 
-void loop() {
-  checkSerial();
-  delay(1);
-}
+/* ==========================================================================
+   AXIS 4 PROCESSING - DOOR ARRAY CONTROL
+   Controls multiple door elements simultaneously based on one potentiometer
+   ========================================================================== */
 
-void checkSerial() {
-  while (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
+void processAxis4(int value) {
+  // --- Normalize Reading to 0.0-1.0 ---
+  float normalizedValue = (float)value / 1023.0;
 
-    // Handle handshake request
-    if (line == "HELLO") {
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
-    }
-    // Handle READ requests for array datarefs
-    // Format: READARRAY array_name type
-    else if (line.startsWith("READARRAY ")) {
-      String rest = line.substring(10);  // Remove "READARRAY " prefix
-      rest.trim();
-      int spaceIndex = rest.indexOf(' ');
-
-      if (spaceIndex > 0) {
-        String name = rest.substring(0, spaceIndex);
-        String type = rest.substring(spaceIndex + 1);
-        type.trim();
-
-        // Send array values as comma-separated string
-        if (name == "float_array" && type == "float") {
-          Serial.print("ARRAYVALUE float_array float ");
-          sendFloatArray(floatArray, 10);
-        }
-        else if (name == "int_array" && type == "int") {
-          Serial.print("ARRAYVALUE int_array int ");
-          sendIntArray(intArray, 10);
-        }
-        else if (name == "bool_array" && type == "bool") {
-          Serial.print("ARRAYVALUE bool_array bool ");
-          sendBoolArray(boolArray, 10);
-        }
-        else if (name == "byte_array" && type == "byte") {
-          Serial.print("ARRAYVALUE byte_array byte ");
-          sendByteArray(byteArray, 10);
-        }
-        else {
-          Serial.println("UNKNOWN");
-        }
-      }
-    }
-    // Handle WRITE requests for array datarefs
-    // Format: WRITEARRAY array_name type value1,value2,value3,...
-    else if (line.startsWith("WRITEARRAY ")) {
-      String rest = line.substring(11);  // Remove "WRITEARRAY " prefix
-      rest.trim();
-      int firstSpace = rest.indexOf(' ');
-
-      if (firstSpace > 0) {
-        String name = rest.substring(0, firstSpace);
-        String rest2 = rest.substring(firstSpace + 1);
-        rest2.trim();
-        int secondSpace = rest2.indexOf(' ');
-
-        if (secondSpace > 0) {
-          String type = rest2.substring(0, secondSpace);
-          String valuesStr = rest2.substring(secondSpace + 1);
-
-          // Parse and store array values
-          if (name == "float_array" && type == "float") {
-            parseFloatArray(valuesStr, floatArray, 10);
-            Serial.println("OK");
-          }
-          else if (name == "int_array" && type == "int") {
-            parseIntArray(valuesStr, intArray, 10);
-            Serial.println("OK");
-          }
-          else if (name == "bool_array" && type == "bool") {
-            parseBoolArray(valuesStr, boolArray, 10);
-            Serial.println("OK");
-          }
-          else if (name == "byte_array" && type == "byte") {
-            parseByteArray(valuesStr, byteArray, 10);
-            Serial.println("OK");
-          }
-          else {
-            Serial.println("ERR");
-          }
-        }
-      }
-    }
-  }
-}
-
-// Helper functions to send arrays as comma-separated strings
-void sendFloatArray(float arr[], int size) {
-  for (int i = 0; i < size; i++) {
-    Serial.print(arr[i], 6);
-    if (i < size - 1) Serial.print(",");
-  }
-  Serial.println();
-}
-
-void sendIntArray(int arr[], int size) {
-  for (int i = 0; i < size; i++) {
-    Serial.print(arr[i]);
-    if (i < size - 1) Serial.print(",");
-  }
-  Serial.println();
-}
-
-void sendBoolArray(bool arr[], int size) {
-  for (int i = 0; i < size; i++) {
-    Serial.print(arr[i] ? 1 : 0);
-    if (i < size - 1) Serial.print(",");
-  }
-  Serial.println();
-}
-
-void sendByteArray(byte arr[], int size) {
-  for (int i = 0; i < size; i++) {
-    Serial.print(arr[i]);
-    if (i < size - 1) Serial.print(",");
-  }
-  Serial.println();
-}
-
-// Helper functions to parse comma-separated strings into arrays
-void parseFloatArray(String str, float arr[], int maxSize) {
-  int index = 0;
-  int start = 0;
-  int commaIndex = 0;
-
-  while (commaIndex >= 0 && index < maxSize) {
-    commaIndex = str.indexOf(',', start);
-    String valueStr;
-
-    if (commaIndex >= 0) {
-      valueStr = str.substring(start, commaIndex);
-      start = commaIndex + 1;
-    } else {
-      valueStr = str.substring(start);
-    }
-
-    arr[index] = valueStr.toFloat();
-    index++;
-  }
-}
-
-void parseIntArray(String str, int arr[], int maxSize) {
-  int index = 0;
-  int start = 0;
-  int commaIndex = 0;
-
-  while (commaIndex >= 0 && index < maxSize) {
-    commaIndex = str.indexOf(',', start);
-    String valueStr;
-
-    if (commaIndex >= 0) {
-      valueStr = str.substring(start, commaIndex);
-      start = commaIndex + 1;
-    } else {
-      valueStr = str.substring(start);
-    }
-
-    arr[index] = valueStr.toInt();
-    index++;
-  }
-}
-
-void parseBoolArray(String str, bool arr[], int maxSize) {
-  int index = 0;
-  int start = 0;
-  int commaIndex = 0;
-
-  while (commaIndex >= 0 && index < maxSize) {
-    commaIndex = str.indexOf(',', start);
-    String valueStr;
-
-    if (commaIndex >= 0) {
-      valueStr = str.substring(start, commaIndex);
-      start = commaIndex + 1;
-    } else {
-      valueStr = str.substring(start);
-    }
-
-    arr[index] = (valueStr == "1" || valueStr.equalsIgnoreCase("true"));
-    index++;
-  }
-}
-
-void parseByteArray(String str, byte arr[], int maxSize) {
-  int index = 0;
-  int start = 0;
-  int commaIndex = 0;
-
-  while (commaIndex >= 0 && index < maxSize) {
-    commaIndex = str.indexOf(',', start);
-    String valueStr;
-
-    if (commaIndex >= 0) {
-      valueStr = str.substring(start, commaIndex);
-      start = commaIndex + 1;
-    } else {
-      valueStr = str.substring(start);
-    }
-
-    arr[index] = (byte)valueStr.toInt();
-    index++;
-  }
-}
-```
-
-### 6. Command Datarefs
-
-#### command_dataref.ino
-Executes command-type datarefs and provides simple LED feedback.
-
-- Features: Command execution, LED feedback
-- Output ID: `CMD_DEVICE`
-
-```cpp
-/*
- * X-Plane Dataref Bridge - Command Dataref
- *
- * This sketch demonstrates executing command-type datarefs. It listens for
- * CMD messages and executes specific actions based on the command received.
- */
-
-// Device identification constants
-const char* DEVICE_NAME = "CommandDevice";
-const char* FIRMWARE_VERSION = "1.0";
-const char* BOARD_TYPE = "UNO";
-
-// LED pin for visual feedback
-const int LED_PIN = LED_BUILTIN;
-bool ledState = false;               // Current LED state
-unsigned long lastBlink = 0;         // Time of last blink
-
-void setup() {
-  // Initialize LED pin as output
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-
-  Serial.begin(115200);
-  while (!Serial && millis() < 5000) {
-    delay(10);
-  }
-
-  Serial.println("// Command Device Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.println("// Ready to execute commands");
-}
-
-void loop() {
-  checkSerial();
-
-  // Handle LED blinking for visual feedback
-  handleLedBlinking();
-
-  delay(1);
-}
-
-void checkSerial() {
-  while (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
-
-    // Handle handshake request
-    if (line == "HELLO") {
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
-    }
-    // Handle command execution
-    // Format: CMD command_name
-    else if (line.startsWith("CMD ")) {
-      String command = line.substring(4);  // Remove "CMD " prefix
-      command.trim();
-
-      // Execute the command and send acknowledgment
-      executeCommand(command);
-      Serial.print("CMD_EXECUTED ");
-      Serial.println(command);
-    }
-    // Handle LIST command to show available commands
-    else if (line == "LIST") {
-      Serial.println("STATUS Available Commands:");
-      Serial.println("STATUS - toggleLED (toggle built-in LED)");
-      Serial.println("STATUS - pulseLED (blink LED 3 times)");
-      Serial.println("STATUS - reset (send reset signal)");
-      Serial.println("STATUS - flash (quick LED flash)");
-    }
-  }
-}
-
-void executeCommand(const String &cmd) {
-  if (cmd == "toggleLED") {
-    // Toggle the built-in LED on/off
-    ledState = !ledState;
-    digitalWrite(LED_PIN, ledState ? HIGH : LOW);
-    Serial.println("STATUS LED toggled");
-  }
-  else if (cmd == "pulseLED") {
-    // Make the LED blink rapidly 3 times
-    Serial.println("STATUS LED pulsing...");
+  // --- Only Update if Value Changed Significantly ---
+  // Higher threshold (20) reduces traffic for multi-element operations
+  if (abs(value - prevAxis4Value) > 20) {
+    // --- Update Multiple Array Elements ---
+    // Distribute potentiometer value across first 3 elements
     for (int i = 0; i < 3; i++) {
-      digitalWrite(LED_PIN, HIGH);
-      delay(100);
-      digitalWrite(LED_PIN, LOW);
-      delay(100);
+      // Create slight variations based on element position
+      // Element 0: value - 0.1, Element 1: value, Element 2: value + 0.1
+      float variedValue = constrain(normalizedValue + (i * 0.1 - 0.1), 0.0, 1.0);
+      demoArray[i] = variedValue;
     }
-    // Return to current state
-    digitalWrite(LED_PIN, ledState ? HIGH : LOW);
-  }
-  else if (cmd == "reset") {
-    // Send reset acknowledgment
-    Serial.println("RESET_CMD_RECEIVED");
-    // Reset internal state if needed
-    ledState = false;
-    digitalWrite(LED_PIN, LOW);
-  }
-  else if (cmd == "flash") {
-    // Quick flash the LED
-    Serial.println("STATUS LED flashed");
-    digitalWrite(LED_PIN, HIGH);
-    delay(50);
-    digitalWrite(LED_PIN, LOW);
-    delay(50);
-    // Return to current state
-    digitalWrite(LED_PIN, ledState ? HIGH : LOW);
-  }
-  else {
-    // Unknown command
-    Serial.print("UNKNOWN_CMD: ");
-    Serial.println(cmd);
+
+    // --- Create Comma-Separated Values String ---
+    String csvValues = "";
+    for (int i = 0; i < 3; i++) {
+      if (i > 0) csvValues += ",";  // Add comma between values
+      csvValues += String(demoArray[i], 4);  // Add value with 4 decimals
+    }
+
+    // --- Send Door Array Command ---
+    Serial.print("INPUT ");                  // Start message
+    Serial.print(OUTPUT_ID_DOOR_ARRAY);      // Send OUTPUT_ID for array
+    Serial.print(" ");                       // Space separator
+    Serial.println(csvValues);               // Send CSV string
+
+    // --- Send Debug Information ---
+    Serial.print("// Updated DOOR_ARRAY with values: ");
+    Serial.println(csvValues);
+
+    prevAxis4Value = value;  // Update stored previous value
   }
 }
 
-void handleLedBlinking() {
-  // Optional: keep LED in a visible state for ongoing activity
-  if (ledState && (millis() - lastBlink) > 500) {
-    lastBlink = millis();
-    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-  }
+/* ==========================================================================
+   HELPER FUNCTIONS
+   Utility functions for data conversion and processing
+   ========================================================================== */
+
+// --- Map and Constrain Helper Function ---
+// Converts input range to output range while keeping values within bounds
+float mapAndConstrain(int inputValue, int inMin, int inMax, float outMin, float outMax) {
+  // Map input range to output range (like Arduino's map() but for floats)
+  float mappedValue = ((float)(inputValue - inMin) / (float)(inMax - inMin)) * (outMax - outMin) + outMin;
+  
+  // Constrain value to be within output range
+  return constrain(mappedValue, outMin, outMax);
 }
+
+/* ==========================================================================
+   END OF SKETCH
+   Congratulations! You now have a working 4-axis input controller.
+   ========================================================================== */
 ```
 
-### 7. Array Elements Read/Write
+### 3. Digital Outputs Controller with OUTPUT_IDs
 
-#### array_elements_read_write.ino
-Reads/writes individual array elements or ranges.
+#### digital_outputs_controller_with_output_ids.ino
+4 digital outputs that respond to different dataref types using OUTPUT_IDs.
 
-- Features: Element access, ranges, multi-element ops
-- Output ID: `ARRAY_ELEMENTS_RW`
+- Features: Digital output control, value parsing, OUTPUT_ID system
+- Output ID: `DigitalOutputsController`
 
 ```cpp
 /*
- * X-Plane Dataref Bridge - Array Elements Read/Write
- *
- * This sketch demonstrates reading and writing individual elements of array datarefs
- * as well as multiple elements at once. It supports element-specific operations.
- */
+===============================================================================
+X-Plane Dataref Bridge - Digital Outputs Controller with OUTPUT_IDs (Beginner Version)
+===============================================================================
 
-// Device identification constants
-const char* DEVICE_NAME = "ArrayElementsRW";
-const char* FIRMWARE_VERSION = "1.0";
-const char* BOARD_TYPE = "UNO";
+PURPOSE:
+This sketch creates a digital outputs controller that responds to X-Plane dataref
+changes received through the bridge application. It demonstrates how to control
+LEDs, indicators, or other digital outputs based on different types of data.
 
-// Array storage for different types
-float floatArray[20] = {0};           // Float array with 20 elements
-int intArray[20] = {0};              // Integer array with 20 elements
-bool boolArray[20] = {false};        // Boolean array with 20 elements
-byte byteArray[20] = {0};            // Byte array with 20 elements
+REQUIRED HARDWARE:
+- Arduino UNO (or compatible board)
+- 4x LEDs (any color) or digital output devices
+- 4x 220Ω resistors (for LEDs)
+- Breadboard and jumper wires
+- USB cable for programming and communication
+
+WIRING INSTRUCTIONS (for LEDs with resistors):
+- LED 1: Arduino Pin 8 → 220Ω resistor → LED anode (+) → LED cathode (-) → GND
+- LED 2: Arduino Pin 9 → 220Ω resistor → LED anode (+) → LED cathode (-) → GND
+- LED 3: Arduino Pin 10 → 220Ω resistor → LED anode (+) → LED cathode (-) → GND
+- LED 4: Arduino Pin 11 → 220Ω resistor → LED anode (+) → LED cathode (-) → GND
+- Arduino GND to common ground rail
+
+OUTPUT FUNCTIONALITY:
+Output 1 (Pin 8): Responds to GEAR_STATUS - lights when landing gear is down
+Output 2 (Pin 9): Pulses when COMMAND_EXECUTED - brief flash for commands
+Output 3 (Pin 10): Responds to LED_STATE_ELEM - lights when array element > 0.5
+Output 4 (Pin 11): Responds to LED_STATE_ARRAY - lights when array average > 0.5
+
+OUTPUT_ID SYSTEM:
+OUTPUT_IDs are friendly names you configure in the bridge application to map
+to actual X-Plane datarefs. The bridge sends "SET OUTPUT_ID value" messages
+to your Arduino when the associated X-Plane dataref changes.
+
+BRIDGE CONFIGURATION:
+In your X-Plane Dataref Bridge application, map these OUTPUT_IDs:
+GEAR_STATUS → sim/cockpit2/switches/gear_handle_status
+BEACON_STATUS → sim/cockpit2/switches/beacon_on
+LED_STATE_ELEM → LED_STATE[n] (individual elements)
+LED_STATE_ARRAY → LED_STATE (full array)
+COMMAND_EXECUTED → Command execution notifications
+
+DIGITAL OUTPUT BASICS:
+- digitalWrite(pin, HIGH) turns output ON (LED lights up)
+- digitalWrite(pin, LOW) turns output OFF (LED turns off)
+- Arduino outputs can directly drive LEDs with current-limiting resistors
+- Values > 0.5 (50%) typically trigger "ON" state for analog data
+
+TROUBLESHOOTING:
+- LEDs not working? Check polarity (long leg = anode/positive)
+- Dim LEDs? Verify resistor values (220Ω standard for 5V Arduino)
+- No data received? Check serial connection and bridge configuration
+- Incorrect behavior? Verify OUTPUT_ID mappings in bridge application
+===============================================================================
+*/
+
+/* ==========================================================================
+   DEVICE IDENTIFICATION SECTION
+   These constants identify your device to X-Plane Dataref Bridge
+   ========================================================================== */
+
+const char* DEVICE_NAME = "DigitalOutputsController";  // Human-readable name
+const char* FIRMWARE_VERSION = "1.0";                // Version tracking
+const char* BOARD_TYPE = "UNO";                       // Arduino board type
+
+/* ==========================================================================
+   OUTPUT_ID DEFINITIONS SECTION
+   These are the friendly names the bridge will use to send data to your device
+   ========================================================================== */
+
+const char* OUTPUT_ID_GEAR = "GEAR_STATUS";           // Landing gear status
+const char* OUTPUT_ID_BEACON = "BEACON_STATUS";       // Beacon light status
+const char* OUTPUT_ID_LED_ELEM = "LED_STATE_ELEM";    // LED array elements
+const char* OUTPUT_ID_LED_ARRAY = "LED_STATE_ARRAY";   // Full LED array
+
+/* ==========================================================================
+   DIGITAL OUTPUT PIN CONFIGURATION SECTION
+   Define which Arduino pins each output device is connected to
+   ========================================================================== */
+
+const int OUTPUT1_PIN = 8;  // Controlled by GEAR_STATUS (landing gear indicator)
+const int OUTPUT2_PIN = 9;  // Pulses for command execution (activity indicator)
+const int OUTPUT3_PIN = 10; // Controlled by LED element (status indicator)
+const int OUTPUT4_PIN = 11; // Controlled by LED array (overall status)
+
+/* ==========================================================================
+   DATA STORAGE SECTION
+   Variables to store values received from the bridge application
+   ========================================================================== */
+
+// --- Single Value Storage ---
+float gearValue = 0.0;      // Current landing gear status (0.0=up, 1.0=down)
+float beaconValue = 0.0;     // Current beacon light status (0.0=off, 1.0=on)
+
+// --- Command Status ---
+bool commandExecuted = false;  // Flag for command execution pulse
+
+// --- Array Value Storage ---
+float arrayElementValue = 0.0;  // Individual array element value
+float combinedArrayValue = 0.0; // Average of multiple array elements
+
+/* ==========================================================================
+   TIMING CONTROL SECTION
+   Manages when outputs are updated to prevent unnecessary rapid changes
+   ========================================================================== */
+
+unsigned long lastUpdate = 0;              // Timestamp of last output update
+const unsigned long UPDATE_INTERVAL = 100;  // Update every 100ms (0.1 seconds)
+
+/* ==========================================================================
+   SETUP FUNCTION
+   Runs once at startup - initializes all outputs and establishes communication
+   ========================================================================== */
 
 void setup() {
-  Serial.begin(115200);
+  // --- Initialize Digital Output Pins ---
+  // Set all output pins to OUTPUT mode to control LEDs or other devices
+  pinMode(OUTPUT1_PIN, OUTPUT);  // Gear status pin as output
+  pinMode(OUTPUT2_PIN, OUTPUT);  // Command pulse pin as output
+  pinMode(OUTPUT3_PIN, OUTPUT);  // LED element pin as output
+  pinMode(OUTPUT4_PIN, OUTPUT);  // LED array pin as output
+
+  // --- Initialize All Outputs to OFF State ---
+  digitalWrite(OUTPUT1_PIN, LOW);  // Turn off gear indicator
+  digitalWrite(OUTPUT2_PIN, LOW);  // Turn off command indicator
+  digitalWrite(OUTPUT3_PIN, LOW);  // Turn off LED element indicator
+  digitalWrite(OUTPUT4_PIN, LOW);  // Turn off LED array indicator
+
+  // --- Initialize Serial Communication ---
+  Serial.begin(115200);  // Start serial at bridge's required baud rate
+
+  // --- Wait for Serial Connection ---
+  // Important for boards that need time to establish serial connection
   while (!Serial && millis() < 5000) {
-    delay(10);
+    delay(10);  // Small delay to prevent CPU overload
   }
 
-  Serial.println("// Array Elements Read/Write Started");
-  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
-  Serial.println("// Supports individual and multiple array element operations");
-
-  // Initialize arrays with sample values
-  for (int i = 0; i < 20; i++) {
-    floatArray[i] = i * 0.5;
-    intArray[i] = i * 10;
-    boolArray[i] = (i % 3 == 0);
-    byteArray[i] = i + 100;
-  }
+  // --- Send Startup Messages ---
+  Serial.println("// Digital Outputs Controller Started");
+  Serial.print("// Device: "); 
+  Serial.println(DEVICE_NAME);
+  Serial.println("// Outputs respond to OUTPUT_ID values and commands");
 }
+
+/* ==========================================================================
+   MAIN LOOP FUNCTION
+   Runs continuously - checks for incoming data and updates outputs accordingly
+   ========================================================================== */
 
 void loop() {
-  checkSerial();
-  delay(1);
+  checkSerial();   // Listen for messages from bridge application
+  updateOutputs();  // Update LED outputs based on received data
+  delay(10);       // Small delay to prevent overwhelming processor
 }
 
+/* ==========================================================================
+   SERIAL COMMUNICATION HANDLER
+   Processes incoming messages from X-Plane Dataref Bridge
+   ========================================================================== */
+
 void checkSerial() {
+  // Check if any data is available from serial port
   while (Serial.available()) {
+    // Read one complete line (message ends with newline character)
     String line = Serial.readStringUntil('\n');
-    line.trim();
+    line.trim();  // Remove whitespace from beginning and end
 
-    // Handle handshake request
+    // --- Handle Handshake Request ---
+    // Bridge sends "HELLO" to identify connected devices
     if (line == "HELLO") {
-      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
-      Serial.print(";board="); Serial.print(BOARD_TYPE);
-      Serial.print(";name="); Serial.println(DEVICE_NAME);
+      // Respond with device identification in expected format
+      Serial.print("XPDR;fw="); 
+      Serial.print(FIRMWARE_VERSION);    // Send firmware version
+      Serial.print(";board="); 
+      Serial.print(BOARD_TYPE);          // Send board type
+      Serial.print(";name="); 
+      Serial.println(DEVICE_NAME);       // Send device name
     }
-    // Handle READ for single array element
-    // Format: READELEM array_name[index] type
-    else if (line.startsWith("READELEM ")) {
-      String rest = line.substring(9);  // Remove "READELEM " prefix
-      rest.trim();
-      int spaceIndex = rest.indexOf(' ');
-
-      if (spaceIndex > 0) {
-        String nameWithIndex = rest.substring(0, spaceIndex);
-        String type = rest.substring(spaceIndex + 1);
-        type.trim();
-
-        // Parse array name and index
-        int bracketStart = nameWithIndex.indexOf('[');
-        int bracketEnd = nameWithIndex.indexOf(']');
-
-        if (bracketStart > 0 && bracketEnd > bracketStart) {
-          String arrayName = nameWithIndex.substring(0, bracketStart);
-          String indexStr = nameWithIndex.substring(bracketStart + 1, bracketEnd);
-          int index = indexStr.toInt();
-
-          // Send single element value
-          if (arrayName == "float_array" && type == "float" && index >= 0 && index < 20) {
-            Serial.print("ELEMVALUE float_array["); Serial.print(index); Serial.print("] float ");
-            Serial.println(floatArray[index], 6);
+    
+    // --- Handle SET Commands (Primary Data Input) ---
+    // Bridge sends "SET OUTPUT_ID value" when X-Plane dataref changes
+    else if (line.startsWith("SET ")) {
+      // --- Parse SET Message ---
+      // Format: "SET GEAR_STATUS 1.0" or "SET LED_STATE_ARRAY 0.5,0.7,0.3"
+      int firstSpace = line.indexOf(' ');        // Position of first space
+      int secondSpace = line.lastIndexOf(' ');   // Position of last space
+      
+      // Verify we found both spaces (valid message format)
+      if (firstSpace > 0 && secondSpace > firstSpace) {
+        // Extract OUTPUT_ID and value from message
+        String outputId = line.substring(firstSpace + 1, secondSpace);  // Get OUTPUT_ID
+        String valueStr = line.substring(secondSpace + 1);              // Get value string
+        float value = valueStr.toFloat();                              // Convert to float
+        
+        // --- Handle Gear Status Updates ---
+        if (outputId == OUTPUT_ID_GEAR) {
+          gearValue = value;  // Store new gear status
+          Serial.print("// Received "); 
+          Serial.print(OUTPUT_ID_GEAR);
+          Serial.print(": "); 
+          Serial.println(gearValue);  // Debug message
+        }
+        
+        // --- Handle Beacon Status Updates ---
+        else if (outputId == OUTPUT_ID_BEACON) {
+          beaconValue = value;  // Store new beacon status
+          Serial.print("// Received "); 
+          Serial.print(OUTPUT_ID_BEACON);
+          Serial.print(": "); 
+          Serial.println(beaconValue);  // Debug message
+        }
+        
+        // --- Handle LED Element Updates ---
+        else if (outputId.startsWith(OUTPUT_ID_LED_ELEM)) {
+          // Extract index if present (e.g., LED_STATE_ELEM3 → index 3)
+          int indexStart = String(OUTPUT_ID_LED_ELEM).length();  // Find where index starts
+          String indexStr = outputId.substring(indexStart);        // Get index part
+          
+          if (indexStr.length() > 0) {  // If index was specified
+            int index = indexStr.toInt();  // Convert to integer
+            arrayElementValue = value;     // Store element value
+            
+            Serial.print("// Received "); 
+            Serial.print(outputId);
+            Serial.print(": "); 
+            Serial.println(value);  // Debug message
           }
-          else if (arrayName == "int_array" && type == "int" && index >= 0 && index < 20) {
-            Serial.print("ELEMVALUE int_array["); Serial.print(index); Serial.print("] int ");
-            Serial.println(intArray[index]);
-          }
-          else if (arrayName == "bool_array" && type == "bool" && index >= 0 && index < 20) {
-            Serial.print("ELEMVALUE bool_array["); Serial.print(index); Serial.print("] bool ");
-            Serial.println(boolArray[index] ? 1 : 0);
-          }
-          else if (arrayName == "byte_array" && type == "byte" && index >= 0 && index < 20) {
-            Serial.print("ELEMVALUE byte_array["); Serial.print(index); Serial.print("] byte ");
-            Serial.println(byteArray[index]);
-          }
-          else {
-            Serial.println("UNKNOWN_ELEM");
-          }
+        }
+        
+        // --- Handle Full LED Array Updates ---
+        else if (outputId == OUTPUT_ID_LED_ARRAY) {
+          calculateCombinedArrayValue(valueStr);  // Process array values
+          Serial.print("// Received "); 
+          Serial.print(OUTPUT_ID_LED_ARRAY);
+          Serial.print(": "); 
+          Serial.println(valueStr);  // Debug message
         }
       }
     }
-    // Handle WRITE for single array element
-    // Format: WRITEELEM array_name[index] type value
-    else if (line.startsWith("WRITEELEM ")) {
-      String rest = line.substring(10);  // Remove "WRITEELEM " prefix
-      rest.trim();
-      int firstSpace = rest.indexOf(' ');
-
-      if (firstSpace > 0) {
-        String nameWithIndex = rest.substring(0, firstSpace);
-        String rest2 = rest.substring(firstSpace + 1);
-        rest2.trim();
-        int secondSpace = rest2.indexOf(' ');
-
-        if (secondSpace > 0) {
-          String type = rest2.substring(0, secondSpace);
-          String valueStr = rest2.substring(secondSpace + 1);
-          float value = valueStr.toFloat();
-
-          // Parse array name and index
-          int bracketStart = nameWithIndex.indexOf('[');
-          int bracketEnd = nameWithIndex.indexOf(']');
-
-          if (bracketStart > 0 && bracketEnd > bracketStart) {
-            String arrayName = nameWithIndex.substring(0, bracketStart);
-            String indexStr = nameWithIndex.substring(bracketStart + 1, bracketEnd);
-            int index = indexStr.toInt();
-
-            // Update single element
-            if (arrayName == "float_array" && type == "float" && index >= 0 && index < 20) {
-              floatArray[index] = value;
-              Serial.println("OK");
-            }
-            else if (arrayName == "int_array" && type == "int" && index >= 0 && index < 20) {
-              intArray[index] = (int)value;
-              Serial.println("OK");
-            }
-            else if (arrayName == "bool_array" && type == "bool" && index >= 0 && index < 20) {
-              boolArray[index] = (value != 0);
-              Serial.println("OK");
-            }
-            else if (arrayName == "byte_array" && type == "byte" && index >= 0 && index < 20) {
-              byteArray[index] = (byte)value;
-              Serial.println("OK");
-            }
-            else {
-              Serial.println("ERR");
-            }
-          }
-        }
-      }
+    
+    // --- Handle Command Execution Notifications ---
+    // Bridge sends "CMD_EXECUTED command_name" when commands are triggered
+    else if (line.startsWith("CMD_EXECUTED ")) {
+      String commandName = line.substring(13);  // Extract command name
+      commandExecuted = true;                   // Set execution flag
+      Serial.print("// Command executed: "); 
+      Serial.println(commandName);               // Debug message
+      
+      // Brief pulse duration for visual feedback
+      delay(50);           // 50ms pulse duration
+      commandExecuted = false;  // Reset execution flag
     }
-    // Handle MULTIREAD for multiple array elements
-    // Format: MULTIREAD array_name[start_index,end_index] type
-    else if (line.startsWith("MULTIREAD ")) {
-      String rest = line.substring(10);  // Remove "MULTIREAD " prefix
-      rest.trim();
-      int spaceIndex = rest.indexOf(' ');
-
-      if (spaceIndex > 0) {
-        String nameWithRange = rest.substring(0, spaceIndex);
-        String type = rest.substring(spaceIndex + 1);
-        type.trim();
-
-        // Parse array name and range
-        int bracketStart = nameWithRange.indexOf('[');
-        int bracketEnd = nameWithRange.indexOf(']');
-
-        if (bracketStart > 0 && bracketEnd > bracketStart) {
-          String arrayName = nameWithRange.substring(0, bracketStart);
-          String rangeStr = nameWithRange.substring(bracketStart + 1, bracketEnd);
-
-          int commaIndex = rangeStr.indexOf(',');
-          if (commaIndex > 0) {
-            int startIndex = rangeStr.substring(0, commaIndex).toInt();
-            int endIndex = rangeStr.substring(commaIndex + 1).toInt();
-
-            // Send multiple elements as comma-separated values
-            if (arrayName == "float_array" && type == "float" &&
-                startIndex >= 0 && endIndex < 20 && startIndex <= endIndex) {
-              Serial.print("MULTIVALUE float_array["); Serial.print(startIndex);
-              Serial.print(","); Serial.print(endIndex); Serial.print("] float ");
-
-              for (int i = startIndex; i <= endIndex; i++) {
-                Serial.print(floatArray[i], 6);
-                if (i < endIndex) Serial.print(",");
-              }
-              Serial.println();
-            }
-            // Similar handling for other types...
-          }
-        }
-      }
+    
+    // --- Handle LIST Command ---
+    // Bridge asks what functions this device provides
+    else if (line == "LIST") {
+      Serial.println("STATUS Available Functions:");
+      Serial.println("STATUS - Output 1: Controlled by GEAR_STATUS");
+      Serial.println("STATUS - Output 2: Pulses when command executed");
+      Serial.println("STATUS - Output 3: Controlled by LED_STATE_ELEM");
+      Serial.println("STATUS - Output 4: Controlled by LED_STATE_ARRAY");
+    }
+    
+    // --- Handle STATUS Command ---
+    // Bridge asks for current device status
+    else if (line == "STATUS") {
+      Serial.println("STATUS Controller Status:");
+      Serial.print("STATUS - Outputs: 4 configured");
+      Serial.print("STATUS - GEAR value: "); 
+      Serial.println(gearValue);
+      Serial.print("STATUS - Command executed: "); 
+      Serial.println(commandExecuted ? "YES" : "NO");
+      Serial.print("STATUS - LED element value: "); 
+      Serial.println(arrayElementValue);
+      Serial.print("STATUS - Combined array value: "); 
+      Serial.println(combinedArrayValue);
     }
   }
 }
+
+/* ==========================================================================
+   OUTPUT UPDATE FUNCTION
+   Updates all digital outputs based on current stored values
+   ========================================================================== */
+
+void updateOutputs() {
+  // --- Check if It's Time to Update ---
+  // Only update outputs at specified interval to prevent rapid flashing
+  if (millis() - lastUpdate > UPDATE_INTERVAL) {
+    
+    // --- Update Output 1: Gear Status Indicator ---
+    // Turn ON if gear is down (value > 0.5 = 50%)
+    if (gearValue > 0.5) {
+      digitalWrite(OUTPUT1_PIN, HIGH);  // Turn ON gear indicator
+    } else {
+      digitalWrite(OUTPUT1_PIN, LOW);   // Turn OFF gear indicator
+    }
+
+    // --- Update Output 2: Command Execution Pulse ---
+    // Brief pulse when command is executed
+    if (commandExecuted) {
+      digitalWrite(OUTPUT2_PIN, HIGH);   // Turn ON command indicator
+    } else {
+      digitalWrite(OUTPUT2_PIN, LOW);    // Turn OFF command indicator
+    }
+
+    // --- Update Output 3: LED Element Indicator ---
+    // Turn ON if array element is active (value > 0.5 = 50%)
+    if (arrayElementValue > 0.5) {
+      digitalWrite(OUTPUT3_PIN, HIGH);   // Turn ON element indicator
+    } else {
+      digitalWrite(OUTPUT3_PIN, LOW);    // Turn OFF element indicator
+    }
+
+    // --- Update Output 4: LED Array Indicator ---
+    // Turn ON if average array value is active (value > 0.5 = 50%)
+    if (combinedArrayValue > 0.5) {
+      digitalWrite(OUTPUT4_PIN, HIGH);   // Turn ON array indicator
+    } else {
+      digitalWrite(OUTPUT4_PIN, LOW);    // Turn OFF array indicator
+    }
+
+    // --- Update Timestamp ---
+    lastUpdate = millis();  // Record when we last updated
+  }
+}
+
+/* ==========================================================================
+   ARRAY PROCESSING HELPER FUNCTION
+   Processes comma-separated array values and calculates average
+   ========================================================================== */
+
+void calculateCombinedArrayValue(String valuesStr) {
+  // --- Initialize Variables ---
+  int count = 0;           // Number of values processed
+  float sum = 0.0;        // Running total of values
+  int start = 0;           // Starting position for parsing
+  int commaIndex = 0;      // Position of next comma
+
+  // --- Parse Comma-Separated Values ---
+  // String format: "0.5,0.7,0.3,0.8,0.1"
+  while (commaIndex >= 0) {
+    // Find next comma in the string
+    commaIndex = valuesStr.indexOf(',', start);
+    String valueStr;
+
+    // Extract individual value
+    if (commaIndex >= 0) {
+      valueStr = valuesStr.substring(start, commaIndex);  // Get value before comma
+      start = commaIndex + 1;                            // Move past comma
+    } else {
+      valueStr = valuesStr.substring(start);               // Get last value
+    }
+
+    // --- Process Individual Value ---
+    sum += valueStr.toFloat();  // Add to running total
+    count++;                    // Increment count
+
+    // --- Exit Loop After Last Value ---
+    if (commaIndex < 0) break;
+  }
+
+  // --- Calculate Average ---
+  if (count > 0) {
+    combinedArrayValue = sum / count;  // Calculate average
+  } else {
+    combinedArrayValue = 0.0;         // Default to zero if no values
+  }
+}
+
+/* ==========================================================================
+   END OF SKETCH
+   Congratulations! You now have a working digital outputs controller.
+   ========================================================================== */
 ```
 
 ## Protocol Documentation
