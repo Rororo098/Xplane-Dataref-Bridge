@@ -103,7 +103,7 @@ sudo usermod -a -G dialout $USER
 ```
 
 ### Standalone Executable
-Pre-built executables are available in the releases section for Windows, macOS, and Linux.
+Pre-built executables are available in the releases section for Windows.
 
 ## Quick Start
 
