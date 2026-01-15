@@ -103,7 +103,7 @@ sudo usermod -a -G dialout $USER
 ```
 
 ### Standalone Executable
-Pre-built executables are available in the releases section for Windows, macOS, and Linux.
+Pre-built executables are available in the releases section for Windows.
 
 ## Quick Start
 
@@ -1214,6 +1214,656 @@ void calculateCombinedArrayValue(String valuesStr) {
    END OF SKETCH
    Congratulations! You now have a working digital outputs controller.
    ========================================================================== */
+```
+
+### 8. 4-Button Controller
+
+#### 4_button_controller.ino
+A 4-button controller that performs different operations.
+
+- Features: Button debouncing, multiple operations
+- Output ID: `FOUR_BUTTON_CONTROLLER`
+
+```cpp
+/*
+ * X-Plane Dataref Bridge - 4 Button Controller
+ * 
+ * This sketch demonstrates a 4-button controller that performs different operations:
+ * - Button 1: Writes to a dataref
+ * - Button 2: Executes a command type dataref
+ * - Button 3: Writes to a specific array element
+ * - Button 4: Writes to multiple array elements
+ */
+
+// Device identification constants
+const char* DEVICE_NAME = "FourButtonController";
+const char* FIRMWARE_VERSION = "1.0";
+const char* BOARD_TYPE = "UNO";
+
+// Button pin definitions
+const int BUTTON1_PIN = 2;  // Write to dataref
+const int BUTTON2_PIN = 3;  // Execute command
+const int BUTTON3_PIN = 4;  // Write to array element
+const int BUTTON4_PIN = 5;  // Write to multiple array elements
+
+// Button state tracking
+bool lastButton1State = false;
+bool lastButton2State = false;
+bool lastButton3State = false;
+bool lastButton4State = false;
+
+unsigned long lastDebounceTime1 = 0;
+unsigned long lastDebounceTime2 = 0;
+unsigned long lastDebounceTime3 = 0;
+unsigned long lastDebounceTime4 = 0;
+
+const unsigned long DEBOUNCE_DELAY = 50;  // Debounce delay in milliseconds
+
+// Array for testing array operations
+float testArray[10] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+
+void setup() {
+  // Initialize button pins as inputs with pull-up resistors
+  pinMode(BUTTON1_PIN, INPUT_PULLUP);
+  pinMode(BUTTON2_PIN, INPUT_PULLUP);
+  pinMode(BUTTON3_PIN, INPUT_PULLUP);
+  pinMode(BUTTON4_PIN, INPUT_PULLUP);
+  
+  // Initialize serial communication
+  Serial.begin(115200);
+  
+  // Wait for serial connection to establish
+  while (!Serial && millis() < 5000) {
+    delay(10);
+  }
+  
+  Serial.println("// Four Button Controller Started");
+  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
+  Serial.println("// Button 1: Write dataref | Button 2: Execute command | Button 3: Array element | Button 4: Multiple elements");
+}
+
+void loop() {
+  checkSerial();
+  checkButtons();
+  delay(10);  // Small delay to prevent overwhelming the processor
+}
+
+void checkSerial() {
+  // Handle incoming serial commands from the bridge
+  while (Serial.available()) {
+    String line = Serial.readStringUntil('\n');
+    line.trim();
+    
+    // Handle handshake request from the bridge
+    if (line == "HELLO") {
+      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
+      Serial.print(";board="); Serial.print(BOARD_TYPE);
+      Serial.print(";name="); Serial.println(DEVICE_NAME);
+    }
+    // Handle LIST command to show available features
+    else if (line == "LIST") {
+      Serial.println("STATUS Available Functions:");
+      Serial.println("STATUS - Button 1: Write to dataref (gear handle)");
+      Serial.println("STATUS - Button 2: Execute command (heading sync)");
+      Serial.println("STATUS - Button 3: Write to array element (LED_STATE[0])");
+      Serial.println("STATUS - Button 4: Write to multiple array elements (LED_STATE[0-2])");
+    }
+    // Handle STATUS command
+    else if (line == "STATUS") {
+      Serial.println("STATUS Controller Status:");
+      Serial.print("STATUS - Buttons: 4 configured");
+      Serial.print("STATUS - Array size: 10 elements");
+      Serial.println("STATUS - Ready for button presses");
+    }
+  }
+}
+
+void checkButtons() {
+  // Read current button states (inverted because of pull-up resistors)
+  bool currentButton1State = !digitalRead(BUTTON1_PIN);
+  bool currentButton2State = !digitalRead(BUTTON2_PIN);
+  bool currentButton3State = !digitalRead(BUTTON3_PIN);
+  bool currentButton4State = !digitalRead(BUTTON4_PIN);
+  
+  // Check Button 1: Write to a dataref
+  if (currentButton1State != lastButton1State) {
+    if ((millis() - lastDebounceTime1) > DEBOUNCE_DELAY) {
+      if (currentButton1State) {
+        // Button 1 pressed - write to a dataref
+        writeDataref();
+        lastDebounceTime1 = millis();
+      }
+    }
+    lastButton1State = currentButton1State;
+  }
+  
+  // Check Button 2: Execute a command type dataref
+  if (currentButton2State != lastButton2State) {
+    if ((millis() - lastDebounceTime2) > DEBOUNCE_DELAY) {
+      if (currentButton2State) {
+        // Button 2 pressed - execute a command
+        executeCommand();
+        lastDebounceTime2 = millis();
+      }
+    }
+    lastButton2State = currentButton2State;
+  }
+  
+  // Check Button 3: Write to a specific array element
+  if (currentButton3State != lastButton3State) {
+    if ((millis() - lastDebounceTime3) > DEBOUNCE_DELAY) {
+      if (currentButton3State) {
+        // Button 3 pressed - write to a specific array element
+        writeArrayElement();
+        lastDebounceTime3 = millis();
+      }
+    }
+    lastButton3State = currentButton3State;
+  }
+  
+  // Check Button 4: Write to multiple array elements
+  if (currentButton4State != lastButton4State) {
+    if ((millis() - lastDebounceTime4) > DEBOUNCE_DELAY) {
+      if (currentButton4State) {
+        // Button 4 pressed - write to multiple array elements
+        writeMultipleArrayElements();
+        lastDebounceTime4 = millis();
+      }
+    }
+    lastButton4State = currentButton4State;
+  }
+}
+
+void writeDataref() {
+  // Send a SETDREF command to write to a specific dataref
+  // Example: Write to gear handle status
+  Serial.println("SETDREF sim/cockpit2/switches/gear_handle_status 1");
+  Serial.println("// Button 1: Wrote to gear handle dataref");
+}
+
+void executeCommand() {
+  // Send a CMD command to execute a command-type dataref
+  // Example: Execute heading sync command
+  Serial.println("CMD sim/autopilot/heading_sync");
+  Serial.println("// Button 2: Executed heading sync command");
+}
+
+void writeArrayElement() {
+  // Send a WRITEELEM command to write to a specific array element
+  // Example: Write to LED_STATE[0] element
+  Serial.println("WRITEELEM LED_STATE[0] float 1.0");
+  Serial.println("// Button 3: Wrote to LED_STATE[0]");
+}
+
+void writeMultipleArrayElements() {
+  // Send a WRITEARRAY command to write to multiple array elements
+  // Example: Write to LED_STATE array elements 0-2
+  Serial.println("WRITEARRAY LED_STATE float 1.0,0.5,0.0");
+  Serial.println("// Button 4: Wrote to LED_STATE[0], LED_STATE[1], LED_STATE[2]");
+  
+  // Alternative: Update our local test array
+  testArray[0] = 1.0;
+  testArray[1] = 0.5;
+  testArray[2] = 0.0;
+  Serial.println("// Local array updated: [0]=1.0, [1]=0.5, [2]=0.0");
+}
+```
+
+### 9. 4-Axis Input Controller
+
+#### 4_axis_input_controller.ino
+A 4-axis input controller with different functionality per axis.
+
+- Features: Analog input handling, threshold detection
+- Output ID: `4_AXIS_INPUT_CONTROLLER`
+
+```cpp
+/*
+ * X-Plane Dataref Bridge - 4 Axis Input Controller
+ * 
+ * This sketch demonstrates a 4-axis input controller that performs different actions:
+ * 1st axis: Writes to a dataref (e.g., throttle, flap, etc.)
+ * 2nd axis: Executes command-type datarefs (e.g., toggle switches)
+ * 3rd axis: Writes to a specific array element
+ * 4th axis: Writes to multiple array elements
+ */
+
+// Device identification constants
+const char* DEVICE_NAME = "4AxisController";
+const char* FIRMWARE_VERSION = "1.0";
+const char* BOARD_TYPE = "UNO";
+
+// Pin assignments for analog axes (potentiometers or joystick)
+const int AXIS_1_PIN = A0;  // Throttle or similar
+const int AXIS_2_PIN = A1;  // Command trigger
+const int AXIS_3_PIN = A2;  // Array element control
+const int AXIS_4_PIN = A3;  // Multi-element control
+
+// Threshold for command triggering (prevents accidental triggers)
+const int COMMAND_THRESHOLD = 800;  // Out of 1024 (approx 78%)
+
+// Previous values to prevent flooding updates
+int prevAxis1Value = -1;
+int prevAxis2Trigger = -1;
+int prevAxis3Value = -1;
+int prevAxis4Value = -1;
+
+// Array for demonstration (we'll use this for array operations)
+float demoArray[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Wait for serial connection to be established
+  while (!Serial && millis() < 5000) {
+    delay(10);
+  }
+  
+  Serial.println("// 4-Axis Input Controller Started");
+  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
+  Serial.println("// Axes: 1-Dataref, 2-Command, 3-Array Element, 4-Multi-Array");
+  
+  // Initialize analog pins (they are inputs by default)
+  pinMode(AXIS_1_PIN, INPUT);
+  pinMode(AXIS_2_PIN, INPUT);
+  pinMode(AXIS_3_PIN, INPUT);
+  pinMode(AXIS_4_PIN, INPUT);
+}
+
+void loop() {
+  // Handle incoming serial commands (handshake, etc.)
+  handleSerialCommands();
+  
+  // Read all axes
+  int axis1Value = analogRead(AXIS_1_PIN);      // Raw: 0-1023
+  int axis2Value = analogRead(AXIS_2_PIN);      // Raw: 0-1023
+  int axis3Value = analogRead(AXIS_3_PIN);      // Raw: 0-1023
+  int axis4Value = analogRead(AXIS_4_PIN);      // Raw: 0-1023
+  
+  // Process Axis 1: Write to dataref
+  processAxis1(axis1Value);
+  
+  // Process Axis 2: Execute command
+  processAxis2(axis2Value);
+  
+  // Process Axis 3: Write to specific array element
+  processAxis3(axis3Value);
+  
+  // Process Axis 4: Write to multiple array elements
+  processAxis4(axis4Value);
+  
+  // Small delay to prevent overwhelming the serial connection
+  delay(50);
+}
+
+void handleSerialCommands() {
+  while (Serial.available()) {
+    String line = Serial.readStringUntil('\n');
+    line.trim();
+    
+    // Handle handshake request
+    if (line == "HELLO") {
+      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
+      Serial.print(";board="); Serial.print(BOARD_TYPE);
+      Serial.print(";name="); Serial.println(DEVICE_NAME);
+      Serial.println("// Handshake completed successfully");
+    }
+    // Handle LIST command
+    else if (line == "LIST") {
+      Serial.println("STATUS Available Commands:");
+      Serial.println("STATUS - HELLO (establish connection)");
+      Serial.println("STATUS - LIST (show available commands)");
+      Serial.println("STATUS - STATUS (show device status)");
+    }
+    // Handle STATUS command
+    else if (line == "STATUS") {
+      Serial.println("STATUS 4-Axis Input Controller Status:");
+      Serial.print("STATUS - Device: "); Serial.println(DEVICE_NAME);
+      Serial.print("STATUS - Axes readings - 1:"); Serial.print(analogRead(AXIS_1_PIN));
+      Serial.print(", 2:"); Serial.print(analogRead(AXIS_2_PIN));
+      Serial.print(", 3:"); Serial.print(analogRead(AXIS_3_PIN));
+      Serial.print(", 4:"); Serial.println(analogRead(AXIS_4_PIN));
+    }
+  }
+}
+
+void processAxis1(int value) {
+  // Normalize value from 0-1023 to 0.0-1.0 for dataref
+  float normalizedValue = (float)value / 1023.0;
+  
+  // Only send update if value changed significantly (prevent flooding)
+  if (abs(value - prevAxis1Value) > 10) {
+    // Example: Write to throttle ratio
+    Serial.print("SETDREF sim/cockpit2/engine/actuators/throttle_ratio_all ");
+    Serial.println(normalizedValue, 4);
+    
+    // Alternative: Send via SET command (more compatible with bridge)
+    Serial.print("SET THROTTLE_AXIS ");
+    Serial.println(normalizedValue, 4);
+    
+    prevAxis1Value = value;
+  }
+}
+
+void processAxis2(int value) {
+  // Use axis value to trigger commands when it exceeds threshold
+  bool shouldTrigger = (value > COMMAND_THRESHOLD);
+  
+  if (shouldTrigger && !prevAxis2Trigger) {
+    // Execute command when threshold crossed from low to high
+    Serial.println("CMD sim/autopilot/autopilot_on");
+    Serial.println("// Command: Autopilot ON triggered");
+    prevAxis2Trigger = true;
+  } 
+  else if (!shouldTrigger && prevAxis2Trigger) {
+    // Execute command when threshold crossed from high to low
+    Serial.println("CMD sim/autopilot/autopilot_off");
+    Serial.println("// Command: Autopilot OFF triggered");
+    prevAxis2Trigger = false;
+  }
+}
+
+void processAxis3(int value) {
+  // Normalize value from 0-1023 to 0.0-1.0
+  float normalizedValue = (float)value / 1023.0;
+  
+  // Use axis value to determine which array element to update
+  // Map 0-1023 to array index 0-4
+  int arrayIndex = map(value, 0, 1023, 0, 4);
+  
+  // Only update if value changed significantly
+  if (abs(value - prevAxis3Value) > 10) {
+    // Update the specific array element
+    demoArray[arrayIndex] = normalizedValue;
+    
+    // Send command to update specific array element
+    Serial.print("WRITEELEM sim/flightmodel2/misc/door_open_ratio[");
+    Serial.print(arrayIndex);
+    Serial.print("] float ");
+    Serial.println(normalizedValue, 4);
+    
+    Serial.print("// Updated array element ["); Serial.print(arrayIndex); 
+    Serial.print("] to value: "); Serial.println(normalizedValue, 4);
+    
+    prevAxis3Value = value;
+  }
+}
+
+void processAxis4(int value) {
+  // Normalize value from 0-1023 to 0.0-1.0
+  float normalizedValue = (float)value / 1023.0;
+  
+  // Only update if value changed significantly
+  if (abs(value - prevAxis4Value) > 20) { // Higher threshold for multi-element to reduce traffic
+    // Update multiple array elements based on the axis value
+    // Distribute the value across multiple elements
+    
+    // Example: Update first 3 elements with variations of the value
+    for (int i = 0; i < 3; i++) {
+      // Create variation based on index
+      float variedValue = constrain(normalizedValue + (i * 0.1 - 0.1), 0.0, 1.0);
+      demoArray[i] = variedValue;
+    }
+    
+    // Create comma-separated string for multiple values
+    String csvValues = "";
+    for (int i = 0; i < 3; i++) {
+      if (i > 0) csvValues += ",";
+      csvValues += String(demoArray[i], 4);
+    }
+    
+    // Send command to update multiple array elements
+    Serial.print("WRITEARRAY sim/flightmodel2/misc/door_open_ratio float ");
+    Serial.println(csvValues);
+    
+    Serial.print("// Updated multiple array elements with values: ");
+    Serial.println(csvValues);
+    
+    prevAxis4Value = value;
+  }
+}
+
+// Helper function to map and constrain values
+float mapAndConstrain(int inputValue, int inMin, int inMax, float outMin, float outMax) {
+  float mappedValue = ((float)(inputValue - inMin) / (float)(inMax - inMin)) * (outMax - outMin) + outMin;
+  return constrain(mappedValue, outMin, outMax);
+}
+```
+
+### 10. Digital Outputs Controller
+
+#### digital_outputs_controller.ino
+4 digital outputs that respond to different dataref types.
+
+- Features: Digital output control, value parsing
+- Output ID: `DIGITAL_OUTPUTS_CONTROLLER`
+
+```cpp
+/*
+ * X-Plane Dataref Bridge - Digital Outputs Controller
+ * 
+ * This sketch demonstrates 4 digital outputs that respond to different dataref types:
+ * - Output 1: Reads from a dataref and controls a digital output
+ * - Output 2: Reads command execution status and controls a digital output
+ * - Output 3: Reads a specific array element and controls a digital output
+ * - Output 4: Reads multiple array elements and controls a digital output
+ */
+
+// Device identification constants
+const char* DEVICE_NAME = "DigitalOutputsController";
+const char* FIRMWARE_VERSION = "1.0";
+const char* BOARD_TYPE = "UNO";
+
+// Digital output pin definitions
+const int OUTPUT1_PIN = 8;   // Controlled by dataref value
+const int OUTPUT2_PIN = 9;   // Controlled by command execution
+const int OUTPUT3_PIN = 10;  // Controlled by array element
+const int OUTPUT4_PIN = 11;  // Controlled by multiple array elements
+
+// Storage for received values
+float datarefValue = 0.0;           // Value from dataref
+bool commandExecuted = false;       // Command execution status
+float arrayElementValue = 0.0;      // Value from specific array element
+float combinedArrayValue = 0.0;     // Combined value from multiple array elements
+
+// Timing for periodic updates
+unsigned long lastUpdate = 0;
+const unsigned long UPDATE_INTERVAL = 100;  // Update outputs every 100ms
+
+void setup() {
+  // Initialize digital output pins
+  pinMode(OUTPUT1_PIN, OUTPUT);
+  pinMode(OUTPUT2_PIN, OUTPUT);
+  pinMode(OUTPUT3_PIN, OUTPUT);
+  pinMode(OUTPUT4_PIN, OUTPUT);
+  
+  // Initialize outputs to LOW initially
+  digitalWrite(OUTPUT1_PIN, LOW);
+  digitalWrite(OUTPUT2_PIN, LOW);
+  digitalWrite(OUTPUT3_PIN, LOW);
+  digitalWrite(OUTPUT4_PIN, LOW);
+  
+  // Initialize serial communication
+  Serial.begin(115200);
+  
+  // Wait for serial connection to establish
+  while (!Serial && millis() < 5000) {
+    delay(10);
+  }
+  
+  Serial.println("// Digital Outputs Controller Started");
+  Serial.print("// Device: "); Serial.println(DEVICE_NAME);
+  Serial.println("// Outputs respond to dataref values and commands");
+}
+
+void loop() {
+  checkSerial();
+  updateOutputs();
+  delay(10);  // Small delay to prevent overwhelming the processor
+}
+
+void checkSerial() {
+  // Handle incoming serial commands from the bridge
+  while (Serial.available()) {
+    String line = Serial.readStringUntil('\n');
+    line.trim();
+    
+    // Handle handshake request from the bridge
+    if (line == "HELLO") {
+      Serial.print("XPDR;fw="); Serial.print(FIRMWARE_VERSION);
+      Serial.print(";board="); Serial.print(BOARD_TYPE);
+      Serial.print(";name="); Serial.println(DEVICE_NAME);
+    }
+    // Handle incoming dataref values from the bridge
+    // Format: VALUE dataref_name value
+    else if (line.startsWith("VALUE ")) {
+      // Parse the VALUE message: VALUE dataref_name value
+      int firstSpace = line.indexOf(' ');
+      int secondSpace = line.indexOf(' ', firstSpace + 1);
+      
+      if (firstSpace > 0 && secondSpace > firstSpace) {
+        String datarefName = line.substring(firstSpace + 1, secondSpace);
+        String valueStr = line.substring(secondSpace + 1);
+        float value = valueStr.toFloat();
+        
+        // Update storage based on dataref name
+        if (datarefName == "sim/cockpit2/switches/gear_handle_status") {
+          datarefValue = value;
+          Serial.print("// Received gear status: "); Serial.println(datarefValue);
+        }
+        else if (datarefName == "sim/cockpit2/switches/beacon_on") {
+          datarefValue = value;  // Could also control output 1
+          Serial.print("// Received beacon status: "); Serial.println(datarefValue);
+        }
+      }
+    }
+    // Handle incoming array values
+    // Format: ARRAYVALUE array_name type value1,value2,value3,...
+    else if (line.startsWith("ARRAYVALUE ")) {
+      // Parse array value message
+      String rest = line.substring(11);  // Remove "ARRAYVALUE " prefix
+      int firstSpace = rest.indexOf(' ');
+      int secondSpace = rest.indexOf(' ', firstSpace + 1);
+      
+      if (firstSpace > 0 && secondSpace > firstSpace) {
+        String arrayName = rest.substring(0, firstSpace);
+        String type = rest.substring(firstSpace + 1, secondSpace);
+        String valuesStr = rest.substring(secondSpace + 1);
+        
+        // Process array values based on array name
+        if (arrayName == "LED_STATE_ARRAY") {
+          // Parse the first value for array element control
+          int commaIndex = valuesStr.indexOf(',');
+          if (commaIndex > 0) {
+            String firstValue = valuesStr.substring(0, commaIndex);
+            arrayElementValue = firstValue.toFloat();
+          } else {
+            arrayElementValue = valuesStr.toFloat();
+          }
+          
+          // Calculate average of multiple elements for output 4
+          calculateCombinedArrayValue(valuesStr);
+          
+          Serial.print("// Received array values: "); Serial.println(valuesStr);
+        }
+      }
+    }
+    // Handle command execution notifications
+    // Format: CMD_EXECUTED command_name
+    else if (line.startsWith("CMD_EXECUTED ")) {
+      String commandName = line.substring(11);  // Remove "CMD_EXECUTED " prefix
+      commandExecuted = true;
+      Serial.print("// Command executed: "); Serial.println(commandName);
+      
+      // Reset command status after a short period
+      delay(50);  // Brief pulse for command execution
+      commandExecuted = false;
+    }
+    // Handle LIST command to show available features
+    else if (line == "LIST") {
+      Serial.println("STATUS Available Functions:");
+      Serial.println("STATUS - Output 1: Controlled by dataref value");
+      Serial.println("STATUS - Output 2: Pulses when command executed");
+      Serial.println("STATUS - Output 3: Controlled by array element");
+      Serial.println("STATUS - Output 4: Controlled by multiple array elements");
+    }
+    // Handle STATUS command
+    else if (line == "STATUS") {
+      Serial.println("STATUS Controller Status:");
+      Serial.print("STATUS - Outputs: 4 configured");
+      Serial.print("STATUS - Dataref value: "); Serial.println(datarefValue);
+      Serial.print("STATUS - Command executed: "); Serial.println(commandExecuted ? "YES" : "NO");
+      Serial.print("STATUS - Array element value: "); Serial.println(arrayElementValue);
+      Serial.print("STATUS - Combined array value: "); Serial.println(combinedArrayValue);
+    }
+  }
+}
+
+void updateOutputs() {
+  // Update outputs periodically based on received values
+  if (millis() - lastUpdate > UPDATE_INTERVAL) {
+    // Output 1: Controlled by dataref value (turns on if value > 0.5)
+    if (datarefValue > 0.5) {
+      digitalWrite(OUTPUT1_PIN, HIGH);
+    } else {
+      digitalWrite(OUTPUT1_PIN, LOW);
+    }
+    
+    // Output 2: Pulses when command is executed
+    if (commandExecuted) {
+      digitalWrite(OUTPUT2_PIN, HIGH);
+    } else {
+      digitalWrite(OUTPUT2_PIN, LOW);
+    }
+    
+    // Output 3: Controlled by specific array element (turns on if value > 0.5)
+    if (arrayElementValue > 0.5) {
+      digitalWrite(OUTPUT3_PIN, HIGH);
+    } else {
+      digitalWrite(OUTPUT3_PIN, LOW);
+    }
+    
+    // Output 4: Controlled by combined array elements (turns on if average > 0.5)
+    if (combinedArrayValue > 0.5) {
+      digitalWrite(OUTPUT4_PIN, HIGH);
+    } else {
+      digitalWrite(OUTPUT4_PIN, LOW);
+    }
+    
+    lastUpdate = millis();
+  }
+}
+
+void calculateCombinedArrayValue(String valuesStr) {
+  // Parse comma-separated values and calculate average
+  int count = 0;
+  float sum = 0.0;
+  int start = 0;
+  int commaIndex = 0;
+  
+  while (commaIndex >= 0) {
+    commaIndex = valuesStr.indexOf(',', start);
+    String valueStr;
+    
+    if (commaIndex >= 0) {
+      valueStr = valuesStr.substring(start, commaIndex);
+      start = commaIndex + 1;
+    } else {
+      valueStr = valuesStr.substring(start);
+    }
+    
+    sum += valueStr.toFloat();
+    count++;
+    
+    if (commaIndex < 0) break;
+  }
+  
+  if (count > 0) {
+    combinedArrayValue = sum / count;
+  } else {
+    combinedArrayValue = 0.0;
+  }
+}
 ```
 
 ## Protocol Documentation
