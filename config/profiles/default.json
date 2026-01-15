@@ -2,12 +2,14 @@
     "version": "1.0",
     "outputs": {},
     "monitored_datarefs": [
-        "sim/multiplayer/position/plane10_throttle",
-        "sim/autopilot/airspeed_up",
+        "sim/GPS/mode_airport",
         "sim/flightmodel2/gear/tire_rotation_angle_deg",
-        "sim/flightmodel2/misc/door_open_ratio",
         "sim/cockpit2/radios/actuators/nav_frequency_Mhz",
-        "sim/GPS/mode_airport"
+        "sim/flightmodel2/misc/door_open_ratio",
+        "sim/autopilot/airspeed_up",
+        "sim/flight_controls/flaps_down",
+        "sim/multiplayer/position/plane10_throttle",
+        "sim/flight_controls/cowl_flaps_open"
     ],
     "inputs": [
         {
@@ -88,10 +90,7 @@
         }
     ],
     "calibration": {},
-    "auto_connect": [
-        "COM7",
-        "COM16"
-    ],
+    "auto_connect": [],
     "device_aliases": {},
     "known_devices": {
         "WINMM_0": "Microsoft PC-joystick driver",
