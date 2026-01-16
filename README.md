@@ -28,16 +28,16 @@ The X-Plane Dataref Bridge is a Python/PyQt6 application that creates a communic
 - Bidirectional communication: read from X-Plane, write to X-Plane
 
 ## Features
-✅ **Real-time Dataref Monitoring:** Monitor any X-Plane dataref in real-time
-✅ **Bidirectional Communication:** Both read from and write to X-Plane
-✅ **Multiple Data Types:** Support for int, float, bool, byte, string, and array datarefs
-✅ **Command Execution:** Execute X-Plane commands from hardware
-✅ **Hardware Abstraction:** Works with Arduino, ESP32, and other serial devices
-✅ **GUI Interface:** Intuitive PyQt6-based user interface
-✅ **Input Mapping:** Map hardware inputs (buttons, encoders, pots) to X-Plane actions
-✅ **Output Mapping:** Map X-Plane datarefs to hardware outputs (LEDs, servos, displays)
-✅ **Auto-Discovery:** Automatic detection of X-Plane and connected devices
-✅ **Cross-Platform:** Runs on Windows, macOS, and Linux
+-✅ **Real-time Dataref Monitoring:** Monitor any X-Plane dataref in real-time
+-✅ **Bidirectional Communication:** Both read from and write to X-Plane
+-✅ **Multiple Data Types:** Support for int, float, bool, byte, string, and array datarefs
+-✅ **Command Execution:** Execute X-Plane commands from hardware
+-✅ **Hardware Abstraction:** Works with Arduino, ESP32, and other serial devices
+-✅ **GUI Interface:** Intuitive PyQt6-based user interface
+-✅ **Input Mapping:** Map hardware inputs (buttons, encoders, pots) to X-Plane actions
+-✅ **Output Mapping:** Map X-Plane datarefs to hardware outputs (LEDs, servos, displays)
+-✅ **Auto-Discovery:** Automatic detection of X-Plane and connected devices
+-✅ **Cross-Platform:** Runs on Windows, macOS, and Linux
 
 ## Installation
 
