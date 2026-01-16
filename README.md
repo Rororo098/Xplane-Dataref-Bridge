@@ -39,6 +39,7 @@ The X-Plane Dataref Bridge is a Python/PyQt6 application that creates a communic
 -✅ **Auto-Discovery:** Automatic detection of X-Plane and connected devices
 -✅ **Cross-Platform:** Runs on Windows, macOS, and Linux
 
+
 ## Installation
 
 ### Prerequisites
