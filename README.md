@@ -1,49 +1,55 @@
-X-Plane Dataref Bridge
+# X-Plane Dataref Bridge
+
 A comprehensive bridge connecting X-Plane flight simulator to Arduino and other microcontrollers
 
-License: MIT
-Python
-X-Plane
+**License:** MIT
+**Technologies:** Python, X-Plane
 
-Table of Contents
-Overview
-Features
-Installation
-Quick Start
-Arduino Sketches
-Protocol Documentation
-Examples
-Troubleshooting
-Development
-Contributing
-License
-Overview
+## Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Arduino Sketches](#arduino-sketches)
+- [Protocol Documentation](#protocol-documentation)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Overview
 The X-Plane Dataref Bridge is a Python/PyQt6 application that creates a communication bridge between X-Plane flight simulator and Arduino microcontrollers. It enables you to build custom hardware cockpits with authentic instruments, switches, and controls that interact with X-Plane in real-time.
 
-How it works:
+### How it works:
+- X-Plane sends datarefs via UDP
+- The bridge application receives and processes these datarefs
+- Microcontroller (Arduino/ESP32) communicates via USB serial
+- Bidirectional communication: read from X-Plane, write to X-Plane
 
-X-Plane sends datarefs via UDP
-The bridge application receives and processes these datarefs
-Microcontroller (Arduino/ESP32) communicates via USB serial
-Bidirectional communication: read from X-Plane, write to X-Plane
-Features
-✅ Real-time Dataref Monitoring: Monitor any X-Plane dataref in real-time
-✅ Bidirectional Communication: Both read from and write to X-Plane
-✅ Multiple Data Types: Support for int, float, bool, byte, string, and array datarefs
-✅ Command Execution: Execute X-Plane commands from hardware
-✅ Hardware Abstraction: Works with Arduino, ESP32, and other serial devices
-✅ GUI Interface: Intuitive PyQt6-based user interface
-✅ Input Mapping: Map hardware inputs (buttons, encoders, pots) to X-Plane actions
-✅ Output Mapping: Map X-Plane datarefs to hardware outputs (LEDs, servos, displays)
-✅ Auto-Discovery: Automatic detection of X-Plane and connected devices
-✅ Cross-Platform: Runs on Windows, macOS, and Linux
-Installation
-Prerequisites
-Python 3.8 or higher
-X-Plane 11 or 12
-Arduino IDE (for microcontroller programming)
-Cross-Platform Installation
-Windows
+## Features
+✅ **Real-time Dataref Monitoring:** Monitor any X-Plane dataref in real-time
+✅ **Bidirectional Communication:** Both read from and write to X-Plane
+✅ **Multiple Data Types:** Support for int, float, bool, byte, string, and array datarefs
+✅ **Command Execution:** Execute X-Plane commands from hardware
+✅ **Hardware Abstraction:** Works with Arduino, ESP32, and other serial devices
+✅ **GUI Interface:** Intuitive PyQt6-based user interface
+✅ **Input Mapping:** Map hardware inputs (buttons, encoders, pots) to X-Plane actions
+✅ **Output Mapping:** Map X-Plane datarefs to hardware outputs (LEDs, servos, displays)
+✅ **Auto-Discovery:** Automatic detection of X-Plane and connected devices
+✅ **Cross-Platform:** Runs on Windows, macOS, and Linux
+
+## Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- X-Plane 11 or 12
+- Arduino IDE (for microcontroller programming)
+
+### Cross-Platform Installation
+
+#### Windows
+```bash
 # Clone the repository
 git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
 cd Xplane-Dataref-Bridge
@@ -53,7 +59,10 @@ pip install -r requirements.txt
 
 # Run the application
 python main.py
-macOS
+```
+
+#### macOS
+```bash
 # Clone the repository
 git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
 cd Xplane-Dataref-Bridge
@@ -63,7 +72,10 @@ pip3 install -r requirements.txt
 
 # Run the application
 python3 main.py
-Linux
+```
+
+#### Linux
+```bash
 # Clone the repository
 git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
 cd Xplane-Dataref-Bridge
@@ -73,43 +85,53 @@ pip3 install -r requirements.txt
 
 # Run the application
 python3 main.py
-Note for Linux users: You may need to install additional system packages:
+```
 
-Ubuntu/Debian: sudo apt install python3-pyqt6 python3-serial
-Fedora: sudo dnf install python3-PyQt6 python3-pyserial
-Arch: sudo pacman -S python-pyqt6 python-pyserial
+**Note for Linux users:** You may need to install additional system packages:
+
+- Ubuntu/Debian: `sudo apt install python3-pyqt6 python3-serial`
+- Fedora: `sudo dnf install python3-PyQt6 python3-pyserial`
+- Arch: `sudo pacman -S python-pyqt6 python-pyserial`
+
 You may also need to add your user to the dialout group for serial access:
 
+```bash
 sudo usermod -a -G dialout $USER
 # Then log out and log back in for changes to take effect
-Standalone Executable
+```
+
+### Standalone Executable
 Pre-built executables are available in the releases section for Windows, macOS, and Linux.
 
-Quick Start
-Start X-Plane with your aircraft loaded
-Upload Arduino sketch (see Arduino Sketches section below)
-Connect Arduino via USB to your computer
-Run the Bridge application
-Connect to X-Plane using the Connect button
-Configure datarefs in the Output Config tab
-Map hardware in the Input Config tab
-Arduino Sketches
+## Quick Start
+1. Start X-Plane with your aircraft loaded
+2. Upload Arduino sketch (see Arduino Sketches section below)
+3. Connect Arduino via USB to your computer
+4. Run the Bridge application
+5. Connect to X-Plane using the Connect button
+6. Configure datarefs in the Output Config tab
+7. Map hardware in the Input Config tab
+
+## Arduino Sketches
 Comprehensive Arduino sketches demonstrating communication with the X-Plane Dataref Bridge. Each sketch focuses on a specific capability of the protocol.
 
-1. 4-Button Controller with Proper Protocol
-4_button_controller_corrected.ino
+### 1. 4-Button Controller with Proper Protocol
+**File:** `4_button_controller_corrected.ino`
+
 A 4-button controller that sends different types of commands using the correct protocol.
 
-Features: Button debouncing, multiple operations, proper serial protocol
-Output ID: FourButtonController
+**Features:** Button debouncing, multiple operations, proper serial protocol
+**Output ID:** FourButtonController
+
+```cpp
 /*
 ===============================================================================
 X-Plane Dataref Bridge - 4 Button Controller with OUTPUT_IDs (Beginner Version)
 ===============================================================================
 
 PURPOSE:
-This sketch creates a 4-button controller that sends different types of commands 
-to X-Plane through Dataref Bridge application. Each button demonstrates a 
+This sketch creates a 4-button controller that sends different types of commands
+to X-Plane through Dataref Bridge application. Each button demonstrates a
 different type of dataref operation.
 
 REQUIRED HARDWARE:
@@ -121,7 +143,7 @@ REQUIRED HARDWARE:
 
 WIRING INSTRUCTIONS:
 - Connect Button 1 between Pin 2 and GND
-- Connect Button 2 between Pin 3 and GND  
+- Connect Button 2 between Pin 3 and GND
 - Connect Button 3 between Pin 4 and GND
 - Connect Button 4 between Pin 5 and GND
 - Arduino GND to common ground rail
@@ -134,14 +156,14 @@ Button 3 (Pin 4): Sends LED_STATE_ELEM0 - controls individual LED array element
 Button 4 (Pin 5): Sends LED_STATE_ARRAY - controls multiple LED array elements
 
 OUTPUT_ID SYSTEM:
-OUTPUT_IDs are user-friendly names that you configure in bridge application 
-to map to actual X-Plane datarefs. This makes your Arduino code reusable across 
+OUTPUT_IDs are user-friendly names that you configure in bridge application
+to map to actual X-Plane datarefs. This makes your Arduino code reusable across
 different aircraft and easier to understand.
 
 BRIDGE CONFIGURATION:
 In your X-Plane Dataref Bridge application, map these OUTPUT_IDs:
 GEAR_HANDLE → sim/cockpit2/switches/gear_handle_status
-HEADING_SYNC → sim/autopilot/heading_sync  
+HEADING_SYNC → sim/autopilot/heading_sync
 LED_STATE_ELEM0 → LED_STATE[0]
 LED_STATE_ARRAY → LED_STATE (full array)
 
@@ -242,7 +264,7 @@ void setup() {
   // --- Send Startup Messages ---
   // These messages help with debugging and confirm device is working
   Serial.println("// Four Button Controller Started");  // Startup confirmation
-  Serial.print("// Device: "); 
+  Serial.print("// Device: ");
   Serial.println(DEVICE_NAME);                        // Send device name
   Serial.println("// Button 1: GEAR_HANDLE | Button 2: HEADING_SYNC | Button 3: LED_ELEM | Button 4: LED_ARRAY");  // Function guide
 }
@@ -268,12 +290,12 @@ void checkSerial() {
   while (Serial.available() > 0) {
     // Read one character at a time
     char c = (char)Serial.read();
-    
+
     // If we receive a newline character, the message is complete
     if (c == '\n') {
       processLine(inputBuffer);    // Process the complete message
       inputBuffer = "";             // Clear buffer for next message
-    } 
+    }
     // Ignore carriage return characters (Windows sometimes sends them)
     else if (c != '\r') {
       inputBuffer += c;    // Add character to buffer
@@ -293,31 +315,31 @@ void processLine(String line) {
   // Bridge sends "HELLO" to check if device is responding
   if (line == "HELLO") {
     // Respond with device information in the exact expected format
-    Serial.print("XPDR;fw="); 
+    Serial.print("XPDR;fw=");
     Serial.print(FIRMWARE_VERSION);    // Send firmware version
-    Serial.print(";board="); 
+    Serial.print(";board=");
     Serial.print(BOARD_TYPE);          // Send board type
-    Serial.print(";name="); 
+    Serial.print(";name=");
     Serial.println(DEVICE_NAME);       // Send device name
-    
+
     // Visual feedback - blink built-in LED to show connection established
     digitalWrite(LED_BUILTIN, HIGH);
     delay(100);
     digitalWrite(LED_BUILTIN, LOW);
   }
-  
+
   // --- Handle SET Commands ---
   // Bridge sends "SET <KEY> <VALUE>" when X-Plane dataref changes
   else if (line.startsWith("SET ")) {
     // Parse format: "SET GEAR_LED 1.0"
     int firstSpace = line.indexOf(' ');      // Find first space
     int secondSpace = line.lastIndexOf(' '); // Find last space
-    
+
     if (firstSpace > 0 && secondSpace > firstSpace) {
       String key = line.substring(firstSpace + 1, secondSpace);  // Extract the OUTPUT_ID
       String valueStr = line.substring(secondSpace + 1);         // Extract the value
       float value = valueStr.toFloat();                        // Convert to float
-      
+
       // Handle the SET command based on the key
       handleSetCommand(key, value);
     }
@@ -333,7 +355,7 @@ void handleSetCommand(String key, float value) {
   // --- Process Different Output_IDs ---
   // This section would handle any data coming FROM X-Plane TO your Arduino
   // For this input-only controller, we just acknowledge for debugging
-  
+
   if (key == "GEAR_HANDLE") {
     // Example: If you had a gear status LED
     // digitalWrite(GEAR_LED_PIN, value > 0.5 ? HIGH : LOW);
@@ -352,7 +374,7 @@ void handleSetCommand(String key, float value) {
     Serial.print("// Received LED_STATE_ARRAY: ");
     Serial.println(value);
   }
-  
+
   // Send acknowledgment for debugging (optional but helpful)
   Serial.print("ACK ");
   Serial.print(key);
@@ -468,7 +490,7 @@ void writeMultipleArrayElements() {
   Serial.print(" ");                     // Space separator
   Serial.println("1.0,0.5,0.0");      // Send multiple values (CSV format)
   Serial.println("// Button 4: Sent LED_STATE_ARRAY input");  // Debug message
-  
+
   // Update local test array for demonstration (optional)
   // testArray[0] = 1.0;  // First element full brightness
   // testArray[1] = 0.5;  // Second element half brightness
@@ -480,12 +502,17 @@ void writeMultipleArrayElements() {
    END OF SKETCH
    Congratulations! You now have a working 4-button controller with proper protocol.
    ========================================================================== */
-2. 4-Axis Input Controller with Proper Protocol
-4_axis_input_controller_corrected.ino
+```
+
+### 2. 4-Axis Input Controller with Proper Protocol
+**File:** `4_axis_input_controller_corrected.ino`
+
 A 4-axis input controller with different functionality per axis using correct protocol.
 
-Features: Analog input handling, threshold detection, proper serial protocol
-Output ID: 4AxisController
+**Features:** Analog input handling, threshold detection, proper serial protocol
+**Output ID:** 4AxisController
+
+```cpp
 /*
 ===============================================================================
 X-Plane Dataref Bridge - 4 Axis Input Controller with OUTPUT_IDs (Beginner Version)
@@ -493,7 +520,7 @@ X-Plane Dataref Bridge - 4 Axis Input Controller with OUTPUT_IDs (Beginner Versi
 
 PURPOSE:
 This sketch creates a 4-axis input controller using analog inputs (potentiometers or
-joystick axes) to control different X-Plane systems. Each axis demonstrates a 
+joystick axes) to control different X-Plane systems. Each axis demonstrates a
 different type of dataref operation.
 
 REQUIRED HARDWARE:
@@ -504,7 +531,7 @@ REQUIRED HARDWARE:
 
 WIRING INSTRUCTIONS (for 4x potentiometers):
 - Potentiometer 1: Center pin → A0, Outer pins → 5V and GND
-- Potentiometer 2: Center pin → A1, Outer pins → 5V and GND  
+- Potentiometer 2: Center pin → A1, Outer pins → 5V and GND
 - Potentiometer 3: Center pin → A2, Outer pins → 5V and GND
 - Potentiometer 4: Center pin → A3, Outer pins → 5V and GND
 
@@ -515,7 +542,7 @@ Axis 3 (A2): DOOR_ELEM[n] - Controls specific door elements based on position
 Axis 4 (A3): DOOR_ARRAY - Controls multiple door elements simultaneously
 
 OUTPUT_ID SYSTEM:
-OUTPUT_IDs are user-friendly names that you configure in bridge application 
+OUTPUT_IDs are user-friendly names that you configure in bridge application
 to map to actual X-Plane datarefs. This makes your code reusable across different
 aircraft and much easier to understand than hardcoded X-Plane paths.
 
@@ -622,7 +649,7 @@ void setup() {
   // --- Send Startup Messages ---
   // These help with debugging and confirm proper initialization
   Serial.println("// 4-Axis Input Controller Started");
-  Serial.print("// Device: "); 
+  Serial.print("// Device: ");
   Serial.println(DEVICE_NAME);
   Serial.println("// Axes: 1-THROTTLE, 2-AUTOPILOT, 3-DOOR_ELEM, 4-DOOR_ARRAY");
 
@@ -641,7 +668,7 @@ void setup() {
 
 void loop() {
   checkSerialCommands();    // Check for messages from bridge
-  
+
   // --- Read All Analog Inputs ---
   // analogRead() returns 0-1023 based on voltage (0V-5V)
   int axis1Value = analogRead(AXIS_1_PIN);  // Read throttle position
@@ -668,12 +695,12 @@ void checkSerialCommands() {
   while (Serial.available() > 0) {
     // Read one character at a time
     char c = (char)Serial.read();
-    
+
     // If we receive a newline character, the message is complete
     if (c == '\n') {
       processLine(inputBuffer);    // Process the complete message
       inputBuffer = "";             // Clear buffer for next message
-    } 
+    }
     // Ignore carriage return characters (Windows sometimes sends them)
     else if (c != '\r') {
       inputBuffer += c;    // Add character to buffer
@@ -693,27 +720,27 @@ void processLine(String line) {
   // Bridge sends "HELLO" to identify connected devices
   if (line == "HELLO") {
     // Respond with device identification in exact expected format
-    Serial.print("XPDR;fw="); 
+    Serial.print("XPDR;fw=");
     Serial.print(FIRMWARE_VERSION);    // Send firmware version
-    Serial.print(";board="); 
+    Serial.print(";board=");
     Serial.print(BOARD_TYPE);          // Send board type
-    Serial.print(";name="); 
+    Serial.print(";name=");
     Serial.println(DEVICE_NAME);       // Send device name
     Serial.println("// Handshake completed successfully");  // Confirmation
   }
-  
+
   // --- Handle SET Commands ---
   // Bridge sends "SET <KEY> <VALUE>" when X-Plane dataref changes
   else if (line.startsWith("SET ")) {
     // Parse format: "SET THROTTLE_AXIS 0.75"
     int firstSpace = line.indexOf(' ');      // Find first space
     int secondSpace = line.lastIndexOf(' '); // Find last space
-    
+
     if (firstSpace > 0 && secondSpace > firstSpace) {
       String key = line.substring(firstSpace + 1, secondSpace);  // Extract the OUTPUT_ID
       String valueStr = line.substring(secondSpace + 1);         // Extract the value
       float value = valueStr.toFloat();                        // Convert to float
-      
+
       // Handle the SET command based on the key
       handleSetCommand(key, value);
     }
@@ -729,7 +756,7 @@ void handleSetCommand(String key, float value) {
   // --- Process Different Output_IDs ---
   // This section would handle any data coming FROM X-Plane TO your Arduino
   // For this input-only controller, we just acknowledge for debugging
-  
+
   if (key == "THROTTLE_AXIS") {
     Serial.print("// Received THROTTLE_AXIS: ");
     Serial.println(value);
@@ -748,7 +775,7 @@ void handleSetCommand(String key, float value) {
     Serial.print("// Received DOOR_ARRAY: ");
     Serial.println(value);
   }
-  
+
   // Send acknowledgment for debugging (optional but helpful)
   Serial.print("ACK ");
   Serial.print(key);
@@ -776,7 +803,7 @@ void processAxis1(int value) {
     Serial.print(OUTPUT_ID_THROTTLE);    // Send OUTPUT_ID
     Serial.print(" ");                   // Space separator
     Serial.println(normalizedValue, 4);   // Send value with 4 decimal places
-    
+
     prevAxis1Value = value;  // Update stored previous value
   }
 }
@@ -800,7 +827,7 @@ void processAxis2(int value) {
     Serial.println("1");                  // Value 1 = autopilot ON
     Serial.println("// Command: Autopilot ON triggered");  // Debug message
     prevAxis2Trigger = true;  // Update stored state
-  } 
+  }
   // --- Check State Change from High to Low ---
   else if (!shouldTrigger && prevAxis2Trigger) {
     // --- Send Autopilot OFF Command ---
@@ -840,10 +867,10 @@ void processAxis3(int value) {
     Serial.println(normalizedValue, 4);                  // Send value with 4 decimals
 
     // --- Send Debug Information ---
-    Serial.print("// Updated "); 
+    Serial.print("// Updated ");
     Serial.print(OUTPUT_ID_DOOR_ELEM_BASE);
-    Serial.print(arrayIndex); 
-    Serial.print(" to value: "); 
+    Serial.print(arrayIndex);
+    Serial.print(" to value: ");
     Serial.println(normalizedValue, 4);
 
     prevAxis3Value = value;  // Update stored previous value
@@ -902,7 +929,7 @@ void processAxis4(int value) {
 float mapAndConstrain(int inputValue, int inMin, int inMax, float outMin, float outMax) {
   // Map input range to output range (like Arduino's map() but for floats)
   float mappedValue = ((float)(inputValue - inMin) / (float)(inMax - inMin)) * (outMax - outMin) + outMin;
-  
+
   // Constrain value to be within output range
   return constrain(mappedValue, outMin, outMax);
 }
@@ -911,12 +938,17 @@ float mapAndConstrain(int inputValue, int inMin, int inMax, float outMin, float 
    END OF SKETCH
    Congratulations! You now have a working 4-axis input controller with proper protocol.
    ========================================================================== */
-3. Digital Outputs Controller with Proper Protocol
-digital_outputs_controller_corrected.ino
+```
+
+### 3. Digital Outputs Controller with Proper Protocol
+**File:** `digital_outputs_controller_corrected.ino`
+
 4 digital outputs that respond to different dataref types using correct protocol.
 
-Features: Digital output control, value parsing, proper serial protocol
-Output ID: DigitalOutputsController
+**Features:** Digital output control, value parsing, proper serial protocol
+**Output ID:** DigitalOutputsController
+
+```cpp
 /*
 ===============================================================================
 X-Plane Dataref Bridge - Digital Outputs Controller with OUTPUT_IDs (Beginner Version)
@@ -1064,7 +1096,7 @@ void setup() {
 
   // --- Send Startup Messages ---
   Serial.println("// Digital Outputs Controller Started");
-  Serial.print("// Device: "); 
+  Serial.print("// Device: ");
   Serial.println(DEVICE_NAME);
   Serial.println("// Outputs respond to OUTPUT_ID values and commands");
 }
@@ -1090,12 +1122,12 @@ void checkSerial() {
   while (Serial.available() > 0) {
     // Read one character at a time
     char c = (char)Serial.read();
-    
+
     // If we receive a newline character, the message is complete
     if (c == '\n') {
       processLine(inputBuffer);    // Process the complete message
       inputBuffer = "";             // Clear buffer for next message
-    } 
+    }
     // Ignore carriage return characters (Windows sometimes sends them)
     else if (c != '\r') {
       inputBuffer += c;    // Add character to buffer
@@ -1115,31 +1147,31 @@ void processLine(String line) {
   // Bridge sends "HELLO" to identify connected devices
   if (line == "HELLO") {
     // Respond with device identification in exact expected format
-    Serial.print("XPDR;fw="); 
+    Serial.print("XPDR;fw=");
     Serial.print(FIRMWARE_VERSION);    // Send firmware version
-    Serial.print(";board="); 
+    Serial.print(";board=");
     Serial.print(BOARD_TYPE);          // Send board type
-    Serial.print(";name="); 
+    Serial.print(";name=");
     Serial.println(DEVICE_NAME);       // Send device name
-    
+
     // Visual feedback - blink built-in LED to show connection established
     digitalWrite(LED_BUILTIN, HIGH);
     delay(100);
     digitalWrite(LED_BUILTIN, LOW);
   }
-  
+
   // --- Handle SET Commands ---
   // Bridge sends "SET <KEY> <VALUE>" when X-Plane dataref changes
   else if (line.startsWith("SET ")) {
     // Parse format: "SET GEAR_STATUS 1.0" or "SET LED_STATE_ARRAY 0.5,0.7,0.3"
     int firstSpace = line.indexOf(' ');      // Find first space
     int secondSpace = line.lastIndexOf(' '); // Find last space
-    
+
     if (firstSpace > 0 && secondSpace > firstSpace) {
       String key = line.substring(firstSpace + 1, secondSpace);  // Extract the OUTPUT_ID
       String valueStr = line.substring(secondSpace + 1);         // Extract the value
       float value = valueStr.toFloat();                        // Convert to float
-      
+
       // Handle the SET command based on the key
       handleSetCommand(key, valueStr, value);
     }
@@ -1155,47 +1187,47 @@ void handleSetCommand(String key, String valueStr, float value) {
   // --- Handle Gear Status Updates ---
   if (key == OUTPUT_ID_GEAR) {
     gearValue = value;  // Store new gear status
-    Serial.print("// Received "); 
+    Serial.print("// Received ");
     Serial.print(OUTPUT_ID_GEAR);
-    Serial.print(": "); 
+    Serial.print(": ");
     Serial.println(gearValue);  // Debug message
   }
-  
+
   // --- Handle Beacon Status Updates ---
   else if (key == OUTPUT_ID_BEACON) {
     beaconValue = value;  // Store new beacon status
-    Serial.print("// Received "); 
+    Serial.print("// Received ");
     Serial.print(OUTPUT_ID_BEACON);
-    Serial.print(": "); 
+    Serial.print(": ");
     Serial.println(beaconValue);  // Debug message
   }
-  
+
   // --- Handle LED Element Updates ---
   else if (key.startsWith(OUTPUT_ID_LED_ELEM)) {
     // Extract index if present (e.g., LED_STATE_ELEM3 → index 3)
     int indexStart = String(OUTPUT_ID_LED_ELEM).length();  // Find where index starts
     String indexStr = key.substring(indexStart);        // Get index part
-    
+
     if (indexStr.length() > 0) {  // If index was specified
       int index = indexStr.toInt();  // Convert to integer
       arrayElementValue = value;     // Store element value
-      
-      Serial.print("// Received "); 
+
+      Serial.print("// Received ");
       Serial.print(key);
-      Serial.print(": "); 
+      Serial.print(": ");
       Serial.println(value);  // Debug message
     }
   }
-  
+
   // --- Handle Full LED Array Updates ---
   else if (key == OUTPUT_ID_LED_ARRAY) {
     calculateCombinedArrayValue(valueStr);  // Process array values
-    Serial.print("// Received "); 
+    Serial.print("// Received ");
     Serial.print(OUTPUT_ID_LED_ARRAY);
-    Serial.print(": "); 
+    Serial.print(": ");
     Serial.println(valueStr);  // Debug message
   }
-  
+
   // Send acknowledgment for debugging (optional but helpful)
   Serial.print("ACK ");
   Serial.print(key);
@@ -1212,7 +1244,7 @@ void updateOutputs() {
   // --- Check if It's Time to Update ---
   // Only update outputs at specified interval to prevent rapid flashing
   if (millis() - lastUpdate > UPDATE_INTERVAL) {
-    
+
     // --- Update Output 1: Gear Status Indicator ---
     // Turn ON if gear is down (value > 0.5 = 50%)
     if (gearValue > 0.5) {
@@ -1297,39 +1329,29 @@ void calculateCombinedArrayValue(String valuesStr) {
    END OF SKETCH
    Congratulations! You now have a working digital outputs controller with proper protocol.
    ========================================================================== */
-Protocol Documentation
-Handshake Protocol
-Bridge: HELLO
-Arduino: XPDR;fw=<version>;board=<type>;name=<device_name>
-Dataref Operations
-Read: READ <dataref_name> <type>
-Resp: VALUE <dataref_name> <value>
+```
 
-Write: WRITE <dataref_name> <type> <value>
-Resp: OK
+## Protocol Documentation
 
-Set (compat): SETDREF <dataref_name> <value>
-Resp: ACK <key> <value>
+### Handshake Protocol
+- **Bridge:** `HELLO`
+- **Arduino:** `XPDR;fw=<version>;board=<type>;name=<device_name>`
 
-Read Array: READARRAY <array_name> <type>
-Resp: ARRAYVALUE <array_name> <type> <csv_values>
+### Dataref Operations
+- **Read:** `READ <dataref_name> <type>` → `VALUE <dataref_name> <value>`
+- **Write:** `WRITE <dataref_name> <type> <value>` → `OK`
+- **Set (compat):** `SETDREF <dataref_name> <value>` → `ACK <key> <value>`
+- **Read Array:** `READARRAY <array_name> <type>` → `ARRAYVALUE <array_name> <type> <csv_values>`
+- **Write Array:** `WRITEARRAY <array_name> <type> <csv_values>` → `OK`
+- **Read Elem:** `READELEM <array_name[index]> <type>` → `ELEMVALUE <array_name[index]> <type> <value>`
+- **Write Elem:** `WRITEELEM <array_name[index]> <type> <value>` → `OK`
+- **Multi-Read:** `MULTIREAD <array_name[start,end]> <type>` → `MULTIVALUE <array_name[start,end]> <type> <csv_values>`
+- **Command:** `CMD <command_name>` → `CMD_EXECUTED <command_name>`
 
-Write Array: WRITEARRAY <array_name> <type> <csv_values>
-Resp: OK
+## Examples
 
-Read Elem: READELEM <array_name[index]> <type>
-Resp: ELEMVALUE <array_name[index]> <type> <value>
-
-Write Elem: WRITEELEM <array_name[index]> <type> <value>
-Resp: OK
-
-Multi-Read: MULTIREAD <array_name[start,end]> <type>
-Resp: MULTIVALUE <array_name[start,end]> <type> <csv_values>
-
-Command: CMD <command_name>
-Resp: CMD_EXECUTED <command_name>
-Examples
-Basic LED Control
+### Basic LED Control
+```cpp
 // Arduino code to control an LED based on X-Plane dataref
 const int LED_PIN = 8;
 
@@ -1345,7 +1367,10 @@ void loop() {
     }
   }
 }
-Reading Airspeed
+```
+
+### Reading Airspeed
+```cpp
 // Arduino code to read airspeed from X-Plane
 float airspeed = 0.0;
 
@@ -1367,35 +1392,42 @@ void loop() {
     }
   }
 }
-Troubleshooting
-Common Issues
-Device not recognized
+```
 
-Verify handshake response format: XPDR;fw=1.0;board=UNO;name=MyDevice
-Check serial monitor for HELLO command from bridge
-Ensure baud rate is 115200
-No communication
+## Troubleshooting
 
-Confirm baud rate 115200 on both ends
-Check COM port selection in bridge application
-Verify USB cable is properly connected
-Wrong data
+### Common Issues
 
-Double-check data types (int/float/bool/byte)
-Verify dataref names match exactly
-Check for typos in commands
-Connection drops
+#### Device not recognized
+- Verify handshake response format: `XPDR;fw=1.0;board=UNO;name=MyDevice`
+- Check serial monitor for HELLO command from bridge
+- Ensure baud rate is 115200
 
-Implement heartbeat (STATUS HB) or increase timeout
-Check for serial buffer overflow
-Reduce frequency of data requests if needed
-Debugging Tips
-Use Arduino Serial Monitor to view raw communication
-Enable debug logging in the bridge application
-Test with simple handshake sketch first
-Verify X-Plane is running and accessible
-Development
-Project Structure
+#### No communication
+- Confirm baud rate 115200 on both ends
+- Check COM port selection in bridge application
+- Verify USB cable is properly connected
+
+#### Wrong data
+- Double-check data types (int/float/bool/byte)
+- Verify dataref names match exactly
+- Check for typos in commands
+
+#### Connection drops
+- Implement heartbeat (STATUS HB) or increase timeout
+- Check for serial buffer overflow
+- Reduce frequency of data requests if needed
+
+### Debugging Tips
+- Use Arduino Serial Monitor to view raw communication
+- Enable debug logging in the bridge application
+- Test with simple handshake sketch first
+- Verify X-Plane is running and accessible
+
+## Development
+
+### Project Structure
+```
 X-Plane Dataref Bridge/
 ├── core/                 # Core application logic
 │   ├── arduino/          # Arduino communication
@@ -1406,24 +1438,28 @@ X-Plane Dataref Bridge/
 ├── examples/             # Example configurations
 ├── resources/            # Icons and assets
 └── main.py               # Application entry point
-Building Executables
+```
+
+### Building Executables
 For building standalone executables, see How_to_Package_XPDRB_as_an_EXE.md.
 
-Contributing
-Fork the repository
-Create a feature branch (git checkout -b feature/amazing-feature)
-Commit your changes (git commit -m 'Add amazing feature')
-Push to the branch (git push origin feature/amazing-feature)
-Open a Pull Request
-Code Style
-Follow PEP 8 guidelines for Python code
-Use meaningful variable and function names
-Add docstrings to functions and classes
-Write unit tests for new features
-License
+## Contributing
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Style
+- Follow PEP 8 guidelines for Python code
+- Use meaningful variable and function names
+- Add docstrings to functions and classes
+- Write unit tests for new features
+
+## License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-Support
+## Support
 For support, please open an issue in the GitHub repository or contact the maintainers.
 
-Happy Flight Simulation! 🛩️
+**Happy Flight Simulation!** 🛩️
