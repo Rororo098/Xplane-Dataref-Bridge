@@ -1,9 +1,16 @@
-# X-Plane Dataref Bridge
+# X-Plane Dataref Bridge 🛩️
 
-A comprehensive bridge connecting X-Plane flight simulator to Arduino and other microcontrollers
+**A comprehensive hardware interface connecting X-Plane 11/12 flight simulator to Arduino, ESP32, and other microcontrollers for building custom home cockpits**
 
 **License:** MIT
-**Technologies:** Python, X-Plane
+**Technologies:** Python, PyQt6, X-Plane 11, X-Plane 12, Arduino, ESP32, Serial Communication
+**Status:** Actively Maintained ✅
+**Keywords:** Flight Simulation, Hardware Interface, Cockpit Builder, Dataref Communication, X-Plane Hardware Control
+
+[![GitHub stars](https://img.shields.io/github/stars/Rororo098/Xplane-Dataref-Bridge.svg?style=social)](https://github.com/Rororo098/Xplane-Dataref-Bridge/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Rororo098/Xplane-Dataref-Bridge.svg?style=social)](https://github.com/Rororo098/Xplane-Dataref-Bridge/network)
+[![GitHub issues](https://img.shields.io/github/issues/Rororo098/Xplane-Dataref-Bridge.svg)](https://github.com/Rororo098/Xplane-Dataref-Bridge/issues)
+[![GitHub license](https://img.shields.io/github/license/Rororo098/Xplane-Dataref-Bridge.svg)](https://github.com/Rororo098/Xplane-Dataref-Bridge/blob/main/LICENSE)
 
 ## Table of Contents
 - [Overview](#overview)

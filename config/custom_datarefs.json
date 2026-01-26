@@ -238,5 +238,12 @@
         "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
         "writable": true,
         "custom": true
+    },
+    "sim/cockpit/autopilot/ah_sourc": {
+        "name": "sim/cockpit/autopilot/ah_sourc",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
     }
 }

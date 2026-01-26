@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="X-Plane Dataref Bridge - A comprehensive hardware interface connecting X-Plane 11/12 flight simulator to Arduino, ESP32, and other microcontrollers for building custom home cockpits">
+    <meta name="keywords" content="X-Plane, X-Plane 11, X-Plane 12, flight simulator, flight simulation, Arduino, ESP32, microcontroller, Python, PyQt6, dataref, cockpit builder, hardware interface, flight sim, aviation, simulator, hardware control, serial communication, USB serial, home cockpit, DIY cockpit, flight sim hardware">
+    <meta name="author" content="Rororo098">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="X-Plane Dataref Bridge">
+    <meta property="og:description" content="A comprehensive hardware interface connecting X-Plane 11/12 flight simulator to Arduino, ESP32, and other microcontrollers for building custom home cockpits">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://github.com/Rororo098/Xplane-Dataref-Bridge">
+    <meta property="og:site_name" content="X-Plane Dataref Bridge">
+    <title>X-Plane Dataref Bridge - Flight Simulator Hardware Interface</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        header {
+            background-color: #1a73e8;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        nav {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+            border-bottom: 1px solid #ddd;
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            justify-content: center;
+        }
+        nav li {
+            margin: 0 1rem;
+        }
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+        }
+        main {
+            padding: 2rem 0;
+        }
+        section {
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #1a73e8;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .feature-card {
+            border: 1px solid #ddd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 2rem;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #1a73e8;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+        .btn:hover {
+            background-color: #0d5fcc;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🛩️ X-Plane Dataref Bridge</h1>
+            <p>A comprehensive hardware interface for X-Plane flight simulator</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#documentation">Documentation</a></li>
+                <li><a href="#support">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section id="overview">
+            <h2>📋 Overview</h2>
+            <p>The X-Plane Dataref Bridge is a powerful Python/PyQt6 application that creates a seamless communication bridge between X-Plane 11/12 flight simulator and Arduino/ESP32 microcontrollers. It enables flight simulation enthusiasts to build custom hardware cockpits with authentic instruments, switches, and controls that interact with X-Plane in real-time.</p>
+
+            <h3>How It Works</h3>
+            <ul>
+                <li>📡 X-Plane sends datarefs via UDP</li>
+                <li>🖥️ The bridge application receives and processes these datarefs</li>
+                <li>🔌 Microcontroller (Arduino/ESP32) communicates via USB serial</li>
+                <li>🔄 Bidirectional communication: read from X-Plane, write to X-Plane</li>
+            </ul>
+
+            <a href="https://github.com/Rororo098/Xplane-Dataref-Bridge" class="btn">View on GitHub</a>
+        </section>
+
+        <section id="features">
+            <h2>✨ Features</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <h3>📊 Real-time Dataref Monitoring</h3>
+                    <p>Monitor any X-Plane dataref in real-time with high precision and low latency.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔄 Bidirectional Communication</h3>
+                    <p>Both read from and write to X-Plane for complete hardware control.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📦 Multiple Data Types</h3>
+                    <p>Support for int, float, bool, byte, string, and array datarefs.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎮 Command Execution</h3>
+                    <p>Execute X-Plane commands directly from your hardware controls.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔧 Hardware Abstraction</h3>
+                    <p>Works with Arduino, ESP32, and other serial devices.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🖥️ GUI Interface</h3>
+                    <p>Intuitive PyQt6-based user interface for easy configuration.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎛️ Input Mapping</h3>
+                    <p>Map hardware inputs (buttons, encoders, pots) to X-Plane actions.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💡 Output Mapping</h3>
+                    <p>Map X-Plane datarefs to hardware outputs (LEDs, servos, displays).</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Auto-Discovery</h3>
+                    <p>Automatic detection of X-Plane and connected devices.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🌐 Cross-Platform</h3>
+                    <p>Runs on Windows, macOS, and Linux.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="installation">
+            <h2>💻 Installation</h2>
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Python 3.8 or higher</li>
+                <li>X-Plane 11 or 12</li>
+                <li>Arduino IDE (for microcontroller programming)</li>
+            </ul>
+
+            <h3>Cross-Platform Installation</h3>
+            <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto;">
+                <pre><code># Clone the repository
+git clone https://github.com/Rororo098/Xplane-Dataref-Bridge.git
+cd Xplane-Dataref-Bridge
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python main.py</code></pre>
+            </div>
+
+            <p>Pre-built executables are available in the <a href="https://github.com/Rororo098/Xplane-Dataref-Bridge/releases">releases section</a> for Windows, macOS, and Linux.</p>
+        </section>
+
+        <section id="documentation">
+            <h2>📚 Documentation</h2>
+            <p>Comprehensive documentation is available in the repository:</p>
+            <ul>
+                <li>📖 <a href="README.md">README.md</a> - Complete project documentation</li>
+                <li>🔧 <a href="docs/SYSTEM_GUIDE.md">System Guide</a> - Detailed system architecture</li>
+                <li>🎨 <a href="examples/">Examples</a> - Arduino sketches and configuration examples</li>
+                <li>📋 <a href="How_to_Package_XPDRB_as_an_EXE_COMPLETE.md">Packaging Guide</a> - How to create standalone executables</li>
+            </ul>
+        </section>
+
+        <section id="support">
+            <h2>🤝 Support & Community</h2>
+            <p>For support, questions, or to contribute to the project:</p>
+            <ul>
+                <li>🐛 <a href="https://github.com/Rororo098/Xplane-Dataref-Bridge/issues">Report Issues</a></li>
+                <li>💬 <a href="https://github.com/Rororo098/Xplane-Dataref-Bridge/discussions">Discussions</a></li>
+                <li>📝 <a href="https://github.com/Rororo098/Xplane-Dataref-Bridge/pulls">Contribute</a></li>
+                <li>⭐ <a href="https://github.com/Rororo098/Xplane-Dataref-Bridge">Star the Repository</a></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 X-Plane Dataref Bridge. All rights reserved. | Licensed under MIT License</p>
+            <p>Created and maintained by <a href="https://github.com/Rororo098" style="color: #1a73e8;">Rororo098</a></p>
+        </div>
+    </footer>
+</body>
+</html>

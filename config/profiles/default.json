@@ -1,15 +1,33 @@
 {
     "version": "1.0",
-    "outputs": {},
+    "outputs": {
+        "ASD": {
+            "source": "sim/multiplayer/position/plane10_throttle[0]",
+            "is_variable": false
+        },
+        "QWE": {
+            "source": "sim/multiplayer/position/plane10_throttle[1]",
+            "is_variable": false
+        },
+        "EWQ": {
+            "source": "sim/multiplayer/position/plane10_throttle[2]",
+            "is_variable": false
+        }
+    },
     "monitored_datarefs": [
-        "sim/flight_controls/flaps_down",
+        "spad/command/reload",
+        "sim/cockpit/autopilot/ah_sourc",
         "sim/flightmodel2/misc/door_open_ratio",
-        "sim/autopilot/airspeed_up",
+        "sim/flightmodel2/gear/tire_rotation_angle_deg",
+        "sim/multiplayer/position/plane10_throttle[0]",
         "sim/multiplayer/position/plane10_throttle",
+        "sim/autopilot/airspeed_up",
         "sim/GPS/mode_airport",
-        "sim/cockpit2/radios/actuators/nav_frequency_Mhz",
         "sim/flight_controls/cowl_flaps_open",
-        "sim/flightmodel2/gear/tire_rotation_angle_deg"
+        "sim/multiplayer/position/plane10_throttle[2]",
+        "sim/flight_controls/flaps_down",
+        "sim/multiplayer/position/plane10_throttle[1]",
+        "sim/cockpit2/radios/actuators/nav_frequency_Mhz"
     ],
     "inputs": [
         {
