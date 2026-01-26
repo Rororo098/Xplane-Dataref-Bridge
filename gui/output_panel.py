@@ -428,10 +428,24 @@ class OutputPanel(QWidget):
         if dataref_name in self._subscribed_datarefs:
             row = self._subscribed_datarefs[dataref_name]
             if row < self.table.rowCount():
+                # Get the dataref type for proper formatting
+                dtype = ""
+                if self.dataref_manager:
+                    # First try to get info for the exact dataref name
+                    info = self.dataref_manager.get_dataref_info(dataref_name)
+                    if info:
+                        dtype = info.get("type", "")
+                    else:
+                        # If that fails, try to get the base name (without array index)
+                        base_name = dataref_name.split('[')[0]
+                        info = self.dataref_manager.get_dataref_info(base_name)
+                        if info:
+                            dtype = info.get("type", "")
+
                 # Update the value in the table
                 value_item = self.table.item(row, 2)
                 if value_item:
-                    formatted_value = self._format_value(dataref_name, value, "")
+                    formatted_value = self._format_value(dataref_name, value, dtype)
                     value_item.setText(formatted_value)
 
                     # Update color based on value
@@ -2842,6 +2856,48 @@ class OutputPanel(QWidget):
             if dtype == "command":
                 return "COMMAND"
 
+            # Check if this is a string dataref and try to reconstruct the string
+            # Check both the dataref type and the dataref name pattern
+            is_string_type = "string" in dtype or "byte" in dtype
+            # Extract the base name (without array index) for name pattern matching
+            base_name_for_check = name.split('[')[0]
+            is_possible_string = any(keyword in base_name_for_check.lower() for keyword in [
+                'icao', 'tailnum', 'atc', 'title', 'model', 'descrip', 'texture', 'path'
+            ])
+
+            # More aggressive string detection - if it's an array element of a potential string dataref
+            import re
+            array_match = re.match(r'^(.+)\[(\d+)\]$', name)
+            if array_match:
+                potential_base_name, array_index = array_match.groups()
+                is_array_element_of_string = any(keyword in potential_base_name.lower() for keyword in [
+                    'icao', 'tailnum', 'atc', 'title', 'model', 'descrip', 'texture', 'path'
+                ])
+
+                if is_array_element_of_string:
+                    # This is an array element of a potential string dataref, try to reconstruct the full string
+                    if hasattr(self, 'xplane_conn') and self.xplane_conn:
+                        try:
+                            # Use the potential base name to reconstruct the string
+                            reconstructed_string = self.xplane_conn.get_string_value(potential_base_name)
+                            if reconstructed_string is not None and reconstructed_string != "":  # If we successfully reconstructed a string
+                                return f'"{reconstructed_string}"'
+                        except Exception:
+                            # If string reconstruction fails, fall back to the original method
+                            pass
+
+            if is_string_type or is_possible_string:
+                # Try to get the full string from the X-Plane connection
+                if hasattr(self, 'xplane_conn') and self.xplane_conn:
+                    try:
+                        # Use the base name to reconstruct the string
+                        reconstructed_string = self.xplane_conn.get_string_value(base_name_for_check)
+                        if reconstructed_string is not None and reconstructed_string != "":  # If we successfully reconstructed a string
+                            return f'"{reconstructed_string}"'
+                    except Exception:
+                        # If string reconstruction fails, fall back to the original method
+                        pass
+
             if self._is_complex_dtype(dtype):
                 return self._format_complex_value(name, dtype)
 
@@ -2856,8 +2912,19 @@ class OutputPanel(QWidget):
     def _format_complex_value(self, name: str, dtype: str) -> str:
         """Format complex values (arrays, strings, bytes)."""
         base = name.split("[")[0]
-        size = self._get_array_size(dtype)
 
+        # For string datarefs, try to get the full string value directly
+        if "string" in dtype or "byte" in dtype:
+            if hasattr(self, 'xplane_conn') and self.xplane_conn:
+                try:
+                    reconstructed_string = self.xplane_conn.get_string_value(base)
+                    if reconstructed_string:  # If we successfully reconstructed a string
+                        return f'"{reconstructed_string}"'
+                except Exception:
+                    # If string reconstruction fails, fall back to the original method
+                    pass
+
+        size = self._get_array_size(dtype)
         indices = self._get_array_indices(base, size)
 
         if not indices:
@@ -2891,7 +2958,20 @@ class OutputPanel(QWidget):
 
     def _format_string_byte(self, indices: list) -> str:
         """Format string or byte array."""
-        chars = [chr(int(v)) for v in indices if v > 0]
+        # If we have access to xplane_conn, try to get the full string value
+        if hasattr(self, 'xplane_conn') and self.xplane_conn:
+            try:
+                # This function is called from _format_complex_value which has access to the dataref name
+                # We need to get the base name from the calling context
+                # For now, we'll use the original approach but with the possibility of enhancement
+                chars = [chr(int(v)) for v in indices if v > 0 and v < 256]  # Valid ASCII range
+                reassembled = "".join(chars)
+                return f'"{reassembled}"'
+            except Exception:
+                pass
+
+        # Fallback to original method
+        chars = [chr(int(v)) for v in indices if v > 0 and v < 256]  # Valid ASCII range
         reassembled = "".join(chars)
         return f'"{reassembled}"'
 

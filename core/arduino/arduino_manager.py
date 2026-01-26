@@ -405,12 +405,79 @@ class ArduinoManager:
     def send_dref_command(self, port: str, dataref: str, value: float) -> bool:
         """Send a DREF command to a device."""
         command = f"DREF {dataref} {value}"
+
+        # Also forward to X-Plane if connection is available
+        if self.xplane_conn:
+            try:
+                import asyncio
+                try:
+                    # Check if we're in an event loop
+                    loop = asyncio.get_running_loop()
+                    # If we're in a loop, schedule the task
+                    task = loop.create_task(self.xplane_conn.write_dataref(dataref, value))
+                    self._tasks.append(task)  # Store task to prevent garbage collection
+                    log.info("Scheduled DREF command to X-Plane: %s = %.4f", dataref, value)
+                except RuntimeError:
+                    # No event loop running, run in separate thread
+                    import threading
+                    def async_call():
+                        # Create a new event loop for this thread
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        try:
+                            coro = self.xplane_conn.write_dataref(dataref, value)
+                            new_loop.run_until_complete(coro)
+                        finally:
+                            new_loop.close()
+
+                    # Run in a separate thread
+                    thread = threading.Thread(target=async_call, daemon=True)
+                    thread.start()
+            except Exception as e:
+                log.error("Failed to forward DREF to X-Plane: %s", e)
+
         return self.send_command(port, command)
 
     def send_cmd_command(self, port: str, command: str) -> bool:
         """Send a CMD command to a device."""
         full_command = f"CMD {command}"
         return self.send_command(port, full_command)
+
+    def send_string_command(self, port: str, dataref: str, value: str) -> bool:
+        """Send a STRING command to a device."""
+        command = f"STRING {dataref} {value}"
+
+        # Also forward to X-Plane if connection is available
+        if self.xplane_conn:
+            try:
+                import asyncio
+                try:
+                    # Check if we're in an event loop
+                    loop = asyncio.get_running_loop()
+                    # If we're in a loop, schedule the task
+                    task = loop.create_task(self.xplane_conn.write_dataref_string(dataref, value))
+                    self._tasks.append(task)  # Store task to prevent garbage collection
+                    log.info("Scheduled STRING command to X-Plane: %s = %s", dataref, value)
+                except RuntimeError:
+                    # No event loop running, run in separate thread
+                    import threading
+                    def async_call():
+                        # Create a new event loop for this thread
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        try:
+                            coro = self.xplane_conn.write_dataref_string(dataref, value)
+                            new_loop.run_until_complete(coro)
+                        finally:
+                            new_loop.close()
+
+                    # Run in a separate thread
+                    thread = threading.Thread(target=async_call, daemon=True)
+                    thread.start()
+            except Exception as e:
+                log.error("Failed to forward STRING to X-Plane: %s", e)
+
+        return self.send_command(port, command)
     
     def subscribe_dataref(self, port: str, dataref: str, key: str) -> bool:
         """
@@ -879,6 +946,8 @@ class ArduinoManager:
                     self._handle_input(device, line)
                 elif line.startswith("DREF "):
                     self._handle_dref(device, line)
+                elif line.startswith("STRING "):
+                    self._handle_string(device, line)
                 elif line.startswith("CMD "):
                     self._handle_cmd(device, line)
                 elif line.startswith("ACK "):
@@ -895,8 +964,14 @@ class ArduinoManager:
         parts = line.split()
         if len(parts) >= 3:
             key = parts[1]
+
+            # Extract the value part (everything after the key)
+            value_str = ' '.join(parts[2:])  # Join all remaining parts in case value contains spaces
+
             try:
-                value = float(parts[2])
+                # Try to parse as float first (for numeric values)
+                value = float(value_str)
+
                 device.set_input(key, value)
 
                 # Update variable store if available
@@ -909,6 +984,46 @@ class ArduinoManager:
                         f"Input from Arduino device on {device.port}"
                     )
 
+                # Check if this key is mapped to a dataref and forward to X-Plane if so
+                if self.xplane_conn:
+                    # Look up the dataref associated with this key in universal mappings
+                    dataref_info = None
+                    for mapped_key, info in self._universal_mappings.items():
+                        if mapped_key == key.upper():
+                            dataref_info = info
+                            break
+
+                    if dataref_info:
+                        try:
+                            dataref = dataref_info['source']
+                            # Forward the value to X-Plane
+                            import asyncio
+                            try:
+                                # Check if we're in an event loop
+                                loop = asyncio.get_running_loop()
+                                # If we're in a loop, schedule the task
+                                task = loop.create_task(self.xplane_conn.write_dataref(dataref, value))
+                                self._tasks.append(task)  # Store task to prevent garbage collection
+                                log.info("Scheduled INPUT to X-Plane: %s = %.4f", dataref, value)
+                            except RuntimeError:
+                                # No event loop running, run in separate thread
+                                import threading
+                                def async_call():
+                                    # Create a new event loop for this thread
+                                    new_loop = asyncio.new_event_loop()
+                                    asyncio.set_event_loop(new_loop)
+                                    try:
+                                        coro = self.xplane_conn.write_dataref(dataref, value)
+                                        new_loop.run_until_complete(coro)
+                                    finally:
+                                        new_loop.close()
+
+                                # Run in a separate thread
+                                thread = threading.Thread(target=async_call, daemon=True)
+                                thread.start()
+                        except Exception as e:
+                            log.error("Failed to forward INPUT to X-Plane: %s", e)
+
                 # Notify listeners
                 if self.on_input_received:
                     self.on_input_received(device.port, key, value)
@@ -916,35 +1031,127 @@ class ArduinoManager:
                 log.debug("Input from %s: %s = %.4f", device.port, key, value)
 
             except ValueError:
-                pass
+                # If it's not a float, treat it as a string value
+                # This is for string datarefs like aircraft ICAO codes
+                string_value = value_str
+
+                # Update variable store if available
+                if self.variable_store:
+                    from core.variable_store import VariableType
+                    self.variable_store.update_value(
+                        key,
+                        string_value,
+                        VariableType.VARIABLE_ARDUINO,
+                        f"Input from Arduino device on {device.port} (string)"
+                    )
+
+                # Check if this key is mapped to a string dataref and forward to X-Plane if so
+                if self.xplane_conn:
+                    # Look up the dataref associated with this key in universal mappings
+                    dataref_info = None
+                    for mapped_key, info in self._universal_mappings.items():
+                        if mapped_key == key.upper():
+                            dataref_info = info
+                            break
+
+                    if dataref_info:
+                        try:
+                            dataref = dataref_info['source']
+                            # Forward the string value to X-Plane
+                            import asyncio
+                            try:
+                                # Check if we're in an event loop
+                                loop = asyncio.get_running_loop()
+                                # If we're in a loop, schedule the task
+                                task = loop.create_task(self.xplane_conn.write_dataref_string(dataref, string_value))
+                                self._tasks.append(task)  # Store task to prevent garbage collection
+                                log.info("Scheduled INPUT string to X-Plane: %s = %s", dataref, string_value)
+                            except RuntimeError:
+                                # No event loop running, run in separate thread
+                                import threading
+                                def async_call():
+                                    # Create a new event loop for this thread
+                                    new_loop = asyncio.new_event_loop()
+                                    asyncio.set_event_loop(new_loop)
+                                    try:
+                                        coro = self.xplane_conn.write_dataref_string(dataref, string_value)
+                                        new_loop.run_until_complete(coro)
+                                    finally:
+                                        new_loop.close()
+
+                                # Run in a separate thread
+                                thread = threading.Thread(target=async_call, daemon=True)
+                                thread.start()
+                        except Exception as e:
+                            log.error("Failed to forward INPUT string to X-Plane: %s", e)
+
+                # Notify listeners
+                if self.on_input_received:
+                    # Convert string to a representative float for the listener
+                    # For string values, we'll pass a special indicator
+                    self.on_input_received(device.port, key, -999.0)  # Special value to indicate string
+
+                log.debug("Input string from %s: %s = %s", device.port, key, string_value)
 
     def _handle_dref(self, device: ArduinoDevice, line: str) -> None:
         """Handle DREF message from device to set dataref value."""
         # Format: DREF sim/dataref 1.0
         # Split by FIRST space (DREF), then LAST space (Value) is safer
-        try:
-            # Extract the part after "DREF "
-            data_part = line[5:].strip()
-            # Split from the right side to separate dataref from value
-            parts = data_part.rsplit(' ', 1)
-            if len(parts) == 2:
-                dataref = parts[0].strip()
-                val_str = parts[1].strip()
+        # Extract the part after "DREF "
+        data_part = line[5:].strip()
+        # Split from the right side to separate dataref from value
+        parts = data_part.rsplit(' ', 1)
+        if len(parts) == 2:
+            dataref = parts[0].strip()
+            val_str = parts[1].strip()
 
-                try:
-                    value = float(val_str)
+            try:
+                value = float(val_str)
 
-                    # Notify listeners that a dataref should be written
-                    if self.on_dataref_write:
-                        self.on_dataref_write(dataref, value)
+                # Forward the DREF command to X-Plane if connection is available
+                if self.xplane_conn:
+                    try:
+                        # Call the write_dataref method directly (it's async but we'll handle it differently)
+                        # Schedule the coroutine in the main event loop if available
+                        import asyncio
+                        try:
+                            # Check if we're in an event loop
+                            loop = asyncio.get_running_loop()
+                            # If we're in a loop, schedule the task
+                            task = loop.create_task(self.xplane_conn.write_dataref(dataref, value))
+                            self._tasks.append(task)  # Store task to prevent garbage collection
+                            log.info("Scheduled DREF command to X-Plane: %s = %.4f", dataref, value)
+                        except RuntimeError:
+                            # No event loop running, call it synchronously if possible
+                            # For this case, we'll call the underlying method directly
+                            import threading
+                            def async_call():
+                                # Create a new event loop for this thread
+                                new_loop = asyncio.new_event_loop()
+                                asyncio.set_event_loop(new_loop)
+                                try:
+                                    coro = self.xplane_conn.write_dataref(dataref, value)
+                                    new_loop.run_until_complete(coro)
+                                finally:
+                                    new_loop.close()
 
-                    log.info("DREF command from %s: %s = %.4f", device.port, dataref, value)
-                except ValueError:
-                    log.error("Invalid float value from Arduino: '%s'", val_str)
-            else:
-                log.error("Invalid DREF format: %s", line)
-        except Exception as e:
-            log.error("Error parsing DREF command: %s", e)
+                            # Run in a separate thread
+                            thread = threading.Thread(target=async_call, daemon=True)
+                            thread.start()
+                    except Exception as xe:
+                        log.error("Failed to forward DREF to X-Plane: %s", xe)
+                else:
+                    log.warning("No X-Plane connection available for DREF command: %s", dataref)
+
+                # Notify listeners that a dataref should be written
+                if self.on_dataref_write:
+                    self.on_dataref_write(dataref, value)
+
+                log.info("DREF command from %s: %s = %.4f", device.port, dataref, value)
+            except ValueError:
+                log.error("Invalid float value from Arduino: '%s'", val_str)
+        else:
+            log.error("Invalid DREF format: %s", line)
 
     def _handle_cmd(self, device: ArduinoDevice, line: str) -> None:
         """Handle CMD message from device to send X-Plane command."""
@@ -953,6 +1160,38 @@ class ArduinoManager:
             # Extract the command after "CMD "
             command = line[4:].strip()
 
+            # Forward the command to X-Plane if connection is available
+            if self.xplane_conn:
+                try:
+                    import asyncio
+                    try:
+                        # Check if we're in an event loop
+                        loop = asyncio.get_running_loop()
+                        # If we're in a loop, schedule the task
+                        task = loop.create_task(self.xplane_conn.send_command(command))
+                        self._tasks.append(task)  # Store task to prevent garbage collection
+                        log.info("Scheduled CMD command to X-Plane: %s", command)
+                    except RuntimeError:
+                        # No event loop running, run in separate thread
+                        import threading
+                        def async_call():
+                            # Create a new event loop for this thread
+                            new_loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(new_loop)
+                            try:
+                                coro = self.xplane_conn.send_command(command)
+                                new_loop.run_until_complete(coro)
+                            finally:
+                                new_loop.close()
+
+                        # Run in a separate thread
+                        thread = threading.Thread(target=async_call, daemon=True)
+                        thread.start()
+                except Exception as xe:
+                    log.error("Failed to forward CMD to X-Plane: %s", xe)
+            else:
+                log.warning("No X-Plane connection available for CMD: %s", command)
+
             # Notify listeners that a command should be sent
             if self.on_command_send:
                 self.on_command_send(command)
@@ -960,7 +1199,58 @@ class ArduinoManager:
             log.info("CMD command from %s: %s", device.port, command)
         except Exception as e:
             log.error("Error parsing CMD command: %s", e)
-    
+
+    def _handle_string(self, device: ArduinoDevice, line: str) -> None:
+        """Handle STRING message from device to set string dataref value."""
+        # Format: STRING sim/dataref_name text_value
+        try:
+            # Extract the part after "STRING "
+            data_part = line[7:].strip()
+            # Split from the right side to separate dataref from string value
+            parts = data_part.rsplit(' ', 1)
+            if len(parts) == 2:
+                dataref = parts[0].strip()
+                string_val = parts[1].strip()
+
+                # Forward the STRING command to X-Plane if connection is available
+                if self.xplane_conn:
+                    try:
+                        # Call the write_dataref_string method directly
+                        import asyncio
+                        try:
+                            # Check if we're in an event loop
+                            loop = asyncio.get_running_loop()
+                            # If we're in a loop, schedule the task
+                            task = loop.create_task(self.xplane_conn.write_dataref_string(dataref, string_val))
+                            self._tasks.append(task)  # Store task to prevent garbage collection
+                            log.info("Scheduled STRING command to X-Plane: %s = %s", dataref, string_val)
+                        except RuntimeError:
+                            # No event loop running, run in separate thread
+                            import threading
+                            def async_call():
+                                # Create a new event loop for this thread
+                                new_loop = asyncio.new_event_loop()
+                                asyncio.set_event_loop(new_loop)
+                                try:
+                                    coro = self.xplane_conn.write_dataref_string(dataref, string_val)
+                                    new_loop.run_until_complete(coro)
+                                finally:
+                                    new_loop.close()
+
+                            # Run in a separate thread
+                            thread = threading.Thread(target=async_call, daemon=True)
+                            thread.start()
+                    except Exception as xe:
+                        log.error("Failed to forward STRING to X-Plane: %s", xe)
+                else:
+                    log.warning("No X-Plane connection available for STRING command: %s", dataref)
+
+                log.info("STRING command from %s: %s = %s", device.port, dataref, string_val)
+            else:
+                log.error("Invalid STRING format: %s", line)
+        except Exception as e:
+            log.error("Error parsing STRING command: %s", e)
+
     def _notify_update(self) -> None:
         """Notify listeners of device state change."""
         if self.on_device_update:

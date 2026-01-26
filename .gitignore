@@ -97,4 +97,4 @@ htmlcov/
 test_*.py
 *_test.py
 tests/
-test/
+test/nul 

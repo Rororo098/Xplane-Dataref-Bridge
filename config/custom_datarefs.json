@@ -197,12 +197,6 @@
         "writable": true,
         "custom": true
     },
-    "sim/multiplayer/position/plane10_throttle[1]": {
-        "type": "float",
-        "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
-        "writable": true,
-        "custom": true
-    },
     "sim/multiplayer/position/plane10_throttle[2]": {
         "type": "float",
         "description": "Plane 10 Percent of max throttle per 8 engines (0 = none, 1 = full fwd, -1 = full reverse)",
@@ -241,6 +235,4017 @@
     },
     "sim/cockpit/autopilot/ah_sourc": {
         "name": "sim/cockpit/autopilot/ah_sourc",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[0]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[0]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[1]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[1]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[2]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[2]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[3]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[3]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[4]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[4]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[5]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[5]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[6]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[6]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[7]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[7]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[8]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[8]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[9]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[9]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[10]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[10]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[11]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[11]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[12]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[12]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[13]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[13]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[14]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[14]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[15]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[15]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[16]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[16]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[17]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[17]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[18]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[18]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[19]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[19]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[20]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[20]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[21]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[21]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[22]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[22]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[23]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[23]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[24]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[24]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[25]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[25]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[26]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[26]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[27]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[27]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[28]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[28]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[29]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[29]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[30]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[30]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/flightmodel2/wing/aileron2_deg[31]": {
+        "name": "sim/flightmodel2/wing/aileron2_deg[31]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[0]": {
+        "name": "sim/aircraft/view/acf_ICAO[0]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[1]": {
+        "name": "sim/aircraft/view/acf_ICAO[1]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[2]": {
+        "name": "sim/aircraft/view/acf_ICAO[2]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[3]": {
+        "name": "sim/aircraft/view/acf_ICAO[3]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[4]": {
+        "name": "sim/aircraft/view/acf_ICAO[4]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[5]": {
+        "name": "sim/aircraft/view/acf_ICAO[5]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[6]": {
+        "name": "sim/aircraft/view/acf_ICAO[6]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[7]": {
+        "name": "sim/aircraft/view/acf_ICAO[7]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[8]": {
+        "name": "sim/aircraft/view/acf_ICAO[8]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[9]": {
+        "name": "sim/aircraft/view/acf_ICAO[9]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[10]": {
+        "name": "sim/aircraft/view/acf_ICAO[10]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[11]": {
+        "name": "sim/aircraft/view/acf_ICAO[11]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[12]": {
+        "name": "sim/aircraft/view/acf_ICAO[12]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[13]": {
+        "name": "sim/aircraft/view/acf_ICAO[13]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[14]": {
+        "name": "sim/aircraft/view/acf_ICAO[14]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[15]": {
+        "name": "sim/aircraft/view/acf_ICAO[15]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[16]": {
+        "name": "sim/aircraft/view/acf_ICAO[16]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[17]": {
+        "name": "sim/aircraft/view/acf_ICAO[17]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[18]": {
+        "name": "sim/aircraft/view/acf_ICAO[18]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[19]": {
+        "name": "sim/aircraft/view/acf_ICAO[19]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[20]": {
+        "name": "sim/aircraft/view/acf_ICAO[20]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[21]": {
+        "name": "sim/aircraft/view/acf_ICAO[21]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[22]": {
+        "name": "sim/aircraft/view/acf_ICAO[22]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[23]": {
+        "name": "sim/aircraft/view/acf_ICAO[23]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[24]": {
+        "name": "sim/aircraft/view/acf_ICAO[24]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[25]": {
+        "name": "sim/aircraft/view/acf_ICAO[25]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[26]": {
+        "name": "sim/aircraft/view/acf_ICAO[26]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[27]": {
+        "name": "sim/aircraft/view/acf_ICAO[27]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[28]": {
+        "name": "sim/aircraft/view/acf_ICAO[28]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[29]": {
+        "name": "sim/aircraft/view/acf_ICAO[29]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[30]": {
+        "name": "sim/aircraft/view/acf_ICAO[30]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[31]": {
+        "name": "sim/aircraft/view/acf_ICAO[31]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[32]": {
+        "name": "sim/aircraft/view/acf_ICAO[32]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[33]": {
+        "name": "sim/aircraft/view/acf_ICAO[33]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[34]": {
+        "name": "sim/aircraft/view/acf_ICAO[34]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[35]": {
+        "name": "sim/aircraft/view/acf_ICAO[35]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[36]": {
+        "name": "sim/aircraft/view/acf_ICAO[36]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[37]": {
+        "name": "sim/aircraft/view/acf_ICAO[37]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[38]": {
+        "name": "sim/aircraft/view/acf_ICAO[38]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_ICAO[39]": {
+        "name": "sim/aircraft/view/acf_ICAO[39]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/multiplayer/position/plane10_throttle[1]": {
+        "name": "sim/multiplayer/position/plane10_throttle[1]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[0]": {
+        "name": "sim/aircraft/view/acf_author[0]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[1]": {
+        "name": "sim/aircraft/view/acf_author[1]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[2]": {
+        "name": "sim/aircraft/view/acf_author[2]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[3]": {
+        "name": "sim/aircraft/view/acf_author[3]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[4]": {
+        "name": "sim/aircraft/view/acf_author[4]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[5]": {
+        "name": "sim/aircraft/view/acf_author[5]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[6]": {
+        "name": "sim/aircraft/view/acf_author[6]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[7]": {
+        "name": "sim/aircraft/view/acf_author[7]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[8]": {
+        "name": "sim/aircraft/view/acf_author[8]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[9]": {
+        "name": "sim/aircraft/view/acf_author[9]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[10]": {
+        "name": "sim/aircraft/view/acf_author[10]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[11]": {
+        "name": "sim/aircraft/view/acf_author[11]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[12]": {
+        "name": "sim/aircraft/view/acf_author[12]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[13]": {
+        "name": "sim/aircraft/view/acf_author[13]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[14]": {
+        "name": "sim/aircraft/view/acf_author[14]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[15]": {
+        "name": "sim/aircraft/view/acf_author[15]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[16]": {
+        "name": "sim/aircraft/view/acf_author[16]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[17]": {
+        "name": "sim/aircraft/view/acf_author[17]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[18]": {
+        "name": "sim/aircraft/view/acf_author[18]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[19]": {
+        "name": "sim/aircraft/view/acf_author[19]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[20]": {
+        "name": "sim/aircraft/view/acf_author[20]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[21]": {
+        "name": "sim/aircraft/view/acf_author[21]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[22]": {
+        "name": "sim/aircraft/view/acf_author[22]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[23]": {
+        "name": "sim/aircraft/view/acf_author[23]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[24]": {
+        "name": "sim/aircraft/view/acf_author[24]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[25]": {
+        "name": "sim/aircraft/view/acf_author[25]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[26]": {
+        "name": "sim/aircraft/view/acf_author[26]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[27]": {
+        "name": "sim/aircraft/view/acf_author[27]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[28]": {
+        "name": "sim/aircraft/view/acf_author[28]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[29]": {
+        "name": "sim/aircraft/view/acf_author[29]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[30]": {
+        "name": "sim/aircraft/view/acf_author[30]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[31]": {
+        "name": "sim/aircraft/view/acf_author[31]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[32]": {
+        "name": "sim/aircraft/view/acf_author[32]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[33]": {
+        "name": "sim/aircraft/view/acf_author[33]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[34]": {
+        "name": "sim/aircraft/view/acf_author[34]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[35]": {
+        "name": "sim/aircraft/view/acf_author[35]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[36]": {
+        "name": "sim/aircraft/view/acf_author[36]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[37]": {
+        "name": "sim/aircraft/view/acf_author[37]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[38]": {
+        "name": "sim/aircraft/view/acf_author[38]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[39]": {
+        "name": "sim/aircraft/view/acf_author[39]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[40]": {
+        "name": "sim/aircraft/view/acf_author[40]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[41]": {
+        "name": "sim/aircraft/view/acf_author[41]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[42]": {
+        "name": "sim/aircraft/view/acf_author[42]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[43]": {
+        "name": "sim/aircraft/view/acf_author[43]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[44]": {
+        "name": "sim/aircraft/view/acf_author[44]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[45]": {
+        "name": "sim/aircraft/view/acf_author[45]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[46]": {
+        "name": "sim/aircraft/view/acf_author[46]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[47]": {
+        "name": "sim/aircraft/view/acf_author[47]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[48]": {
+        "name": "sim/aircraft/view/acf_author[48]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[49]": {
+        "name": "sim/aircraft/view/acf_author[49]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[50]": {
+        "name": "sim/aircraft/view/acf_author[50]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[51]": {
+        "name": "sim/aircraft/view/acf_author[51]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[52]": {
+        "name": "sim/aircraft/view/acf_author[52]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[53]": {
+        "name": "sim/aircraft/view/acf_author[53]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[54]": {
+        "name": "sim/aircraft/view/acf_author[54]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[55]": {
+        "name": "sim/aircraft/view/acf_author[55]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[56]": {
+        "name": "sim/aircraft/view/acf_author[56]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[57]": {
+        "name": "sim/aircraft/view/acf_author[57]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[58]": {
+        "name": "sim/aircraft/view/acf_author[58]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[59]": {
+        "name": "sim/aircraft/view/acf_author[59]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[60]": {
+        "name": "sim/aircraft/view/acf_author[60]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[61]": {
+        "name": "sim/aircraft/view/acf_author[61]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[62]": {
+        "name": "sim/aircraft/view/acf_author[62]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[63]": {
+        "name": "sim/aircraft/view/acf_author[63]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[64]": {
+        "name": "sim/aircraft/view/acf_author[64]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[65]": {
+        "name": "sim/aircraft/view/acf_author[65]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[66]": {
+        "name": "sim/aircraft/view/acf_author[66]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[67]": {
+        "name": "sim/aircraft/view/acf_author[67]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[68]": {
+        "name": "sim/aircraft/view/acf_author[68]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[69]": {
+        "name": "sim/aircraft/view/acf_author[69]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[70]": {
+        "name": "sim/aircraft/view/acf_author[70]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[71]": {
+        "name": "sim/aircraft/view/acf_author[71]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[72]": {
+        "name": "sim/aircraft/view/acf_author[72]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[73]": {
+        "name": "sim/aircraft/view/acf_author[73]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[74]": {
+        "name": "sim/aircraft/view/acf_author[74]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[75]": {
+        "name": "sim/aircraft/view/acf_author[75]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[76]": {
+        "name": "sim/aircraft/view/acf_author[76]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[77]": {
+        "name": "sim/aircraft/view/acf_author[77]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[78]": {
+        "name": "sim/aircraft/view/acf_author[78]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[79]": {
+        "name": "sim/aircraft/view/acf_author[79]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[80]": {
+        "name": "sim/aircraft/view/acf_author[80]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[81]": {
+        "name": "sim/aircraft/view/acf_author[81]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[82]": {
+        "name": "sim/aircraft/view/acf_author[82]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[83]": {
+        "name": "sim/aircraft/view/acf_author[83]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[84]": {
+        "name": "sim/aircraft/view/acf_author[84]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[85]": {
+        "name": "sim/aircraft/view/acf_author[85]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[86]": {
+        "name": "sim/aircraft/view/acf_author[86]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[87]": {
+        "name": "sim/aircraft/view/acf_author[87]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[88]": {
+        "name": "sim/aircraft/view/acf_author[88]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[89]": {
+        "name": "sim/aircraft/view/acf_author[89]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[90]": {
+        "name": "sim/aircraft/view/acf_author[90]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[91]": {
+        "name": "sim/aircraft/view/acf_author[91]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[92]": {
+        "name": "sim/aircraft/view/acf_author[92]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[93]": {
+        "name": "sim/aircraft/view/acf_author[93]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[94]": {
+        "name": "sim/aircraft/view/acf_author[94]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[95]": {
+        "name": "sim/aircraft/view/acf_author[95]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[96]": {
+        "name": "sim/aircraft/view/acf_author[96]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[97]": {
+        "name": "sim/aircraft/view/acf_author[97]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[98]": {
+        "name": "sim/aircraft/view/acf_author[98]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[99]": {
+        "name": "sim/aircraft/view/acf_author[99]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[100]": {
+        "name": "sim/aircraft/view/acf_author[100]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[101]": {
+        "name": "sim/aircraft/view/acf_author[101]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[102]": {
+        "name": "sim/aircraft/view/acf_author[102]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[103]": {
+        "name": "sim/aircraft/view/acf_author[103]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[104]": {
+        "name": "sim/aircraft/view/acf_author[104]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[105]": {
+        "name": "sim/aircraft/view/acf_author[105]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[106]": {
+        "name": "sim/aircraft/view/acf_author[106]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[107]": {
+        "name": "sim/aircraft/view/acf_author[107]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[108]": {
+        "name": "sim/aircraft/view/acf_author[108]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[109]": {
+        "name": "sim/aircraft/view/acf_author[109]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[110]": {
+        "name": "sim/aircraft/view/acf_author[110]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[111]": {
+        "name": "sim/aircraft/view/acf_author[111]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[112]": {
+        "name": "sim/aircraft/view/acf_author[112]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[113]": {
+        "name": "sim/aircraft/view/acf_author[113]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[114]": {
+        "name": "sim/aircraft/view/acf_author[114]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[115]": {
+        "name": "sim/aircraft/view/acf_author[115]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[116]": {
+        "name": "sim/aircraft/view/acf_author[116]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[117]": {
+        "name": "sim/aircraft/view/acf_author[117]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[118]": {
+        "name": "sim/aircraft/view/acf_author[118]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[119]": {
+        "name": "sim/aircraft/view/acf_author[119]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[120]": {
+        "name": "sim/aircraft/view/acf_author[120]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[121]": {
+        "name": "sim/aircraft/view/acf_author[121]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[122]": {
+        "name": "sim/aircraft/view/acf_author[122]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[123]": {
+        "name": "sim/aircraft/view/acf_author[123]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[124]": {
+        "name": "sim/aircraft/view/acf_author[124]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[125]": {
+        "name": "sim/aircraft/view/acf_author[125]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[126]": {
+        "name": "sim/aircraft/view/acf_author[126]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[127]": {
+        "name": "sim/aircraft/view/acf_author[127]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[128]": {
+        "name": "sim/aircraft/view/acf_author[128]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[129]": {
+        "name": "sim/aircraft/view/acf_author[129]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[130]": {
+        "name": "sim/aircraft/view/acf_author[130]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[131]": {
+        "name": "sim/aircraft/view/acf_author[131]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[132]": {
+        "name": "sim/aircraft/view/acf_author[132]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[133]": {
+        "name": "sim/aircraft/view/acf_author[133]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[134]": {
+        "name": "sim/aircraft/view/acf_author[134]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[135]": {
+        "name": "sim/aircraft/view/acf_author[135]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[136]": {
+        "name": "sim/aircraft/view/acf_author[136]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[137]": {
+        "name": "sim/aircraft/view/acf_author[137]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[138]": {
+        "name": "sim/aircraft/view/acf_author[138]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[139]": {
+        "name": "sim/aircraft/view/acf_author[139]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[140]": {
+        "name": "sim/aircraft/view/acf_author[140]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[141]": {
+        "name": "sim/aircraft/view/acf_author[141]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[142]": {
+        "name": "sim/aircraft/view/acf_author[142]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[143]": {
+        "name": "sim/aircraft/view/acf_author[143]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[144]": {
+        "name": "sim/aircraft/view/acf_author[144]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[145]": {
+        "name": "sim/aircraft/view/acf_author[145]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[146]": {
+        "name": "sim/aircraft/view/acf_author[146]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[147]": {
+        "name": "sim/aircraft/view/acf_author[147]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[148]": {
+        "name": "sim/aircraft/view/acf_author[148]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[149]": {
+        "name": "sim/aircraft/view/acf_author[149]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[150]": {
+        "name": "sim/aircraft/view/acf_author[150]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[151]": {
+        "name": "sim/aircraft/view/acf_author[151]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[152]": {
+        "name": "sim/aircraft/view/acf_author[152]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[153]": {
+        "name": "sim/aircraft/view/acf_author[153]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[154]": {
+        "name": "sim/aircraft/view/acf_author[154]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[155]": {
+        "name": "sim/aircraft/view/acf_author[155]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[156]": {
+        "name": "sim/aircraft/view/acf_author[156]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[157]": {
+        "name": "sim/aircraft/view/acf_author[157]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[158]": {
+        "name": "sim/aircraft/view/acf_author[158]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[159]": {
+        "name": "sim/aircraft/view/acf_author[159]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[160]": {
+        "name": "sim/aircraft/view/acf_author[160]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[161]": {
+        "name": "sim/aircraft/view/acf_author[161]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[162]": {
+        "name": "sim/aircraft/view/acf_author[162]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[163]": {
+        "name": "sim/aircraft/view/acf_author[163]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[164]": {
+        "name": "sim/aircraft/view/acf_author[164]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[165]": {
+        "name": "sim/aircraft/view/acf_author[165]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[166]": {
+        "name": "sim/aircraft/view/acf_author[166]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[167]": {
+        "name": "sim/aircraft/view/acf_author[167]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[168]": {
+        "name": "sim/aircraft/view/acf_author[168]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[169]": {
+        "name": "sim/aircraft/view/acf_author[169]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[170]": {
+        "name": "sim/aircraft/view/acf_author[170]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[171]": {
+        "name": "sim/aircraft/view/acf_author[171]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[172]": {
+        "name": "sim/aircraft/view/acf_author[172]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[173]": {
+        "name": "sim/aircraft/view/acf_author[173]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[174]": {
+        "name": "sim/aircraft/view/acf_author[174]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[175]": {
+        "name": "sim/aircraft/view/acf_author[175]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[176]": {
+        "name": "sim/aircraft/view/acf_author[176]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[177]": {
+        "name": "sim/aircraft/view/acf_author[177]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[178]": {
+        "name": "sim/aircraft/view/acf_author[178]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[179]": {
+        "name": "sim/aircraft/view/acf_author[179]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[180]": {
+        "name": "sim/aircraft/view/acf_author[180]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[181]": {
+        "name": "sim/aircraft/view/acf_author[181]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[182]": {
+        "name": "sim/aircraft/view/acf_author[182]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[183]": {
+        "name": "sim/aircraft/view/acf_author[183]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[184]": {
+        "name": "sim/aircraft/view/acf_author[184]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[185]": {
+        "name": "sim/aircraft/view/acf_author[185]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[186]": {
+        "name": "sim/aircraft/view/acf_author[186]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[187]": {
+        "name": "sim/aircraft/view/acf_author[187]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[188]": {
+        "name": "sim/aircraft/view/acf_author[188]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[189]": {
+        "name": "sim/aircraft/view/acf_author[189]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[190]": {
+        "name": "sim/aircraft/view/acf_author[190]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[191]": {
+        "name": "sim/aircraft/view/acf_author[191]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[192]": {
+        "name": "sim/aircraft/view/acf_author[192]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[193]": {
+        "name": "sim/aircraft/view/acf_author[193]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[194]": {
+        "name": "sim/aircraft/view/acf_author[194]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[195]": {
+        "name": "sim/aircraft/view/acf_author[195]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[196]": {
+        "name": "sim/aircraft/view/acf_author[196]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[197]": {
+        "name": "sim/aircraft/view/acf_author[197]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[198]": {
+        "name": "sim/aircraft/view/acf_author[198]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[199]": {
+        "name": "sim/aircraft/view/acf_author[199]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[200]": {
+        "name": "sim/aircraft/view/acf_author[200]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[201]": {
+        "name": "sim/aircraft/view/acf_author[201]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[202]": {
+        "name": "sim/aircraft/view/acf_author[202]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[203]": {
+        "name": "sim/aircraft/view/acf_author[203]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[204]": {
+        "name": "sim/aircraft/view/acf_author[204]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[205]": {
+        "name": "sim/aircraft/view/acf_author[205]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[206]": {
+        "name": "sim/aircraft/view/acf_author[206]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[207]": {
+        "name": "sim/aircraft/view/acf_author[207]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[208]": {
+        "name": "sim/aircraft/view/acf_author[208]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[209]": {
+        "name": "sim/aircraft/view/acf_author[209]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[210]": {
+        "name": "sim/aircraft/view/acf_author[210]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[211]": {
+        "name": "sim/aircraft/view/acf_author[211]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[212]": {
+        "name": "sim/aircraft/view/acf_author[212]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[213]": {
+        "name": "sim/aircraft/view/acf_author[213]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[214]": {
+        "name": "sim/aircraft/view/acf_author[214]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[215]": {
+        "name": "sim/aircraft/view/acf_author[215]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[216]": {
+        "name": "sim/aircraft/view/acf_author[216]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[217]": {
+        "name": "sim/aircraft/view/acf_author[217]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[218]": {
+        "name": "sim/aircraft/view/acf_author[218]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[219]": {
+        "name": "sim/aircraft/view/acf_author[219]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[220]": {
+        "name": "sim/aircraft/view/acf_author[220]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[221]": {
+        "name": "sim/aircraft/view/acf_author[221]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[222]": {
+        "name": "sim/aircraft/view/acf_author[222]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[223]": {
+        "name": "sim/aircraft/view/acf_author[223]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[224]": {
+        "name": "sim/aircraft/view/acf_author[224]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[225]": {
+        "name": "sim/aircraft/view/acf_author[225]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[226]": {
+        "name": "sim/aircraft/view/acf_author[226]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[227]": {
+        "name": "sim/aircraft/view/acf_author[227]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[228]": {
+        "name": "sim/aircraft/view/acf_author[228]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[229]": {
+        "name": "sim/aircraft/view/acf_author[229]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[230]": {
+        "name": "sim/aircraft/view/acf_author[230]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[231]": {
+        "name": "sim/aircraft/view/acf_author[231]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[232]": {
+        "name": "sim/aircraft/view/acf_author[232]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[233]": {
+        "name": "sim/aircraft/view/acf_author[233]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[234]": {
+        "name": "sim/aircraft/view/acf_author[234]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[235]": {
+        "name": "sim/aircraft/view/acf_author[235]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[236]": {
+        "name": "sim/aircraft/view/acf_author[236]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[237]": {
+        "name": "sim/aircraft/view/acf_author[237]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[238]": {
+        "name": "sim/aircraft/view/acf_author[238]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[239]": {
+        "name": "sim/aircraft/view/acf_author[239]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[240]": {
+        "name": "sim/aircraft/view/acf_author[240]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[241]": {
+        "name": "sim/aircraft/view/acf_author[241]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[242]": {
+        "name": "sim/aircraft/view/acf_author[242]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[243]": {
+        "name": "sim/aircraft/view/acf_author[243]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[244]": {
+        "name": "sim/aircraft/view/acf_author[244]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[245]": {
+        "name": "sim/aircraft/view/acf_author[245]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[246]": {
+        "name": "sim/aircraft/view/acf_author[246]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[247]": {
+        "name": "sim/aircraft/view/acf_author[247]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[248]": {
+        "name": "sim/aircraft/view/acf_author[248]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[249]": {
+        "name": "sim/aircraft/view/acf_author[249]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[250]": {
+        "name": "sim/aircraft/view/acf_author[250]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[251]": {
+        "name": "sim/aircraft/view/acf_author[251]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[252]": {
+        "name": "sim/aircraft/view/acf_author[252]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[253]": {
+        "name": "sim/aircraft/view/acf_author[253]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[254]": {
+        "name": "sim/aircraft/view/acf_author[254]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[255]": {
+        "name": "sim/aircraft/view/acf_author[255]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[256]": {
+        "name": "sim/aircraft/view/acf_author[256]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[257]": {
+        "name": "sim/aircraft/view/acf_author[257]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[258]": {
+        "name": "sim/aircraft/view/acf_author[258]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[259]": {
+        "name": "sim/aircraft/view/acf_author[259]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[260]": {
+        "name": "sim/aircraft/view/acf_author[260]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[261]": {
+        "name": "sim/aircraft/view/acf_author[261]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[262]": {
+        "name": "sim/aircraft/view/acf_author[262]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[263]": {
+        "name": "sim/aircraft/view/acf_author[263]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[264]": {
+        "name": "sim/aircraft/view/acf_author[264]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[265]": {
+        "name": "sim/aircraft/view/acf_author[265]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[266]": {
+        "name": "sim/aircraft/view/acf_author[266]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[267]": {
+        "name": "sim/aircraft/view/acf_author[267]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[268]": {
+        "name": "sim/aircraft/view/acf_author[268]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[269]": {
+        "name": "sim/aircraft/view/acf_author[269]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[270]": {
+        "name": "sim/aircraft/view/acf_author[270]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[271]": {
+        "name": "sim/aircraft/view/acf_author[271]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[272]": {
+        "name": "sim/aircraft/view/acf_author[272]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[273]": {
+        "name": "sim/aircraft/view/acf_author[273]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[274]": {
+        "name": "sim/aircraft/view/acf_author[274]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[275]": {
+        "name": "sim/aircraft/view/acf_author[275]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[276]": {
+        "name": "sim/aircraft/view/acf_author[276]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[277]": {
+        "name": "sim/aircraft/view/acf_author[277]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[278]": {
+        "name": "sim/aircraft/view/acf_author[278]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[279]": {
+        "name": "sim/aircraft/view/acf_author[279]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[280]": {
+        "name": "sim/aircraft/view/acf_author[280]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[281]": {
+        "name": "sim/aircraft/view/acf_author[281]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[282]": {
+        "name": "sim/aircraft/view/acf_author[282]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[283]": {
+        "name": "sim/aircraft/view/acf_author[283]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[284]": {
+        "name": "sim/aircraft/view/acf_author[284]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[285]": {
+        "name": "sim/aircraft/view/acf_author[285]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[286]": {
+        "name": "sim/aircraft/view/acf_author[286]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[287]": {
+        "name": "sim/aircraft/view/acf_author[287]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[288]": {
+        "name": "sim/aircraft/view/acf_author[288]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[289]": {
+        "name": "sim/aircraft/view/acf_author[289]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[290]": {
+        "name": "sim/aircraft/view/acf_author[290]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[291]": {
+        "name": "sim/aircraft/view/acf_author[291]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[292]": {
+        "name": "sim/aircraft/view/acf_author[292]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[293]": {
+        "name": "sim/aircraft/view/acf_author[293]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[294]": {
+        "name": "sim/aircraft/view/acf_author[294]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[295]": {
+        "name": "sim/aircraft/view/acf_author[295]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[296]": {
+        "name": "sim/aircraft/view/acf_author[296]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[297]": {
+        "name": "sim/aircraft/view/acf_author[297]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[298]": {
+        "name": "sim/aircraft/view/acf_author[298]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[299]": {
+        "name": "sim/aircraft/view/acf_author[299]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[300]": {
+        "name": "sim/aircraft/view/acf_author[300]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[301]": {
+        "name": "sim/aircraft/view/acf_author[301]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[302]": {
+        "name": "sim/aircraft/view/acf_author[302]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[303]": {
+        "name": "sim/aircraft/view/acf_author[303]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[304]": {
+        "name": "sim/aircraft/view/acf_author[304]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[305]": {
+        "name": "sim/aircraft/view/acf_author[305]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[306]": {
+        "name": "sim/aircraft/view/acf_author[306]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[307]": {
+        "name": "sim/aircraft/view/acf_author[307]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[308]": {
+        "name": "sim/aircraft/view/acf_author[308]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[309]": {
+        "name": "sim/aircraft/view/acf_author[309]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[310]": {
+        "name": "sim/aircraft/view/acf_author[310]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[311]": {
+        "name": "sim/aircraft/view/acf_author[311]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[312]": {
+        "name": "sim/aircraft/view/acf_author[312]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[313]": {
+        "name": "sim/aircraft/view/acf_author[313]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[314]": {
+        "name": "sim/aircraft/view/acf_author[314]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[315]": {
+        "name": "sim/aircraft/view/acf_author[315]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[316]": {
+        "name": "sim/aircraft/view/acf_author[316]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[317]": {
+        "name": "sim/aircraft/view/acf_author[317]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[318]": {
+        "name": "sim/aircraft/view/acf_author[318]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[319]": {
+        "name": "sim/aircraft/view/acf_author[319]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[320]": {
+        "name": "sim/aircraft/view/acf_author[320]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[321]": {
+        "name": "sim/aircraft/view/acf_author[321]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[322]": {
+        "name": "sim/aircraft/view/acf_author[322]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[323]": {
+        "name": "sim/aircraft/view/acf_author[323]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[324]": {
+        "name": "sim/aircraft/view/acf_author[324]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[325]": {
+        "name": "sim/aircraft/view/acf_author[325]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[326]": {
+        "name": "sim/aircraft/view/acf_author[326]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[327]": {
+        "name": "sim/aircraft/view/acf_author[327]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[328]": {
+        "name": "sim/aircraft/view/acf_author[328]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[329]": {
+        "name": "sim/aircraft/view/acf_author[329]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[330]": {
+        "name": "sim/aircraft/view/acf_author[330]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[331]": {
+        "name": "sim/aircraft/view/acf_author[331]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[332]": {
+        "name": "sim/aircraft/view/acf_author[332]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[333]": {
+        "name": "sim/aircraft/view/acf_author[333]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[334]": {
+        "name": "sim/aircraft/view/acf_author[334]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[335]": {
+        "name": "sim/aircraft/view/acf_author[335]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[336]": {
+        "name": "sim/aircraft/view/acf_author[336]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[337]": {
+        "name": "sim/aircraft/view/acf_author[337]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[338]": {
+        "name": "sim/aircraft/view/acf_author[338]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[339]": {
+        "name": "sim/aircraft/view/acf_author[339]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[340]": {
+        "name": "sim/aircraft/view/acf_author[340]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[341]": {
+        "name": "sim/aircraft/view/acf_author[341]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[342]": {
+        "name": "sim/aircraft/view/acf_author[342]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[343]": {
+        "name": "sim/aircraft/view/acf_author[343]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[344]": {
+        "name": "sim/aircraft/view/acf_author[344]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[345]": {
+        "name": "sim/aircraft/view/acf_author[345]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[346]": {
+        "name": "sim/aircraft/view/acf_author[346]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[347]": {
+        "name": "sim/aircraft/view/acf_author[347]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[348]": {
+        "name": "sim/aircraft/view/acf_author[348]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[349]": {
+        "name": "sim/aircraft/view/acf_author[349]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[350]": {
+        "name": "sim/aircraft/view/acf_author[350]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[351]": {
+        "name": "sim/aircraft/view/acf_author[351]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[352]": {
+        "name": "sim/aircraft/view/acf_author[352]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[353]": {
+        "name": "sim/aircraft/view/acf_author[353]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[354]": {
+        "name": "sim/aircraft/view/acf_author[354]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[355]": {
+        "name": "sim/aircraft/view/acf_author[355]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[356]": {
+        "name": "sim/aircraft/view/acf_author[356]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[357]": {
+        "name": "sim/aircraft/view/acf_author[357]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[358]": {
+        "name": "sim/aircraft/view/acf_author[358]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[359]": {
+        "name": "sim/aircraft/view/acf_author[359]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[360]": {
+        "name": "sim/aircraft/view/acf_author[360]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[361]": {
+        "name": "sim/aircraft/view/acf_author[361]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[362]": {
+        "name": "sim/aircraft/view/acf_author[362]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[363]": {
+        "name": "sim/aircraft/view/acf_author[363]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[364]": {
+        "name": "sim/aircraft/view/acf_author[364]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[365]": {
+        "name": "sim/aircraft/view/acf_author[365]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[366]": {
+        "name": "sim/aircraft/view/acf_author[366]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[367]": {
+        "name": "sim/aircraft/view/acf_author[367]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[368]": {
+        "name": "sim/aircraft/view/acf_author[368]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[369]": {
+        "name": "sim/aircraft/view/acf_author[369]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[370]": {
+        "name": "sim/aircraft/view/acf_author[370]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[371]": {
+        "name": "sim/aircraft/view/acf_author[371]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[372]": {
+        "name": "sim/aircraft/view/acf_author[372]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[373]": {
+        "name": "sim/aircraft/view/acf_author[373]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[374]": {
+        "name": "sim/aircraft/view/acf_author[374]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[375]": {
+        "name": "sim/aircraft/view/acf_author[375]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[376]": {
+        "name": "sim/aircraft/view/acf_author[376]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[377]": {
+        "name": "sim/aircraft/view/acf_author[377]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[378]": {
+        "name": "sim/aircraft/view/acf_author[378]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[379]": {
+        "name": "sim/aircraft/view/acf_author[379]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[380]": {
+        "name": "sim/aircraft/view/acf_author[380]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[381]": {
+        "name": "sim/aircraft/view/acf_author[381]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[382]": {
+        "name": "sim/aircraft/view/acf_author[382]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[383]": {
+        "name": "sim/aircraft/view/acf_author[383]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[384]": {
+        "name": "sim/aircraft/view/acf_author[384]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[385]": {
+        "name": "sim/aircraft/view/acf_author[385]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[386]": {
+        "name": "sim/aircraft/view/acf_author[386]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[387]": {
+        "name": "sim/aircraft/view/acf_author[387]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[388]": {
+        "name": "sim/aircraft/view/acf_author[388]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[389]": {
+        "name": "sim/aircraft/view/acf_author[389]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[390]": {
+        "name": "sim/aircraft/view/acf_author[390]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[391]": {
+        "name": "sim/aircraft/view/acf_author[391]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[392]": {
+        "name": "sim/aircraft/view/acf_author[392]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[393]": {
+        "name": "sim/aircraft/view/acf_author[393]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[394]": {
+        "name": "sim/aircraft/view/acf_author[394]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[395]": {
+        "name": "sim/aircraft/view/acf_author[395]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[396]": {
+        "name": "sim/aircraft/view/acf_author[396]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[397]": {
+        "name": "sim/aircraft/view/acf_author[397]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[398]": {
+        "name": "sim/aircraft/view/acf_author[398]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[399]": {
+        "name": "sim/aircraft/view/acf_author[399]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[400]": {
+        "name": "sim/aircraft/view/acf_author[400]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[401]": {
+        "name": "sim/aircraft/view/acf_author[401]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[402]": {
+        "name": "sim/aircraft/view/acf_author[402]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[403]": {
+        "name": "sim/aircraft/view/acf_author[403]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[404]": {
+        "name": "sim/aircraft/view/acf_author[404]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[405]": {
+        "name": "sim/aircraft/view/acf_author[405]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[406]": {
+        "name": "sim/aircraft/view/acf_author[406]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[407]": {
+        "name": "sim/aircraft/view/acf_author[407]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[408]": {
+        "name": "sim/aircraft/view/acf_author[408]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[409]": {
+        "name": "sim/aircraft/view/acf_author[409]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[410]": {
+        "name": "sim/aircraft/view/acf_author[410]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[411]": {
+        "name": "sim/aircraft/view/acf_author[411]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[412]": {
+        "name": "sim/aircraft/view/acf_author[412]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[413]": {
+        "name": "sim/aircraft/view/acf_author[413]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[414]": {
+        "name": "sim/aircraft/view/acf_author[414]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[415]": {
+        "name": "sim/aircraft/view/acf_author[415]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[416]": {
+        "name": "sim/aircraft/view/acf_author[416]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[417]": {
+        "name": "sim/aircraft/view/acf_author[417]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[418]": {
+        "name": "sim/aircraft/view/acf_author[418]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[419]": {
+        "name": "sim/aircraft/view/acf_author[419]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[420]": {
+        "name": "sim/aircraft/view/acf_author[420]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[421]": {
+        "name": "sim/aircraft/view/acf_author[421]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[422]": {
+        "name": "sim/aircraft/view/acf_author[422]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[423]": {
+        "name": "sim/aircraft/view/acf_author[423]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[424]": {
+        "name": "sim/aircraft/view/acf_author[424]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[425]": {
+        "name": "sim/aircraft/view/acf_author[425]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[426]": {
+        "name": "sim/aircraft/view/acf_author[426]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[427]": {
+        "name": "sim/aircraft/view/acf_author[427]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[428]": {
+        "name": "sim/aircraft/view/acf_author[428]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[429]": {
+        "name": "sim/aircraft/view/acf_author[429]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[430]": {
+        "name": "sim/aircraft/view/acf_author[430]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[431]": {
+        "name": "sim/aircraft/view/acf_author[431]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[432]": {
+        "name": "sim/aircraft/view/acf_author[432]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[433]": {
+        "name": "sim/aircraft/view/acf_author[433]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[434]": {
+        "name": "sim/aircraft/view/acf_author[434]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[435]": {
+        "name": "sim/aircraft/view/acf_author[435]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[436]": {
+        "name": "sim/aircraft/view/acf_author[436]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[437]": {
+        "name": "sim/aircraft/view/acf_author[437]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[438]": {
+        "name": "sim/aircraft/view/acf_author[438]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[439]": {
+        "name": "sim/aircraft/view/acf_author[439]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[440]": {
+        "name": "sim/aircraft/view/acf_author[440]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[441]": {
+        "name": "sim/aircraft/view/acf_author[441]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[442]": {
+        "name": "sim/aircraft/view/acf_author[442]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[443]": {
+        "name": "sim/aircraft/view/acf_author[443]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[444]": {
+        "name": "sim/aircraft/view/acf_author[444]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[445]": {
+        "name": "sim/aircraft/view/acf_author[445]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[446]": {
+        "name": "sim/aircraft/view/acf_author[446]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[447]": {
+        "name": "sim/aircraft/view/acf_author[447]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[448]": {
+        "name": "sim/aircraft/view/acf_author[448]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[449]": {
+        "name": "sim/aircraft/view/acf_author[449]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[450]": {
+        "name": "sim/aircraft/view/acf_author[450]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[451]": {
+        "name": "sim/aircraft/view/acf_author[451]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[452]": {
+        "name": "sim/aircraft/view/acf_author[452]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[453]": {
+        "name": "sim/aircraft/view/acf_author[453]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[454]": {
+        "name": "sim/aircraft/view/acf_author[454]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[455]": {
+        "name": "sim/aircraft/view/acf_author[455]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[456]": {
+        "name": "sim/aircraft/view/acf_author[456]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[457]": {
+        "name": "sim/aircraft/view/acf_author[457]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[458]": {
+        "name": "sim/aircraft/view/acf_author[458]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[459]": {
+        "name": "sim/aircraft/view/acf_author[459]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[460]": {
+        "name": "sim/aircraft/view/acf_author[460]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[461]": {
+        "name": "sim/aircraft/view/acf_author[461]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[462]": {
+        "name": "sim/aircraft/view/acf_author[462]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[463]": {
+        "name": "sim/aircraft/view/acf_author[463]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[464]": {
+        "name": "sim/aircraft/view/acf_author[464]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[465]": {
+        "name": "sim/aircraft/view/acf_author[465]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[466]": {
+        "name": "sim/aircraft/view/acf_author[466]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[467]": {
+        "name": "sim/aircraft/view/acf_author[467]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[468]": {
+        "name": "sim/aircraft/view/acf_author[468]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[469]": {
+        "name": "sim/aircraft/view/acf_author[469]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[470]": {
+        "name": "sim/aircraft/view/acf_author[470]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[471]": {
+        "name": "sim/aircraft/view/acf_author[471]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[472]": {
+        "name": "sim/aircraft/view/acf_author[472]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[473]": {
+        "name": "sim/aircraft/view/acf_author[473]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[474]": {
+        "name": "sim/aircraft/view/acf_author[474]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[475]": {
+        "name": "sim/aircraft/view/acf_author[475]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[476]": {
+        "name": "sim/aircraft/view/acf_author[476]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[477]": {
+        "name": "sim/aircraft/view/acf_author[477]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[478]": {
+        "name": "sim/aircraft/view/acf_author[478]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[479]": {
+        "name": "sim/aircraft/view/acf_author[479]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[480]": {
+        "name": "sim/aircraft/view/acf_author[480]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[481]": {
+        "name": "sim/aircraft/view/acf_author[481]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[482]": {
+        "name": "sim/aircraft/view/acf_author[482]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[483]": {
+        "name": "sim/aircraft/view/acf_author[483]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[484]": {
+        "name": "sim/aircraft/view/acf_author[484]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[485]": {
+        "name": "sim/aircraft/view/acf_author[485]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[486]": {
+        "name": "sim/aircraft/view/acf_author[486]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[487]": {
+        "name": "sim/aircraft/view/acf_author[487]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[488]": {
+        "name": "sim/aircraft/view/acf_author[488]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[489]": {
+        "name": "sim/aircraft/view/acf_author[489]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[490]": {
+        "name": "sim/aircraft/view/acf_author[490]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[491]": {
+        "name": "sim/aircraft/view/acf_author[491]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[492]": {
+        "name": "sim/aircraft/view/acf_author[492]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[493]": {
+        "name": "sim/aircraft/view/acf_author[493]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[494]": {
+        "name": "sim/aircraft/view/acf_author[494]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[495]": {
+        "name": "sim/aircraft/view/acf_author[495]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[496]": {
+        "name": "sim/aircraft/view/acf_author[496]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[497]": {
+        "name": "sim/aircraft/view/acf_author[497]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[498]": {
+        "name": "sim/aircraft/view/acf_author[498]",
+        "type": "float",
+        "description": "Custom Dataref",
+        "writable": true,
+        "custom": true
+    },
+    "sim/aircraft/view/acf_author[499]": {
+        "name": "sim/aircraft/view/acf_author[499]",
         "type": "float",
         "description": "Custom Dataref",
         "writable": true,

@@ -54,6 +54,9 @@ class XPlaneConnection:
         self._live_values: Dict[str, float] = {}  # Values received from X-Plane
         self._virtual_values: Dict[str, float] = {}  # Values written by user/system
 
+        # String dataref tracking - stores arrays of character codes for string datarefs
+        self._string_buffers: Dict[str, List[float]] = {}  # Buffers for string dataref values
+
     @property
     def connected(self) -> bool:
         return self._connected
@@ -334,9 +337,8 @@ class XPlaneConnection:
         self, dataref: str, string_value: str, max_len: int = 0
     ) -> bool:
         """
-        Writes a string to a byte[n] dataref (e.g., acf_ICAO).
-        Iterates through indices and sends each char as float.
-        If max_len is provided, clears the rest of the buffer with nulls.
+        Writes a string to a string[n] dataref (e.g., acf_ICAO) using the DREF packet format.
+        Encodes the string as character codes packed into the DREF packet's float values.
         """
         # Store original dataref for consistency
         original_dataref = dataref
@@ -344,33 +346,68 @@ class XPlaneConnection:
         if dataref.startswith("XP:"):
             dataref = dataref[3:]
 
-        if not self._connected and self._socket is None:
+        if not self._socket or not self._connected:
             log.warning("Attempted to write string to %s but not connected", dataref)
             # Still allow local updates for UI consistency
             return True
 
-        base_name = dataref.split("[")[0]
-        log.info("Sending string '%s' to %s", string_value, base_name)
+        try:
+            # Construction of a 509-byte DREF packet for string dataref
+            # Format: 'DREF' (4) + Null (1) + 8 Float values (32) + Name (472)
+            msg = bytearray(509)
+            msg[0:4] = b"DREF"
+            # msg[4] is 0x00
 
-        # 1. Write characters from string
-        for i, char_code in enumerate(string_value):
-            if i >= 499:
-                break  # UDP packet limit for one DREF
-            await self.write_dataref(f"{base_name}[{i}]", float(ord(char_code)))
+            # Prepare character codes as floats (max 8 characters due to DREF packet limitation)
+            char_codes = [float(ord(c)) for c in string_value[:8]]  # Limit to 8 chars per packet
 
-        # 2. Add Null Terminator
-        last_idx = len(string_value)
-        await self.write_dataref(f"{base_name}[{last_idx}]", 0.0)
+            # Pad with zeros if needed to fill all 8 slots
+            while len(char_codes) < 8:
+                char_codes.append(0.0)  # Null padding
 
-        # 3. Clear trailing bytes if max_len is known
-        if max_len > last_idx + 1:
-            # We don't want to spam 500 packets. Maybe clear just a few more?
-            # Or trust the first null is enough for most UI.
-            # Let's clear up to 4 more bytes just in case.
-            for i in range(last_idx + 1, min(last_idx + 5, max_len)):
-                await self.write_dataref(f"{base_name}[{i}]", 0.0)
+            # Pack the character codes into the float positions (offset 5-36)
+            for i, char_code in enumerate(char_codes):
+                struct.pack_into("<f", msg, 5 + (i * 4), char_code)
 
-        return True
+            # Fill the name buffer (index 37 to 508) with SPACES first (0x20)
+            # This is suggested by some X-Plane docs for better reliability.
+            msg[37:509] = b" " * 472
+
+            # Pack name at offset 37
+            name_bytes = dataref.encode("utf-8")
+            if len(name_bytes) > 471:
+                log.error("Dataref name too long: %s", dataref)
+                return False
+
+            msg[37 : 37 + len(name_bytes)] = name_bytes
+            # Null terminate the name specifically
+            msg[37 + len(name_bytes)] = 0x00
+
+            self._socket.sendto(msg, (self.ip, self.port))
+            log.info(
+                "UDP DREF String Pack: %s = '%s' (%d chars) to %s:%d",
+                dataref, string_value, len(string_value), self.ip, self.port
+            )
+
+            # Update internal cache REGARDLESS of connection
+            # This allows "ghost" or "custom" datarefs to have local state
+            if dataref in self._dataref_to_index:
+                idx = self._dataref_to_index[dataref]
+                if idx in self._subscriptions:
+                    self._subscriptions[idx].value = float(ord(string_value[0])) if string_value else 0.0
+
+            # Store as virtual value (written by user/system)
+            self._virtual_values[dataref] = float(ord(string_value[0])) if string_value else 0.0
+
+            # Notify locally immediately so UI/Logic sees it (crucial for custom/ghost datarefs)
+            # Use original dataref to preserve prefix information
+            if self.on_dataref_update:
+                self.on_dataref_update(original_dataref, float(ord(string_value[0])) if string_value else 0.0)
+            return True
+
+        except Exception as e:
+            log.error("Failed to write string dataref %s: %s", dataref, e)
+            return False
 
     async def select_data_output(self, indices: List[int]) -> bool:
         """Sends DSEL packet to enable specific Data Output rows."""
@@ -592,6 +629,94 @@ class XPlaneConnection:
         except Exception as e:
             log.debug("DREF parse error: %s", e)
 
+    def _parse_rref(self, data: bytes) -> None:
+        offset = 5
+        while offset + 8 <= len(data):
+            index, value = struct.unpack_from("<if", data, offset)
+            offset += 8
+
+            sub = self._subscriptions.get(index)
+            if sub:
+                sub.value = value
+                # Store as live value (received from X-Plane)
+                self._live_values[sub.name] = value
+
+                if self.on_dataref_update:
+                    try:
+                        # Determine if this is part of a string dataref
+                        # String datarefs come in as array elements like [0], [1], [2], etc.
+                        name_to_report = sub.name
+
+                        # Check if this looks like a string dataref (has array index)
+                        import re
+                        match = re.match(r'(.*)\[(\d+)\]', sub.name)
+                        if match:
+                            base_name, array_index = match.groups()
+                            array_idx = int(array_index)
+
+                            # Store the character code in the live values - this is important for all array elements
+                            self._live_values[sub.name] = value
+
+                            # Check if this dataref is known to be a string type
+                            # For now, we'll assume that if it has an array index and the base name
+                            # is commonly a string dataref, it might be a string
+                            # In a more sophisticated implementation, we'd have metadata about dataref types
+                            is_known_string = any(known_str in base_name for known_str in [
+                                'acf_', 'descrip', 'icao', 'tailnum', 'atc', 'title', 'model', 'texture'
+                            ])
+
+                            # Always call the update callback
+                            self.on_dataref_update(name_to_report, value)
+
+                            # If it's a known string type, also try to reconstruct and report the full string
+                            if is_known_string:
+                                # Reconstruct the full string from available character codes
+                                reconstructed_string = self._reconstruct_string_from_buffer(base_name)
+
+                                # Log the reconstructed string for debugging
+                                if reconstructed_string:
+                                    log.debug("Reconstructed string for %s: %s", base_name, repr(reconstructed_string))
+                        else:
+                            # Regular (non-array) dataref
+                            self._live_values[sub.name] = value
+                            self.on_dataref_update(name_to_report, value)
+
+                    except Exception as e:
+                        log.error("Callback error for %s: %s", sub.name, e)
+
+    def _reconstruct_string_from_buffer(self, dataref_base: str) -> str:
+        """
+        Reconstruct a string from the character code buffer for a string dataref.
+        String datarefs in X-Plane are stored as arrays of float values representing ASCII codes.
+        """
+        # Look for consecutive array elements [0], [1], [2], etc.
+        result_chars = []
+        idx = 0
+
+        while True:
+            element_name = f"{dataref_base}[{idx}]"
+            if element_name in self._live_values:
+                char_code = self._live_values[element_name]
+                if char_code == 0.0:  # Null terminator
+                    break
+                # Convert float character code back to character, ensuring it's in valid range
+                int_code = int(char_code)
+                if 32 <= int_code < 127:  # Printable ASCII range
+                    char = chr(int_code)
+                    result_chars.append(char)
+                elif int_code == 0:  # Explicit null terminator
+                    break
+                else:
+                    # For non-printable characters, we might want to represent them differently
+                    # For now, we'll skip them to avoid display issues
+                    pass
+                idx += 1
+            else:
+                # If we can't find the next index, assume string is complete
+                break
+
+        return ''.join(result_chars)
+
     def get_value(self, dataref: str, source: str = "any") -> Optional[float]:
         """
         Get value for a dataref.
@@ -622,6 +747,61 @@ class XPlaneConnection:
                 sub = self._subscriptions.get(idx)
                 return sub.value if sub else None
         return None
+
+    def get_string_value(self, dataref: str) -> Optional[str]:
+        """
+        Get the string value for a string dataref by reconstructing from character codes.
+
+        String datarefs in X-Plane are represented as arrays of float values
+        (each representing an ASCII character code). This method reconstructs
+        the string from these character codes.
+
+        Args:
+            dataref: The dataref name (with or without array index)
+
+        Returns:
+            The reconstructed string value, or None if not available
+        """
+        # Strip prefixes
+        if dataref.startswith("XP:"):
+            dataref = dataref[3:]
+        elif dataref.startswith("VAR:"):
+            dataref = dataref[4:]
+
+        # Get the base name (remove array index if present)
+        base_name = dataref.split("[")[0]
+
+        # Try to reconstruct the string from the live values buffer
+        reconstructed = self._reconstruct_string_from_buffer(base_name)
+
+        # If we got an empty string or None, try a different approach
+        if not reconstructed:
+            # Look for consecutive array elements [0], [1], [2], etc.
+            result_chars = []
+            idx = 0
+
+            while True:
+                element_name = f"{base_name}[{idx}]"
+                if element_name in self._live_values:
+                    char_code = self._live_values[element_name]
+                    if char_code == 0.0:  # Null terminator
+                        break
+                    # Convert float character code back to character, ensuring it's in valid range
+                    int_code = int(char_code)
+                    if 32 <= int_code < 127:  # Printable ASCII range
+                        char = chr(int_code)
+                        result_chars.append(char)
+                    elif int_code == 0:  # Explicit null terminator
+                        break
+                    idx += 1
+                else:
+                    # If we can't find the next index, assume string is complete
+                    break
+
+            if result_chars:
+                return ''.join(result_chars)
+
+        return reconstructed
 
     def get_live_value(self, dataref: str) -> Optional[float]:
         """Get the live value received from X-Plane."""

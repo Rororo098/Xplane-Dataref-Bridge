@@ -502,6 +502,58 @@ class DatarefManager:
             },
         }
 
+        # Add common string datarefs to the default database
+        string_datarefs = {
+            # Aircraft identification
+            "sim/aircraft/view/acf_ICAO": {
+                "type": "string[8]",
+                "writable": True,
+                "description": "Aircraft ICAO code (e.g., C172)",
+                "category": "aircraft",
+            },
+            "sim/aircraft/view/acf_tailnum": {
+                "type": "string[32]",
+                "writable": True,
+                "description": "Aircraft tail number/registration",
+                "category": "aircraft",
+            },
+            "sim/aircraft/view/acf_descrip": {
+                "type": "string[256]",
+                "writable": True,
+                "description": "Aircraft description",
+                "category": "aircraft",
+            },
+            "sim/aircraft/view/acf_author": {
+                "type": "string[256]",
+                "writable": True,
+                "description": "Aircraft author",
+                "category": "aircraft",
+            },
+            "sim/aircraft/view/acf_model": {
+                "type": "string[256]",
+                "writable": True,
+                "description": "Aircraft model",
+                "category": "aircraft",
+            },
+            # ATC related
+            "sim/cockpit2/radios/actuators/com1_callsign": {
+                "type": "string[8]",
+                "writable": True,
+                "description": "COM1 radio callsign",
+                "category": "radios",
+            },
+            # Flight plan
+            "sim/cockpit2/autopilot/flight_plan_waypoint_name": {
+                "type": "string[256]",
+                "writable": False,
+                "description": "Flight plan waypoint name",
+                "category": "autopilot",
+            },
+        }
+
+        # Add string datarefs to the main database
+        self._database.update(string_datarefs)
+
         # Enhance all entries with array metadata
         for name, info in self._database.items():
             type_str = info.get("type", "")

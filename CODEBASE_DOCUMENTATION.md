@@ -959,3 +959,134 @@ graph TD
 5. Report any issues to the development team
 
 This comprehensive documentation provides a complete understanding of the X-Plane Dataref Bridge codebase, enabling AI assistants to provide accurate and contextual assistance for development, debugging, and feature implementation.
+
+## Communication Protocol
+
+### Overview
+The X-Plane Dataref Bridge facilitates bidirectional communication between X-Plane flight simulator and Arduino/ESP32 microcontrollers via serial communication. This section outlines the complete protocol for all dataref operations.
+
+### Handshake
+- **Bridge sends:** `HELLO`
+- **Arduino responds:** `XPDR;fw=<version>;board=<type>;name=<device_name>`
+
+### Message Format
+All messages are terminated with `\n` (newline character).
+
+### Reading Datarefs
+
+#### Single Dataref
+- **Arduino sends:** `READ <dataref_name> <type>`
+- **Bridge responds:** `VALUE <dataref_name> <value>`
+
+#### Array Dataref (Single Element)
+- **Arduino sends:** `READ <dataref_name> <type> <index>`
+- **Bridge responds:** `VALUE <dataref_name> <index> <value>`
+
+#### Array Dataref (Multiple Elements)
+- **Arduino sends:** `READ <dataref_name> <type> ALL`
+- **Bridge responds:** `<dataref_name>: <value0>, <value1>, <value2>, ...`
+
+#### Multiple Datarefs
+- **Arduino sends:** `MULTIREAD <dataref_name[start,end]> <type>`
+- **Bridge responds:** `MULTIVALUE <dataref_name[start,end]> <type> <csv_values>`
+
+### Writing Datarefs
+
+#### Single Value
+- **Arduino sends:** `DREF <dataref_name> <value>`
+- **Bridge responds:** UDP packet to X-Plane (no direct response)
+
+#### Command Execution
+- **Arduino sends:** `CMD <command_name>`
+- **Bridge responds:** UDP command packet to X-Plane (no direct response)
+
+### Array Operations
+
+#### Writing Single Array Element
+- **Arduino sends:** `WRITEELEM <dataref_name[index]> <type> <value>`
+- **Bridge responds:** `OK` or `ERROR`
+
+#### Reading Single Array Element
+- **Arduino sends:** `READELEM <dataref_name[index]> <type>`
+- **Bridge responds:** `ELEMVALUE <dataref_name[index]> <type> <value>`
+
+#### Writing Multiple Array Elements
+- **Arduino sends:** `WRITEARRAY <dataref_name> <type> <csv_values>`
+- **Bridge responds:** `OK` or `ERROR`
+
+#### Reading Multiple Array Elements
+- **Arduino sends:** `READARRAY <dataref_name> <type>`
+- **Bridge responds:** `ARRAYVALUE <dataref_name> <type> <csv_values>`
+
+### Special Data Types
+
+#### String Datarefs
+- **Arduino sends:** `STRING <dataref_name> <string_value>`
+- **Bridge processes:** Converts string to character codes and sends DREF packet with 8 float values
+- **UDP Format:** Character codes packed as float32 values (ASCII ordinals)
+
+#### Byte Datarefs
+- **Arduino sends:** `DREF <dataref_name> <value>` (value as float representing byte)
+- **Bridge processes:** Converts float to byte for X-Plane
+
+#### Data (Binary) Arrays
+- **Arduino sends:** `DREF <dataref_name> <csv_float_values>` (for raw binary data)
+- **Bridge processes:** Each float represents a byte value
+
+### Arduino-Specific Protocols
+
+#### Input Commands (Arduino → Bridge → X-Plane)
+- **Format:** `INPUT <output_id> <value>`
+- **Purpose:** Send values from Arduino to mapped X-Plane datarefs
+- **Bridge action:** Maps `output_id` to X-Plane dataref and sends DREF command
+
+#### Output Commands (Bridge → Arduino ← X-Plane)
+- **Format:** `SET <output_id> <value>`
+- **Purpose:** Send X-Plane dataref values to Arduino
+- **Arduino action:** Process value for local use
+
+#### String Handling in Arduino
+- **Writing:** Use `STRING <dataref> <text>` command
+- **Reading:** Receive character codes as float values in array elements
+- **Decoding:** Combine character codes until null terminator (0.0) is found
+
+### Data Type Specifications
+
+#### Numeric Types
+- **int:** 32-bit signed integer, transmitted as float32
+- **float:** Single precision floating point
+- **double:** Double precision (transmitted as float32 approximation)
+
+#### Array Types
+- **Format:** `<type>[N]` where N is array size
+- **Storage:** Sequential float32 values in UDP packets
+- **Access:** Individual elements via `[index]` notation
+
+#### String Types
+- **Format:** `string[N]` where N is maximum string length
+- **Encoding:** ASCII character codes as float32 values
+- **Termination:** Null-terminated (0.0 marks end of string)
+- **Maximum:** 8 characters per UDP DREF packet (due to packet format limitations)
+
+#### Data/Binary Types
+- **Format:** `data[N]` or `byte[N]`
+- **Encoding:** Raw binary data as float32 values
+- **Processing:** Each float represents one byte value
+
+### Error Handling
+- **Malformed commands:** Bridge responds with error message
+- **Invalid datarefs:** Bridge logs error, no response to Arduino
+- **Communication timeouts:** Automatic retry mechanisms in bridge application
+
+### Best Practices
+1. Always implement proper handshake before sending commands
+2. Use appropriate data types for each operation
+3. Handle array bounds checking in Arduino code
+4. Implement error checking for invalid responses
+5. Use descriptive output IDs for easier debugging
+
+### Troubleshooting
+- **No response:** Check handshake completion and serial connection
+- **Wrong values:** Verify dataref names and type specifications
+- **Array issues:** Confirm index bounds and array size specifications
+- **String problems:** Ensure proper null termination and character encoding
