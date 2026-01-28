@@ -52,7 +52,9 @@ try:
             def write(self, data): return len(data) if data else 0
             @property
             def in_waiting(self): return 0
-            def close(self): pass
+            def close(self): 
+                """Empty method for mock Serial class"""
+                pass
             @property
             def is_open(self): return False
 
@@ -271,13 +273,17 @@ class ArduinoManager:
         if port not in self._last_sent:
             self._last_sent[port] = {}
 
-        cache_key = f"{key}"
+        cache_key = key
         last_value = self._last_sent[port].get(cache_key)
 
         # Threshold for float comparison
         if last_value is None or abs(value - last_value) > 0.001:
-            self.send_value(port, key, value)
-            self._last_sent[port][cache_key] = value
+            success = self.send_value(port, key, value)
+            if success:
+                self._last_sent[port][cache_key] = value
+                log.debug("Sent to %s: %s = %.4f", port, key, value)
+            else:
+                log.warning("Failed to send to %s: %s = %.4f", port, key, value)
 
     @staticmethod
     def list_ports() -> List[Dict]:
@@ -377,7 +383,14 @@ class ArduinoManager:
             return False
         
         try:
-            line = f"SET {key} {value:.4f}\n"
+            # Handle different value types
+            if isinstance(value, str):
+                line = f"STRING {key} {value}\n"
+            else:
+                # Ensure numeric value
+                numeric_value = float(value)
+                line = f"SET {key} {numeric_value:.4f}\n"
+            
             ser.write(line.encode())
             log.debug("Sent to %s: %s", port, line.strip())
             return True
@@ -505,12 +518,21 @@ class ArduinoManager:
         Broadcasts to all devices if a universal mapping exists.
         """
         # 1. Check for Universal Mapping
-        universal_key = self._universal_mappings.get(dataref)
+        universal_key = None
+        for key, info in self._universal_mappings.items():
+            if info['source'] == dataref:
+                universal_key = key
+                break
+
+        log.debug("Checking universal mapping for %s: %s", dataref, universal_key)
 
         if universal_key:
             # Broadcast to ALL connected devices
             with self._lock:
                 ports = [p for p, d in self._devices.items() if d.is_ready]
+
+            log.debug("Broadcasting dataref %s = %.4f to %d devices with key %s",
+                     dataref, value, len(ports), universal_key)
 
             for port in ports:
                 self._send_if_changed(port, universal_key, value)
@@ -527,6 +549,8 @@ class ArduinoManager:
                         devices_to_update.append((port, key))
 
         for port, key in devices_to_update:
+            log.debug("Sending dataref %s = %.4f to device %s with key %s",
+                     dataref, value, port, key)
             self._send_if_changed(port, key, value)
 
     def broadcast_by_key(self, key: str, value: Any) -> bool:
@@ -962,136 +986,97 @@ class ArduinoManager:
         """Handle INPUT message from device."""
         # Format: INPUT <key> <value>
         parts = line.split()
-        if len(parts) >= 3:
-            key = parts[1]
-
-            # Extract the value part (everything after the key)
-            value_str = ' '.join(parts[2:])  # Join all remaining parts in case value contains spaces
-
-            try:
-                # Try to parse as float first (for numeric values)
-                value = float(value_str)
-
-                device.set_input(key, value)
-
-                # Update variable store if available
-                if self.variable_store:
-                    from core.variable_store import VariableType
-                    self.variable_store.update_value(
-                        key,
-                        value,
-                        VariableType.VARIABLE_ARDUINO,
-                        f"Input from Arduino device on {device.port}"
-                    )
-
-                # Check if this key is mapped to a dataref and forward to X-Plane if so
-                if self.xplane_conn:
-                    # Look up the dataref associated with this key in universal mappings
-                    dataref_info = None
-                    for mapped_key, info in self._universal_mappings.items():
-                        if mapped_key == key.upper():
-                            dataref_info = info
-                            break
-
-                    if dataref_info:
-                        try:
-                            dataref = dataref_info['source']
-                            # Forward the value to X-Plane
-                            import asyncio
-                            try:
-                                # Check if we're in an event loop
-                                loop = asyncio.get_running_loop()
-                                # If we're in a loop, schedule the task
-                                task = loop.create_task(self.xplane_conn.write_dataref(dataref, value))
-                                self._tasks.append(task)  # Store task to prevent garbage collection
-                                log.info("Scheduled INPUT to X-Plane: %s = %.4f", dataref, value)
-                            except RuntimeError:
-                                # No event loop running, run in separate thread
-                                import threading
-                                def async_call():
-                                    # Create a new event loop for this thread
-                                    new_loop = asyncio.new_event_loop()
-                                    asyncio.set_event_loop(new_loop)
-                                    try:
-                                        coro = self.xplane_conn.write_dataref(dataref, value)
-                                        new_loop.run_until_complete(coro)
-                                    finally:
-                                        new_loop.close()
-
-                                # Run in a separate thread
-                                thread = threading.Thread(target=async_call, daemon=True)
-                                thread.start()
-                        except Exception as e:
-                            log.error("Failed to forward INPUT to X-Plane: %s", e)
-
-                # Notify listeners
-                if self.on_input_received:
-                    self.on_input_received(device.port, key, value)
-
-                log.debug("Input from %s: %s = %.4f", device.port, key, value)
-
-            except ValueError:
-                # If it's not a float, treat it as a string value
-                # This is for string datarefs like aircraft ICAO codes
-                string_value = value_str
-
-                # Update variable store if available
-                if self.variable_store:
-                    from core.variable_store import VariableType
-                    self.variable_store.update_value(
-                        key,
-                        string_value,
-                        VariableType.VARIABLE_ARDUINO,
-                        f"Input from Arduino device on {device.port} (string)"
-                    )
-
-                # Check if this key is mapped to a string dataref and forward to X-Plane if so
-                if self.xplane_conn:
-                    # Look up the dataref associated with this key in universal mappings
-                    dataref_info = None
-                    for mapped_key, info in self._universal_mappings.items():
-                        if mapped_key == key.upper():
-                            dataref_info = info
-                            break
-
-                    if dataref_info:
-                        try:
-                            dataref = dataref_info['source']
-                            # Forward the string value to X-Plane
-                            import asyncio
-                            try:
-                                # Check if we're in an event loop
-                                loop = asyncio.get_running_loop()
-                                # If we're in a loop, schedule the task
-                                task = loop.create_task(self.xplane_conn.write_dataref_string(dataref, string_value))
-                                self._tasks.append(task)  # Store task to prevent garbage collection
-                                log.info("Scheduled INPUT string to X-Plane: %s = %s", dataref, string_value)
-                            except RuntimeError:
-                                # No event loop running, run in separate thread
-                                import threading
-                                def async_call():
-                                    # Create a new event loop for this thread
-                                    new_loop = asyncio.new_event_loop()
-                                    asyncio.set_event_loop(new_loop)
-                                    try:
-                                        coro = self.xplane_conn.write_dataref_string(dataref, string_value)
-                                        new_loop.run_until_complete(coro)
-                                    finally:
-                                        new_loop.close()
-
-                                # Run in a separate thread
-                                thread = threading.Thread(target=async_call, daemon=True)
-                                thread.start()
-                        except Exception as e:
-                            log.error("Failed to forward INPUT string to X-Plane: %s", e)
-
-                # Notify listeners
-                if self.on_input_received:
-                    # Convert string to a representative float for the listener
-                    # For string values, we'll pass a special indicator
-                    self.on_input_received(device.port, key, -999.0)  # Special value to indicate string
-
-                log.debug("Input string from %s: %s = %s", device.port, key, string_value)
+        if len(parts) < 3:
+            return
+            
+        key = parts[1]
+        value_str = ' '.join(parts[2:])  # Join all remaining parts in case value contains spaces
+        
+        try:
+            self._handle_numeric_input(device, key, value_str)
+        except ValueError:
+            self._handle_string_input(device, key, value_str)
+    
+    def _handle_numeric_input(self, device: ArduinoDevice, key: str, value_str: str):
+        """Handle numeric input from device."""
+        value = float(value_str)
+        device.set_input(key, value)
+        
+        self._update_variable_store(key, value, device.port)
+        self._forward_to_xplane(key, value)
+        self._notify_listeners(device.port, key, value)
+        
+        log.debug("Input from %s: %s = %.4f", device.port, key, value)
+    
+    def _handle_string_input(self, device: ArduinoDevice, key: str, string_value: str):
+        """Handle string input from device."""
+        self._update_variable_store(key, string_value, device.port, is_string=True)
+        self._forward_to_xplane(key, string_value, is_string=True)
+        self._notify_listeners(device.port, key, -999.0)  # Special value to indicate string
+        
+        log.debug("Input string from %s: %s = %s", device.port, key, string_value)
+    
+    def _update_variable_store(self, key: str, value, port: str, is_string: bool = False):
+        """Update variable store if available."""
+        if self.variable_store:
+            from core.variable_store import VariableType
+            source = f"Input from Arduino device on {port}" + (" (string)" if is_string else "")
+            self.variable_store.update_value(key, value, VariableType.VARIABLE_ARDUINO, source)
+    
+    def _forward_to_xplane(self, key: str, value, is_string: bool = False):
+        """Forward input to X-Plane if connected and key is mapped."""
+        if not self.xplane_conn:
+            return
+            
+        # Look up the dataref associated with this key in universal mappings
+        dataref_info = None
+        for mapped_key, info in self._universal_mappings.items():
+            if mapped_key == key.upper():
+                dataref_info = info
+                break
+                
+        if not dataref_info:
+            return
+            
+        try:
+            dataref = dataref_info['source']
+            self._send_to_xplane(dataref, value, is_string)
+        except Exception as e:
+            log.error("Failed to forward INPUT to X-Plane: %s", e)
+    
+    def _send_to_xplane(self, dataref: str, value, is_string: bool = False):
+        """Send data to X-Plane with proper async handling."""
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+            if is_string:
+                task = loop.create_task(self.xplane_conn.write_dataref_string(dataref, value))
+                log.info("Scheduled INPUT string to X-Plane: %s = %s", dataref, value)
+            else:
+                task = loop.create_task(self.xplane_conn.write_dataref(dataref, value))
+                log.info("Scheduled INPUT to X-Plane: %s = %.4f", dataref, value)
+            self._tasks.append(task)
+        except RuntimeError:
+            import threading
+            def async_call():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    if is_string:
+                        coro = self.xplane_conn.write_dataref_string(dataref, value)
+                    else:
+                        coro = self.xplane_conn.write_dataref(dataref, value)
+                    new_loop.run_until_complete(coro)
+                finally:
+                    new_loop.close()
+                    
+            thread = threading.Thread(target=async_call, daemon=True)
+            thread.start()
+    
+    def _notify_listeners(self, port: str, key: str, value: float):
+        """Notify listeners of input received."""
+        if self.on_input_received:
+            self.on_input_received(port, key, value)
 
     def _handle_dref(self, device: ArduinoDevice, line: str) -> None:
         """Handle DREF message from device to set dataref value."""

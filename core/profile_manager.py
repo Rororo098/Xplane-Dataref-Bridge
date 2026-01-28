@@ -254,34 +254,89 @@ class ProfileManager:
         self.save_profile(name)
         source_path = self.PROFILE_DIR / f"{name}.json"
         if not source_path.exists():
+            log.error("Profile %s not found for export", name)
             return False
 
         try:
             import shutil
 
+            # Ensure target directory exists
+            target_path = Path(target_path)
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Copy the profile file
             shutil.copy2(source_path, target_path)
             log.info("Exported profile %s to %s", name, target_path)
             return True
         except Exception as e:
             log.error("Failed to export profile: %s", e)
+            import traceback
+            log.error("Export traceback: %s", traceback.format_exc())
             return False
 
     def import_profile(self, source_path: Path) -> Optional[str]:
         """Copy an external profile into the internal directory and load it."""
         try:
+            source_path = Path(source_path)
+
+            # Validate source file exists
+            if not source_path.exists():
+                log.error("Source profile file not found: %s", source_path)
+                return None
+
+            # Validate it's a JSON file
+            if source_path.suffix.lower() != '.json':
+                log.error("Source file is not a JSON file: %s", source_path)
+                return None
+
+            # Read and validate the profile data before importing
+            try:
+                with open(source_path, 'r') as f:
+                    profile_data = json.load(f)
+
+                # Validate profile structure
+                if not isinstance(profile_data, dict):
+                    log.error("Invalid profile structure: not a dictionary")
+                    return None
+
+                # Check for required fields
+                if 'version' not in profile_data:
+                    log.warning("Profile missing version field, but will attempt to import")
+
+            except json.JSONDecodeError as e:
+                log.error("Invalid JSON in profile file: %s", e)
+                return None
+            except Exception as e:
+                log.error("Error reading profile file: %s", e)
+                return None
+
+            # Generate a unique name if profile already exists
             new_name = source_path.stem
             target_path = self.PROFILE_DIR / f"{new_name}.json"
 
+            # If profile already exists, append a number
+            counter = 1
+            while target_path.exists():
+                new_name = f"{source_path.stem}_{counter}"
+                target_path = self.PROFILE_DIR / f"{new_name}.json"
+                counter += 1
+
             import shutil
 
+            # Copy the profile file
             shutil.copy2(source_path, target_path)
+            log.info("Imported profile from %s to %s", source_path, target_path)
 
             # Load it
             if self.load_profile(new_name):
                 return new_name
-            return None
+            else:
+                log.error("Failed to load imported profile: %s", new_name)
+                return None
         except Exception as e:
             log.error("Failed to import profile: %s", e)
+            import traceback
+            log.error("Import traceback: %s", traceback.format_exc())
             return None
 
     def record_device_name(self, device_id: str, name: str):

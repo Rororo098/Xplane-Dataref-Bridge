@@ -31,7 +31,7 @@ from PyQt6.QtWidgets import (
     QDialogButtonBox,
 )
 from PyQt6.QtGui import QAction
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QDateTime
 from PyQt6.QtGui import QColor, QFont, QIcon
 
 from .variable_dialog import VariableDialog
@@ -375,6 +375,10 @@ class OutputPanel(QWidget):
         # Temp storage for live values
         self._live_values = {}
 
+        # Debouncing for UI updates to prevent flickering
+        self._last_update_time = {}
+        self._update_debounce_time = 100  # milliseconds
+
         # Connect variable store to receive updates for virtual variables
         if self.variable_store:
             self.variable_store.register_listener(self._on_variable_update)
@@ -402,7 +406,7 @@ class OutputPanel(QWidget):
         if db_description.lower() in {"custom dataref", "custom datarefs", "unknown", "n/a"}:
             db_description = ""
         units = (info.get("units") or "").strip() if isinstance(info, dict) else ""
-        desc_core = db_description if db_description else format_dataref_description_from_name(base_name)
+        desc_core = db_description if db_description else self._format_dataref_description_from_name(base_name)
         if units:
             desc_core = f"{desc_core} ({units})"
 
@@ -428,6 +432,16 @@ class OutputPanel(QWidget):
         if dataref_name in self._subscribed_datarefs:
             row = self._subscribed_datarefs[dataref_name]
             if row < self.table.rowCount():
+                # Check debouncing - only update if enough time has passed
+                current_time = QDateTime.currentMSecsSinceEpoch()
+                if dataref_name in self._last_update_time:
+                    time_since_last = current_time - self._last_update_time[dataref_name]
+                    if time_since_last < self._update_debounce_time:
+                        return  # Skip this update to prevent flickering
+
+                # Update the last update time
+                self._last_update_time[dataref_name] = current_time
+
                 # Get the dataref type for proper formatting
                 dtype = ""
                 if self.dataref_manager:
@@ -456,11 +470,21 @@ class OutputPanel(QWidget):
 
     def _update_live_values(self):
         """Update live values in the table from stored values."""
+        current_time = QDateTime.currentMSecsSinceEpoch()
         for dataref_name, row in self._subscribed_datarefs.items():
             if row < self.table.rowCount():
+                # Check debouncing - only update if enough time has passed
+                if dataref_name in self._last_update_time:
+                    time_since_last = current_time - self._last_update_time[dataref_name]
+                    if time_since_last < self._update_debounce_time:
+                        continue  # Skip this update to prevent flickering
+
                 # Get the current value from stored live values
                 current_value = self._live_values.get(dataref_name)
                 if current_value is not None:
+                    # Update the last update time
+                    self._last_update_time[dataref_name] = current_time
+
                     # Update the value in the table
                     value_item = self.table.item(row, 2)
                     if value_item:
@@ -579,6 +603,13 @@ class OutputPanel(QWidget):
 
         menu.exec(target_table.viewport().mapToGlobal(position))
 
+    # Regex patterns as constants
+    ARRAY_ELEMENT_PATTERN = re.compile(r"^(.+)\[(\d+)\]$")
+    ARRAY_INDEX_PATTERN = re.compile(r"\[(\d+)\]")
+    # Log message constants
+    LOG_MAPPED = "Mapped %s -> %s"
+    LOG_REMOVED_MAPPING = "Removed mapping for %s"
+
     def _delete_selected_rows_from_table(self, table_widget):
         """Delete selected rows from a specific table."""
         selected_ranges = table_widget.selectedRanges()
@@ -617,7 +648,7 @@ class OutputPanel(QWidget):
                                 del self._subscribed_datarefs[dataref_name]
 
                             # Check if this is an array element and handle base array cleanup
-                            array_match = re.match(r"^(.+)\[(\d+)\]$", dataref_name)
+                            array_match = self.ARRAY_ELEMENT_PATTERN.match( dataref_name)
                             if array_match:
                                 base_name = array_match.group(1)
                                 # Check if there are any other elements of this array still subscribed
@@ -668,7 +699,7 @@ class OutputPanel(QWidget):
             return 0
         import re
 
-        dims = [int(n) for n in re.findall(r"\[(\d+)\]", type_str)]
+        dims = [int(n) for n in self.ARRAY_INDEX_PATTERN.findall(type_str)]
         if not dims:
             return 0
         total = 1
@@ -789,10 +820,14 @@ class OutputPanel(QWidget):
         is_command = data_type == "command"
         is_complex = "[" in data_type or "string" in data_type or "byte" in data_type
         is_array = self._is_array_dataref(display_name, data_type)
-        btn_text = (
-            "EXECUTE" if is_command
-            else ("Inspect/Edit Array" if is_array else "Inspect/Edit" if is_complex else "Write")
-        )
+        if is_command:
+            btn_text = "EXECUTE"
+        elif is_array:
+            btn_text = "Inspect/Edit Array"
+        elif is_complex:
+            btn_text = "Inspect/Edit"
+        else:
+            btn_text = "Write"
         modify_btn = QPushButton(btn_text)
         modify_btn.clicked.connect(lambda _, r=row: self._modify_value(r))
         self.table.setCellWidget(row, 3, modify_btn)
@@ -2321,7 +2356,7 @@ class OutputPanel(QWidget):
     def _subscribe_if_appropriate(self, clean_name: str, dataref: str):
         """Subscribe to X-Plane if appropriate."""
         # Check if this is an array element (e.g., LED_STATE[3])
-        array_match = re.match(r"^(.+)\[(\d+)\]$", clean_name)
+        array_match = self.ARRAY_ELEMENT_PATTERN.match(clean_name)
         if array_match:
             # This is an array element, subscribe to the base array
             base_name = array_match.group(1)
@@ -2335,7 +2370,7 @@ class OutputPanel(QWidget):
         if info:
             dtype = info.get("type", "")
             # check for array patterns: float[8], int[4], byte[260]
-            m = re.search(r"\[(\d+)\]", dtype)
+            m = self.ARRAY_INDEX_PATTERN.search(dtype)
             if m:
                 count = int(m.group(1))
                 log.info("Detected array size %d for %s", count, dataref)
@@ -2471,11 +2506,11 @@ class OutputPanel(QWidget):
             dataref, key
         )  # Empty key removes mapping
         if key:
-            log.info("Mapped %s -> %s", dataref, key)
+            log.info(self.LOG_MAPPED, dataref, key)
             # Register with DatarefWriter
             self.dataref_writer.register_output_id(key, dataref)
         else:
-            log.info("Removed mapping for %s", dataref)
+            log.info(self.LOG_REMOVED_MAPPING, dataref)
             # Unregister from DatarefWriter
             self.dataref_writer.unregister_output_id(key)
 
@@ -2502,7 +2537,7 @@ class OutputPanel(QWidget):
         self._cleanup_dataref_state(dataref, row)
 
         # 4. Handle array elements - if this was an array element, check if we need to unsubscribe from the base array
-        array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
+        array_match = self.ARRAY_ELEMENT_PATTERN.match( dataref)
         if array_match:
             base_name = array_match.group(1)
             # Check if there are any other elements of this array still subscribed
@@ -2579,7 +2614,7 @@ class OutputPanel(QWidget):
     def _notify_managers_of_removal(self, dataref: str):
         """Notify managers of dataref removal."""
         # Check if this is an array element
-        array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
+        array_match = self.ARRAY_ELEMENT_PATTERN.match( dataref)
         if array_match:
             # This is an array element, unsubscribe from the base array only if no other elements are subscribed
             base_name = array_match.group(1)
@@ -2623,9 +2658,9 @@ class OutputPanel(QWidget):
             dataref, key
         )  # Empty key removes mapping
         if key:
-            log.info("Mapped %s -> %s", dataref, key)
+            log.info(self.LOG_MAPPED, dataref, key)
         else:
-            log.info("Removed mapping for %s", dataref)
+            log.info(self.LOG_REMOVED_MAPPING, dataref)
 
     def _write_dataref(self, dataref: str, value: float):
         """Write a value to a dataref."""
@@ -2703,9 +2738,9 @@ class OutputPanel(QWidget):
                     dataref, key
                 )  # Empty key removes mapping
                 if key:
-                    log.info("Mapped %s -> %s", dataref, key)
+                    log.info(self.LOG_MAPPED, dataref, key)
                 else:
-                    log.info("Removed mapping for %s", dataref)
+                    log.info(self.LOG_REMOVED_MAPPING, dataref)
 
     def _process_datarefs_for_restoration(
         self, all_datarefs: set, inverted_mappings: dict
@@ -2776,9 +2811,9 @@ class OutputPanel(QWidget):
                     dataref, key
                 )  # Empty key removes mapping
                 if key:
-                    log.info("Mapped %s -> %s", dataref, key)
+                    log.info(self.LOG_MAPPED, dataref, key)
                 else:
-                    log.info("Removed mapping for %s", dataref)
+                    log.info(self.LOG_REMOVED_MAPPING, dataref)
 
     def _generate_code(self):
         """Generate Arduino code for all mappings."""
@@ -2834,7 +2869,7 @@ class OutputPanel(QWidget):
         self._live_values[dataref] = value
 
         # Check if this is an array element update (e.g., LED_STATE[3])
-        array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
+        array_match = self.ARRAY_ELEMENT_PATTERN.match( dataref)
         if array_match:
             base_name = array_match.group(1)
             index = int(array_match.group(2))
@@ -2853,8 +2888,13 @@ class OutputPanel(QWidget):
     def _format_value(self, name: str, value: float, dtype: str) -> str:
         """Helper to format a value based on type (supports arrays/strings)."""
         try:
+            # Handle command type
             if dtype == "command":
                 return "COMMAND"
+
+            # Handle string values directly if value is already a string
+            if isinstance(value, str):
+                return f'"{value}"'
 
             # Check if this is a string dataref and try to reconstruct the string
             # Check both the dataref type and the dataref name pattern
@@ -2923,6 +2963,12 @@ class OutputPanel(QWidget):
                 except Exception:
                     # If string reconstruction fails, fall back to the original method
                     pass
+
+        # Check if we have a string value stored in live_values
+        if base in self._live_values:
+            stored_value = self._live_values[base]
+            if isinstance(stored_value, str):
+                return f'"{stored_value}"'
 
         size = self._get_array_size(dtype)
         indices = self._get_array_indices(base, size)
@@ -2995,7 +3041,7 @@ class OutputPanel(QWidget):
         """Update values in the datarefs table."""
         for dataref, row in self._subscribed_datarefs.items():
             # Check if this is an array element (e.g., LED_STATE[3])
-            array_match = re.match(r"^(.+)\[(\d+)\]$", dataref)
+            array_match = self.ARRAY_ELEMENT_PATTERN.match( dataref)
             if array_match:
                 # This is an array element, get the base dataref name
                 base_name = array_match.group(1)
@@ -3214,8 +3260,8 @@ class OutputPanel(QWidget):
                         self._tasks.append(task1)
 
                         # Resubscribe after a short delay
-                        def delayed_resubscribe():
-                            task = asyncio.create_task(self.xplane_conn.subscribe_dataref(dataref_name))
+                        def delayed_resubscribe(name=dataref_name):
+                            task = asyncio.create_task(self.xplane_conn.subscribe_dataref(name))
                             self._tasks.append(task)
 
                         QTimer.singleShot(200, delayed_resubscribe)
@@ -3460,9 +3506,7 @@ class OutputPanel(QWidget):
                 log.warning(f"Invalid value at index {i}: {val}. Setting to 0.0")
                 validated_values.append(0.0)
 
-        # Determine the dataref type to call the appropriate write method
-        info = self.dataref_manager.get_dataref_info(dataref_name) or {}
-        dtype = info.get("type", "")
+
 
         # Use the X-Plane connection to send each element individually
         if self.xplane_conn:
@@ -3486,7 +3530,8 @@ class OutputPanel(QWidget):
 
                 # Small delay between batches to prevent overwhelming the connection
                 if batch_idx < total_batches - 1:  # Don't delay after the last batch
-                    asyncio.create_task(asyncio.sleep(0.01))  # 10ms delay between batches
+                        task = asyncio.create_task(asyncio.sleep(0.01))  # 10ms delay between batches
+                        self._tasks.append(task)
 
             log.info(f"Sent array update for {dataref_name} with {len(validated_values)} elements in {total_batches} batches")
             return True
